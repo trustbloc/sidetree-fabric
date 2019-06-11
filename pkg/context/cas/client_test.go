@@ -9,13 +9,14 @@ package cas
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/context/cas/mocks"
 
 	"github.com/pkg/errors"
 
 	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
 	fabMocks "github.com/hyperledger/fabric-sdk-go/pkg/fab/mocks"
-	"github.com/stretchr/testify/assert"
 )
 
 const chID = "mychannel"
@@ -23,7 +24,7 @@ const chID = "mychannel"
 func TestNew(t *testing.T) {
 	ctx := channelProvider(chID)
 	c := New(ctx)
-	assert.NotNil(t, c)
+	require.NotNil(t, c)
 }
 
 func TestGetClientError(t *testing.T) {
@@ -31,19 +32,18 @@ func TestGetClientError(t *testing.T) {
 	ctx := channelProviderWithError(testErr)
 
 	c := New(ctx)
-	assert.NotNil(t, c)
+	require.NotNil(t, c)
 
 	content := []byte("content")
 	address, err := c.Write(content)
-	assert.NotNil(t, err)
-	assert.Empty(t, address)
-	assert.Contains(t, err.Error(), testErr.Error())
-
+	require.NotNil(t, err)
+	require.Empty(t, address)
+	require.Contains(t, err.Error(), testErr.Error())
 
 	payload, err := c.Read("address")
-	assert.NotNil(t, err)
-	assert.Nil(t, payload)
-	assert.Contains(t, err.Error(), testErr.Error())
+	require.NotNil(t, err)
+	require.Nil(t, payload)
+	require.Contains(t, err.Error(), testErr.Error())
 }
 
 func TestWriteContent(t *testing.T) {
@@ -53,13 +53,13 @@ func TestWriteContent(t *testing.T) {
 
 	content := []byte("content")
 	address, err := cas.Write(content)
-	assert.Nil(t, err)
-	assert.NotEmpty(t, address)
+	require.Nil(t, err)
+	require.NotEmpty(t, address)
 
 	read, err := cas.Read(address)
-	assert.Nil(t, err)
-	assert.NotNil(t, read)
-	assert.Equal(t, content, read)
+	require.Nil(t, err)
+	require.NotNil(t, read)
+	require.Equal(t, content, read)
 }
 
 func TestWriteContentError(t *testing.T) {
@@ -73,9 +73,9 @@ func TestWriteContentError(t *testing.T) {
 
 	content := []byte("content")
 	address, err := cas.Write(content)
-	assert.NotNil(t, err)
-	assert.Empty(t, address)
-	assert.Contains(t, err.Error(), testErr.Error())
+	require.NotNil(t, err)
+	require.Empty(t, address)
+	require.Contains(t, err.Error(), testErr.Error())
 }
 
 func TestReadContentError(t *testing.T) {
@@ -88,9 +88,9 @@ func TestReadContentError(t *testing.T) {
 	cas.channelClient = cc
 
 	read, err := cas.Read("address")
-	assert.NotNil(t, err)
-	assert.Nil(t, read)
-	assert.Contains(t, err.Error(), testErr.Error())
+	require.NotNil(t, err)
+	require.Nil(t, read)
+	require.Contains(t, err.Error(), testErr.Error())
 }
 
 func channelProvider(channelID string) context.ChannelProvider {

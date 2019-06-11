@@ -9,27 +9,27 @@ package protocol
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNew(t *testing.T) {
 	client, err := New("testdata/protocol.json")
-	assert.Nil(t, err)
-	assert.NotNil(t, client)
+	require.Nil(t, err)
+	require.NotNil(t, client)
 }
 
 func TestNewError(t *testing.T) {
 	client, err := New("testdata/invalid.json")
-	assert.NotNil(t, err)
-	assert.Nil(t, client)
-	assert.Contains(t, err.Error(), "no such file or directory")
+	require.NotNil(t, err)
+	require.Nil(t, client)
+	require.Contains(t, err.Error(), "no such file or directory")
 }
 
 func TestCurrentProtocol(t *testing.T) {
 	client, err := New("testdata/protocol.json")
-	assert.Nil(t, err)
-	assert.NotNil(t, client)
+	require.Nil(t, err)
+	require.NotNil(t, client)
 
 	protocol := client.Current()
-	assert.Equal(t, uint(10000), protocol.MaxOperationsPerBatch)
+	require.Equal(t, uint(10000), protocol.MaxOperationsPerBatch)
 }

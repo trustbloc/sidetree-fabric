@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	fabMocks "github.com/hyperledger/fabric-sdk-go/pkg/fab/mocks"
 )
@@ -24,7 +24,7 @@ const chID = "mychannel"
 func TestNew(t *testing.T) {
 	ctx := channelProvider(chID)
 	c := New(ctx)
-	assert.NotNil(t, c)
+	require.NotNil(t, c)
 }
 
 func TestGetClientError(t *testing.T) {
@@ -32,11 +32,11 @@ func TestGetClientError(t *testing.T) {
 	ctx := channelProviderWithError(testErr)
 
 	c := New(ctx)
-	assert.NotNil(t, c)
+	require.NotNil(t, c)
 
 	err := c.WriteAnchor("anchor")
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), testErr.Error())
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), testErr.Error())
 }
 
 func TestWriteAnchor(t *testing.T) {
@@ -45,7 +45,7 @@ func TestWriteAnchor(t *testing.T) {
 	c.channelClient = mocks.NewMockChannelClient()
 
 	err := c.WriteAnchor("anchor")
-	assert.Nil(t, err)
+	require.Nil(t, err)
 }
 
 func TestWriteAnchorError(t *testing.T) {
@@ -58,8 +58,8 @@ func TestWriteAnchorError(t *testing.T) {
 	bc.channelClient = cc
 
 	err := bc.WriteAnchor("anchor")
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), testErr.Error())
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), testErr.Error())
 }
 
 func channelProvider(channelID string) context.ChannelProvider {
