@@ -34,7 +34,6 @@ const (
 
 var logger = logrus.New()
 
-// SidetreeContext implements 'Fabric' version of Sidetree node context
 type SidetreeContext struct {
 	protocolClient       protocolApi.Client
 	casClient            batch.CASClient
