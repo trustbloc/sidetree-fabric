@@ -1,0 +1,346 @@
+#
+# Copyright SecureKey Technologies Inc. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+bddtest:
+  # Paths to channel .tx files used for bdd tests
+  channelconfig:
+    mychannel:
+      txPath: "./fixtures/fabric/channel/mychannel.tx"
+      anchorTxPath:
+        peerorg1: "./fixtures/fabric/channel/mychannelOrg1MSPanchors.tx"
+        peerorg2: "./fixtures/fabric/channel/mychannelOrg2MSPanchors.tx"
+    yourchannel:
+      txPath: "./fixtures/fabric/channel/yourchannel.tx"
+      anchorTxPath:
+        peerorg1: "./fixtures/fabric/channel/yourchannelOrg1MSPanchors.tx"
+        peerorg2: "./fixtures/fabric/channel/yourchannelOrg2MSPanchors.tx"
+
+client:
+
+  # Which organization does this application instance belong to? The value must be the name of an org
+  # defined under "organizations"
+  organization: peerorg1
+
+  logging:
+    level: info
+
+  # Global configuration for peer, event service and orderer timeouts
+  peer:
+    timeout:
+      connection: 30s
+      response: 120s
+      discovery:
+        # Expiry period for discovery service greylist filter
+        # The channel client will greylist peers that are found to be offline
+        # to prevent re-selecting them in subsequent retries.
+        # This interval will define how long a peer is greylisted
+        greylistExpiry: 5s
+  eventService:
+    timeout:
+      connection: 30s
+      registrationResponse: 10s
+  orderer:
+    timeout:
+      connection: 3s
+      response: 10s
+  global:
+    timeout:
+      query: 120s
+      execute: 120s
+      resmgmt: 120s
+    cache:
+      connectionIdle: 30s
+      eventServiceIdle: 2m
+      channelConfig: 60s
+      channelMembership: 30s
+
+  # Root of the MSP directories with keys and certs.
+  cryptoconfig:
+    path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config
+
+  # Some SDKs support pluggable KV stores, the properties under "credentialStore"
+  # are implementation specific
+  credentialStore:
+    # [Optional]. Not used by Go SDK. Others SDKs may use it if using an alternative impl
+    # Could be used if SDK would require an object for properties like url, db name, etc.
+    path: "/tmp/hfc-kvs"
+
+    # [Optional]. Specific to the CryptoSuite implementation used by GO SDK. Software-based implementations
+    # requiring a key store. PKCS#11 based implementations does not.
+    cryptoStore:
+      # Specific to the underlying KeyValueStore that backs the crypto key store.
+      path: /tmp/msp
+
+   # BCCSP config for the client. Used by GO SDK.
+  BCCSP:
+    security:
+     enabled: true
+     default:
+      provider: "SW"
+     hashAlgorithm: "SHA2"
+     softVerify: true
+     ephemeral: false
+     level: 256
+
+  tlsCerts:
+    # [Optional]. Use system certificate pool when connecting to peers, orderers (for negotiating TLS) Default: false
+    systemCertPool: false
+
+    client:
+      key:
+        path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.key
+      cert:
+        path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.crt
+
+channels:
+  # name of the channel
+  mychannel:
+    orderers:
+      - orderer.example.com
+    # Required. list of peers from participating orgs
+    peers:
+      peer0.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+      peer1.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+      peer0.org2.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+      peer1.org2.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+  yourchannel:
+    orderers:
+      - orderer.example.com
+    # Required. list of peers from participating orgs
+    peers:
+      peer0.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+      peer1.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+      peer0.org2.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+      peer1.org2.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+
+orderers:
+  orderer.example.com:
+    url:  localhost:7050
+
+    # these are standard properties defined by the gRPC library
+    # they will be passed in as-is to gRPC client constructor
+    grpcOptions:
+      ssl-target-name-override: orderer.example.com
+      grpc-max-send-message-length: 15
+#     These parameters should be set in coordination with the keepalive policy on the server,
+#     as incompatible settings can result in closing of connection.
+#     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+    tlsCACerts:
+      # Certificate location absolute path
+      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem
+
+#
+# list of participating organizations in this network
+#
+organizations:
+  peerorg1:
+    mspid: Org1MSP
+
+    # Needed to load users crypto keys and certs for this org (absolute path or relative to global crypto path, DEV mode)
+    # for PROD with no cert access through volume mappings, use 'users' and embed user certs/keys directly, do not use 'cryptoPath'
+    # for DEV mode, cryptoPath below works as an alternative
+    #cryptoPath:  fixtures/channel/crypto-config/peerOrganizations/org1.example.com/users/{userName}@org1.example.com/msp
+    cryptoPath:  peerOrganizations/org1.example.com/users/{username}@org1.example.com/msp
+
+    peers:
+      - peer0.org1.example.com
+      - peer1.org1.example.com
+
+    # [Optional]. Certificate Authorities issue certificates for identification purposes in a Fabric based
+    # network. Typically certificates provisioning is done in a separate process outside of the
+    # runtime network. Fabric-CA is a special certificate authority that provides a REST APIs for
+    # dynamic certificate management (enroll, revoke, re-enroll). The following section is only for
+    # Fabric-CA servers.
+    certificateAuthorities:
+
+  peerorg2:
+    mspid: Org2MSP
+
+    # Needed to load users crypto keys and certs for this org (absolute path or relative to global crypto path, DEV mode)
+    # for PROD with no cert access through volume mappings, use 'users' and embed user certs/keys directly, do not use 'cryptoPath'
+    # for DEV mode, cryptoPath below works as an alternative
+    #cryptoPath:  fixtures/channel/crypto-config/peerOrganizations/org2.example.com/users/{userName}@org2.example.com/msp
+    cryptoPath:  peerOrganizations/org2.example.com/users/{username}@org2.example.com/msp
+
+    peers:
+      - peer0.org2.example.com
+      - peer1.org2.example.com
+
+    # [Optional]. Certificate Authorities issue certificates for identification purposes in a Fabric based
+    # network. Typically certificates provisioning is done in a separate process outside of the
+    # runtime network. Fabric-CA is a special certificate authority that provides a REST APIs for
+    # dynamic certificate management (enroll, revoke, re-enroll). The following section is only for
+    # Fabric-CA servers.
+    certificateAuthorities:
+
+  # Orderer Org name
+  ordererorg:
+      # Membership Service Provider ID for this organization
+      mspID: "OrdererMSP"
+
+      # Needed to load users crypto keys and certs for this org (absolute path or relative to global crypto path, DEV mode)
+      cryptoPath: ordererOrganizations/example.com/users/{username}@example.com/msp
+
+#
+# List of peers to send various requests to, including endorsement, query
+# and event listener registration.
+#
+peers:
+  peer0.org1.example.com:
+    # this URL is used to send endorsement and query requests
+    url: localhost:7051
+
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
+      grpc.http2.keepalive_time: 15
+#     These parameters should be set in coordination with the keepalive policy on the server,
+#     as incompatible settings can result in closing of connection.
+#     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+    tlsCACerts:
+      # Certificate location absolute path
+      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
+
+  peer1.org1.example.com:
+    # this URL is used to send endorsement and query requests
+    url: localhost:7151
+
+    grpcOptions:
+      ssl-target-name-override: peer1.org1.example.com
+      grpc.http2.keepalive_time: 15
+      #     These parameters should be set in coordination with the keepalive policy on the server,
+      #     as incompatible settings can result in closing of connection.
+      #     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+    tlsCACerts:
+      # Certificate location absolute path
+      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
+
+  peer0.org2.example.com:
+    # this URL is used to send endorsement and query requests
+    url: localhost:8051
+
+    grpcOptions:
+      ssl-target-name-override: peer0.org2.example.com
+      grpc.http2.keepalive_time: 15
+      #     These parameters should be set in coordination with the keepalive policy on the server,
+      #     as incompatible settings can result in closing of connection.
+      #     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+    tlsCACerts:
+      # Certificate location absolute path
+      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
+
+  peer1.org2.example.com:
+    # this URL is used to send endorsement and query requests
+    url: localhost:8151
+
+    grpcOptions:
+      ssl-target-name-override: peer1.org2.example.com
+      grpc.http2.keepalive_time: 15
+      #     These parameters should be set in coordination with the keepalive policy on the server,
+      #     as incompatible settings can result in closing of connection.
+      #     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+    tlsCACerts:
+      # Certificate location absolute path
+      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
+
+entityMatchers:
+
+  peer:
+    - pattern: peer0.org1.example.com:(\d+)
+      urlSubstitutionExp: localhost:7051
+      mappedHost: peer0.org1.example.com
+
+    - pattern: peer1.org1.example.com:(\d+)
+      urlSubstitutionExp: localhost:7151
+      mappedHost: peer1.org1.example.com
+
+    - pattern: peer0.org2.example.com:(\d+)
+      urlSubstitutionExp: localhost:8051
+      mappedHost: peer0.org2.example.com
+
+    - pattern: peer1.org2.example.com:(\d+)
+      urlSubstitutionExp: localhost:8151
+      mappedHost: peer1.org2.example.com
+
+  orderer:
+    - pattern: (\w+).example.(\w+)
+      urlSubstitutionExp: localhost:7050
+      sslTargetOverrideUrlSubstitutionExp: orderer.example.com
+      mappedHost: orderer.example.com

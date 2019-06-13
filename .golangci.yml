@@ -8,14 +8,14 @@ service:
   project-path: github.com/trustbloc/sidetree-fabric
   golangci-lint-version: 1.16.x
   prepare:
-    - GO111MODULE=on go mod vendor
+    - GO111MODULE=on go mod vendor;cd test/bddtests;GO111MODULE=on go mod vendor;cd fixtures/fabric/peer/cmd;GO111MODULE=on go mod vendor
 
 run:
   concurrency: 4
   deadline: 1m
   issues-exit-code: 1
   tests: true
-  build-tags: [""]
+  build-tags: ["test/bddtests"]
   skip-files:
     - ^(.*_test.go.*$)$
 

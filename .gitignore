@@ -1,3 +1,9 @@
+#
+# Copyright SecureKey Technologies Inc. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -18,3 +24,9 @@
 .DS_Store
 
 coverage.txt
+
+test/bddtests/fixtures/fabric/crypto-config/
+test/bddtests/fixtures/fabric/channel/
+docker-compose.log
+
+.build
