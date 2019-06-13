@@ -16,6 +16,7 @@
 #   channel-config-gen:         generates test channel configuration transactions and blocks
 #   bddtests:                   run bddtests
 #   docker-thirdparty:          pulls thirdparty images
+#   sidetree-docker:            build sidetree-fabric image
 #
 
 
@@ -43,6 +44,10 @@ FABRIC_PEER_EXT_IMAGE   ?= trustbloc/fabric-peer
 FABRIC_PEER_EXT_VERSION ?= 0.1.0-snapshot-60cd415
 FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
 
+# Namespace for the blocnode image
+DOCKER_OUTPUT_NS     ?= trustbloc
+SIDETREE_FABRIC_IMAGE_NAME ?= sidetree-fabric
+
 checks: license lint
 
 .PHONY: license
@@ -55,7 +60,7 @@ lint:
 unit-test:
 	@scripts/unit.sh
 
-all: clean checks unit-test
+all: clean checks unit-test bddtests
 
 
 crypto-gen:
@@ -76,7 +81,7 @@ populate-fixtures: clean
 	@scripts/populate-fixtures.sh -f
 
 
-bddtests: clean checks populate-fixtures docker-thirdparty bddtests-fabric-peer-docker
+bddtests: clean checks populate-fixtures docker-thirdparty bddtests-fabric-peer-docker sidetree-docker
 	@scripts/integration.sh
 
 
@@ -97,6 +102,18 @@ bddtests-fabric-peer-docker:
 docker-thirdparty:
 	docker pull couchdb:2.2.0
 	docker pull hyperledger/fabric-orderer:$(ARCH)-2.0.0-alpha
+
+sidetree:
+	@echo "Building sidetree"
+	@mkdir -p ./.build/bin
+	@go build -o ./.build/bin/sidetree-fabric cmd/sidetree-server/main.go
+
+sidetree-docker:
+	@docker build -f ./images/sidetree-fabric/Dockerfile --no-cache -t $(DOCKER_OUTPUT_NS)/$(SIDETREE_FABRIC_IMAGE_NAME):latest \
+	--build-arg GO_VER=$(GO_VER) \
+	--build-arg ALPINE_VER=$(ALPINE_VER) \
+	--build-arg GO_TAGS=$(GO_TAGS) \
+	--build-arg GOPROXY=$(GOPROXY) .
 
 clean-images:
 	@echo "Stopping all containers, pruning containers and images, deleting dev images"

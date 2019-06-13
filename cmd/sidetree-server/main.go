@@ -9,29 +9,24 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
-
-	"github.com/go-openapi/loads"
-	"github.com/trustbloc/sidetree-node/restapi"
-
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-
 	"net/http"
+	"os"
 	"strings"
 
-	"github.com/go-openapi/runtime/middleware"
-
 	"github.com/go-openapi/errors"
-
+	"github.com/go-openapi/loads"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime/middleware"
+	flags "github.com/jessevdk/go-flags"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler/didvalidator"
 	"github.com/trustbloc/sidetree-core-go/pkg/processor"
-
-	"github.com/go-openapi/runtime"
 	"github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-node/pkg/requesthandler"
+	"github.com/trustbloc/sidetree-node/restapi"
 	"github.com/trustbloc/sidetree-node/restapi/operations"
 )
 
@@ -48,10 +43,28 @@ func main() {
 	server := restapi.NewServer(api)
 	defer serverShutdown(server)
 
-	server.ConfigureFlags()
-
-	// Custom: Additional flags
+	parser := flags.NewParser(server, flags.Default)
+	// Custom configure flags
 	configureFlags()
+	server.ConfigureFlags()
+	for _, optsGroup := range api.CommandLineOptionsGroups {
+		_, err := parser.AddGroup(optsGroup.ShortDescription, optsGroup.LongDescription, optsGroup.Options)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
+	if _, err := parser.Parse(); err != nil {
+		code := 1
+		if fe, ok := err.(*flags.Error); ok {
+			if fe.Type == flags.ErrHelp {
+				code = 0
+			}
+		}
+		os.Exit(code)
+	}
+
+	server.ConfigureAPI()
 
 	// Custom: Configure handler
 	handler, handlerErr := configureAPI(api)
