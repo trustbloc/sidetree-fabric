@@ -5,6 +5,8 @@
 [![GolangCI](https://golangci.com/badges/github.com/trustbloc/sidetree-fabric.svg)](https://golangci.com/r/github.com/trustbloc/sidetree-fabric)
 [![Go Report Card](https://goreportcard.com/badge/github.com/trustbloc/sidetree-fabric?style=flat-square)](https://goreportcard.com/report/github.com/trustbloc/sidetree-fabric)
 [![codebeat badge](https://codebeat.co/badges/d549a1a4-372c-416b-ae56-7b6e395b3a56)](https://codebeat.co/projects/github-com-trustbloc-sidetree-fabric-master)
+[![codecov](https://codecov.io/gh/trustbloc/sidetree-fabric/branch/master/graph/badge.svg)](https://codecov.io/gh/trustbloc/sidetree-fabric)
+
 
 # sidetree-fabric
 
