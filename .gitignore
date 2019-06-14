@@ -30,3 +30,5 @@ test/bddtests/fixtures/fabric/channel/
 docker-compose.log
 
 .build
+
+vendor

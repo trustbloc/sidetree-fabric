@@ -18,6 +18,7 @@ require (
 	github.com/hyperledger/fabric v2.0.0-alpha+incompatible
 	github.com/hyperledger/fabric-amcl v0.0.0-20181230093703-5ccba6eab8d6 // indirect
 	github.com/hyperledger/fabric-sdk-go v1.0.0-alpha5.0.20190328182020-93c3fcb272be
+	github.com/jessevdk/go-flags v1.4.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.3.0
