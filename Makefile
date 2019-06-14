@@ -81,7 +81,7 @@ populate-fixtures: clean
 	@scripts/populate-fixtures.sh -f
 
 
-bddtests: clean checks populate-fixtures docker-thirdparty bddtests-fabric-peer-docker sidetree-docker
+bddtests: clean checks populate-fixtures docker-thirdparty bddtests-fabric-peer-docker sidetree-docker build-cc
 	@scripts/integration.sh
 
 
@@ -114,6 +114,12 @@ sidetree-docker:
 	--build-arg ALPINE_VER=$(ALPINE_VER) \
 	--build-arg GO_TAGS=$(GO_TAGS) \
 	--build-arg GOPROXY=$(GOPROXY) .
+
+
+build-cc: clean
+	@echo "Building cc"
+	@mkdir -p ./.build
+	@scripts/copycc.sh
 
 clean-images:
 	@echo "Stopping all containers, pruning containers and images, deleting dev images"
