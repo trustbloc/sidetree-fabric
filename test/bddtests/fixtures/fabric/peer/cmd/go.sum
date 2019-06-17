@@ -20,6 +20,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/beorn7/perks v1.0.0 h1:HWo1m869IqiPhD389kmkxeTalrjNbbJTC8LXupb+sl0=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
+github.com/bluele/gcache v0.0.0-20190301044115-79ae3b2d8680/go.mod h1:8c4/i2VlovMO2gBnHGQPN5EJw+H0lx1u/5p+cgsXtCk=
+github.com/btcsuite/btcutil v0.0.0-20170419141449-a5ecb5d9547a/go.mod h1:+5NJ2+qvTyV9exUAL/rxXi3DcLg2Ts+ymUAY5y4NvMg=
 github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d/go.mod h1:+5NJ2+qvTyV9exUAL/rxXi3DcLg2Ts+ymUAY5y4NvMg=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
@@ -220,8 +222,13 @@ github.com/tedsuo/ifrit v0.0.0-20180802180643-bea94bb476cc/go.mod h1:eyZnKCc955u
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/trustbloc/fabric-mod v0.0.0-20190605152521-6547615cb978 h1:VvOfhiQixo2YpImr3Akne8Lp/gb4exzCXMsjG+ggVaM=
 github.com/trustbloc/fabric-mod v0.0.0-20190605152521-6547615cb978/go.mod h1:LxTDde3l64j/c3QAlxxkkTc3TT70rrU5fDDej92Y9oI=
+github.com/trustbloc/fabric-mod v0.0.0-20190612161459-dc5ee1e1e6b1/go.mod h1:LxTDde3l64j/c3QAlxxkkTc3TT70rrU5fDDej92Y9oI=
 github.com/trustbloc/fabric-mod/extensions v0.0.0-20190605152521-6547615cb978 h1:GgtfHtfUhgFdVtfi2/cVM8L8bujHQjo+UHBAP8GZLNs=
 github.com/trustbloc/fabric-mod/extensions v0.0.0-20190605152521-6547615cb978/go.mod h1:9qNBb9mF5Q9mu7HaYX4Q6BIRntdPjjYamPiNbSmjGeo=
+github.com/trustbloc/fabric-peer-ext v0.0.0-20190606010932-60cd4152d74a/go.mod h1:0KR8SgrWokUCIhYn12AmE1D+UDqI363r9v6khoUpeJg=
+github.com/trustbloc/fabric-peer-ext v0.0.0-20190614202948-d10d96908772/go.mod h1:BEMDMXWGx4GUE6S0UTzL/+kpmi3HLTYsYW/+Q12xhXE=
+github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20190606010932-60cd4152d74a/go.mod h1:oiGoyxEPMoOfCgINSH3eWmiEVzs99k27Paxs0RN3PaE=
+github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20190614202948-d10d96908772/go.mod h1:Kt1+z0kBFFsGDYzz6jSG3WKPVSy6gZTvPm0EjHUNSD4=
 github.com/trustbloc/fabric-peer-test-common v0.0.0-20190528215613-a7959c5ba3e1/go.mod h1:WkMYVPBLYZVYmkoke8/KmwBnGxeQQTeZafbV3FVexew=
 github.com/trustbloc/fabric-sdk-go-ext/fabric v0.0.0-20190528182243-b95c24511993/go.mod h1:24RzLAEPTcvxFatT0GLRXZTPkvkYyiBlp8yNxEwg2ig=
 github.com/ugorji/go v1.1.1/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=
