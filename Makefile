@@ -57,7 +57,7 @@ license:
 lint:
 	@scripts/check_lint.sh
 
-unit-test:
+unit-test: checks
 	@scripts/unit.sh
 
 all: clean checks unit-test bddtests
