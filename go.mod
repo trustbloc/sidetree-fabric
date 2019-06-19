@@ -22,6 +22,7 @@ require (
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/viper v1.0.2
 	github.com/stretchr/testify v1.3.0
+	github.com/trustbloc/fabric-peer-ext v0.0.0
 	github.com/trustbloc/sidetree-core-go v0.0.0-20190604193932-b3a21a189580
 	github.com/trustbloc/sidetree-node v0.0.0-20190605161025-0df7c418272b
 	go.uber.org/atomic v1.4.0 // indirect

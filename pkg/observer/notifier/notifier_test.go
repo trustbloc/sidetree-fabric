@@ -28,14 +28,14 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 	t.Run("test key in kvrwset is deleted", func(t *testing.T) {
 		// register to receive sidetree txn value
 		sideTreeTxnCh := notifier.RegisterForSidetreeTxn()
-		done := make(chan SideTreeTxn, 1)
+		done := make(chan SidetreeTxn, 1)
 		go func() {
 			for {
 				select {
 				case sideTreeTxn := <-sideTreeTxnCh:
 					done <- sideTreeTxn
 				case <-time.After(1 * time.Second):
-					done <- SideTreeTxn{}
+					done <- SidetreeTxn{}
 				}
 			}
 		}()
@@ -47,14 +47,14 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 	t.Run("test namespace not equal to sideTreeTxnCCName", func(t *testing.T) {
 		// register to receive sidetree txn value
 		sideTreeTxnCh := notifier.RegisterForSidetreeTxn()
-		done := make(chan SideTreeTxn, 1)
+		done := make(chan SidetreeTxn, 1)
 		go func() {
 			for {
 				select {
 				case sideTreeTxn := <-sideTreeTxnCh:
 					done <- sideTreeTxn
 				case <-time.After(1 * time.Second):
-					done <- SideTreeTxn{}
+					done <- SidetreeTxn{}
 				}
 			}
 		}()
@@ -66,14 +66,14 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 	t.Run("test success", func(t *testing.T) {
 		// register to receive sidetree txn value
 		sideTreeTxnCh := notifier.RegisterForSidetreeTxn()
-		done := make(chan SideTreeTxn, 1)
+		done := make(chan SidetreeTxn, 1)
 		go func() {
 			for {
 				select {
 				case sideTreeTxn := <-sideTreeTxnCh:
 					done <- sideTreeTxn
 				case <-time.After(1 * time.Second):
-					done <- SideTreeTxn{}
+					done <- SidetreeTxn{}
 				}
 			}
 		}()
