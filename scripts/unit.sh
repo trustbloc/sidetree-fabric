@@ -11,5 +11,5 @@ set -e
 PKGS=`go list github.com/trustbloc/sidetree-fabric/... 2> /dev/null | \
                                                    grep -v /mocks`
 echo "Running pkg unit tests..."
-go test -count=1 -cover $PKGS -p 1 -timeout=10m -race -coverprofile=coverage.txt -covermode=atomic
+go test -tags testing -count=1 -cover $PKGS -p 1 -timeout=10m -race -coverprofile=coverage.txt -covermode=atomic
 
