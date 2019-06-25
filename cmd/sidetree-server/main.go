@@ -64,8 +64,6 @@ func main() {
 		os.Exit(code)
 	}
 
-	server.ConfigureAPI()
-
 	// Custom: Configure handler
 	handler, handlerErr := configureAPI(api)
 	if handlerErr != nil {

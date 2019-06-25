@@ -191,6 +191,14 @@ func TestUnmarshalBatchFile(t *testing.T) {
 	require.Contains(t, err.Error(), "invalid character")
 }
 
+func TestUpdateOperation(t *testing.T) {
+
+	doc, err := updateOperation([]byte("[test : 123]"), 1, notifier.SidetreeTxn{})
+	require.NotNil(t, err)
+	require.Nil(t, doc)
+	require.Contains(t, err.Error(), "invalid character")
+}
+
 func getJSON(op Operation) string {
 
 	bytes, err := json.Marshal(op)

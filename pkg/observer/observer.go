@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/trustbloc/sidetree-core-go/pkg/document"
+
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/peer"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
@@ -25,10 +27,14 @@ const (
 	sidetreeNs   = "sidetreetxn_cc"
 	sidetreeColl = "dcas"
 
-	docNs   = "doc_cc"
-	docColl = "diddoc"
+	docNs   = "document_cc"
+	docColl = "docs"
 
 	observerRole = "observer"
+
+	transactionTime   = "transactionTime"
+	transactionNumber = "transactionNumber"
+	operationIndex    = "operationIndex"
 )
 
 // getBlockPublisher returns block publisher for channel
@@ -146,10 +152,10 @@ func (o *observer) processSidetreeTxn(sidetreeTxn notifier.SidetreeTxn) error {
 		return errors.Wrapf(err, "failed to unmarshal anchor[%s]", sidetreeTxn.AnchorAddress)
 	}
 
-	return o.processBatchFile(af.BatchFileHash)
+	return o.processBatchFile(af.BatchFileHash, sidetreeTxn)
 }
 
-func (o *observer) processBatchFile(batchFileAddress string) error {
+func (o *observer) processBatchFile(batchFileAddress string, sidetreeTxn notifier.SidetreeTxn) error {
 
 	content, err := o.getContent(batchFileAddress)
 	if err != nil {
@@ -163,8 +169,13 @@ func (o *observer) processBatchFile(batchFileAddress string) error {
 
 	logger.Debugf("batch file operations: %s", bf.Operations)
 
-	for _, op := range bf.Operations {
-		addr, err := o.putContent([]byte(op))
+	for index, op := range bf.Operations {
+		updatedOp, err := updateOperation([]byte(op), index, sidetreeTxn)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update operation with blockchain metadata")
+		}
+
+		addr, err := o.putContent(updatedOp)
 		if err != nil {
 			return errors.Wrapf(err, "failed to store operation[%s] from batch[%s]", op, batchFileAddress)
 		}
@@ -173,6 +184,28 @@ func (o *observer) processBatchFile(batchFileAddress string) error {
 	}
 
 	return nil
+}
+
+func updateOperation(value []byte, index int, sidetreeTxn notifier.SidetreeTxn) ([]byte, error) {
+
+	doc, err := document.FromBytes(value)
+	if err != nil {
+		return nil, err
+	}
+
+	// The following three constants define order of operations (when operation happened in blockchain time):
+	// 1) block number
+	// 2) transaction number within block (defines anchor/batch file transaction)
+	// 3) operation index within batch
+
+	//  The logical blockchain time that this operation was anchored on the blockchain
+	doc[transactionTime] = sidetreeTxn.BlockNumber
+	// The transaction number of the transaction this operation was batched within
+	doc[transactionNumber] = sidetreeTxn.TxNum
+	// The index this operation was assigned to in the batch
+	doc[operationIndex] = index
+
+	return doc.Bytes()
 }
 
 var getDCAS = func(channelID string) dcasClient {
