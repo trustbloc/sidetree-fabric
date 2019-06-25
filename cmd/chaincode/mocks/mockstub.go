@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hyperledger/fabric/protos/ledger/queryresult"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
@@ -53,8 +55,9 @@ type MockStub struct {
 	Keys map[string]*list.List
 
 	// Errors used for testing
-	GetPrivateErr error
-	PutPrivateErr error
+	GetPrivateErr      error
+	PutPrivateErr      error
+	GetPrivateQueryErr error
 }
 
 // GetTransient returns transient map
@@ -239,4 +242,88 @@ func (stub *MockStub) MockInvoke(uuid string, args [][]byte) pb.Response {
 	res := stub.cc.Invoke(stub)
 	stub.MockTransactionEnd(uuid)
 	return res
+}
+
+// GetPrivateDataQueryResult mocks rich query
+func (stub *MockStub) GetPrivateDataQueryResult(collection, query string) (shim.StateQueryIteratorInterface, error) {
+
+	if stub.GetPrivateQueryErr != nil {
+		return nil, stub.GetPrivateQueryErr
+	}
+
+	return NewMockStateQueryIterator(stub, collection, query), nil
+}
+
+// NewMockStateQueryIterator returns a mock state iterator
+func NewMockStateQueryIterator(stub *MockStub, collection, query string) *MockStateQueryIterator {
+	iter := new(MockStateQueryIterator)
+	iter.Closed = false
+	iter.Stub = stub
+	iter.Query = query
+	iter.Current = stub.getKeys(collection).Front()
+
+	return iter
+}
+
+/*****************************
+ State Query Iterator
+*****************************/
+
+// MockStateQueryIterator is a mock implementation of the state query iterator
+type MockStateQueryIterator struct {
+	Closed  bool
+	Stub    *MockStub
+	Query   string
+	Current *list.Element
+}
+
+// HasNext returns true if the range query iterator contains additional keys
+// and values.
+func (iter *MockStateQueryIterator) HasNext() bool {
+	if iter.Closed {
+		// previously called Close()
+		mockLogger.Error("HasNext() but already closed")
+		return false
+	}
+
+	if iter.Current == nil {
+		mockLogger.Error("HasNext() couldn't get Current")
+		return false
+	}
+
+	return true
+}
+
+// Next returns the next key and value in the range query iterator.
+func (iter *MockStateQueryIterator) Next() (*queryresult.KV, error) {
+	if iter.Closed {
+		err := errors.New("MockStateQueryIterator.Next() called after Close()")
+		mockLogger.Errorf("%+v", err)
+		return nil, err
+	}
+
+	if !iter.HasNext() {
+		err := errors.New("MockStateQueryIterator.Next() called when it does not HaveNext()")
+		mockLogger.Errorf("%+v", err)
+		return nil, err
+	}
+
+	key := iter.Current.Value.(string)
+	value, err := iter.Stub.GetState(key)
+	iter.Current = iter.Current.Next()
+
+	return &queryresult.KV{Key: key, Value: value}, err
+}
+
+// Close closes the range query iterator. This should be called when done
+// reading from the iterator to free up resources.
+func (iter *MockStateQueryIterator) Close() error {
+	if iter.Closed {
+		err := errors.New("MockStateQueryIterator.Close() called after Close()")
+		mockLogger.Errorf("%+v", err)
+		return err
+	}
+
+	iter.Closed = true
+	return nil
 }

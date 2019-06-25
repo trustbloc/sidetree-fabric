@@ -57,6 +57,27 @@ func (mc *Client) Read(address string) ([]byte, error) {
 	return payload, nil
 }
 
+// Query performs a "rich" query against a given private collection.
+// It is only supported for state databases that support rich query.
+func (mc *Client) Query(query string) ([][]byte, error) {
+
+	iter, err := mc.stub.GetPrivateDataQueryResult(mc.collection, query)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to query content for: %s", query)
+	}
+
+	var results [][]byte
+	for iter.HasNext() {
+		elem, err := iter.Next()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to retrieve key and value in the range")
+		}
+		results = append(results, elem.GetValue())
+	}
+
+	return results, nil
+}
+
 // getHash will compute the hash for the supplied bytes using SHA256
 func getHash(bytes []byte) []byte {
 	h := crypto.SHA256.New()
