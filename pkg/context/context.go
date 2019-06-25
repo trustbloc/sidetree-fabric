@@ -17,11 +17,11 @@ import (
 	"github.com/spf13/viper"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
-	"github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/processor"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/blockchain"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/cas"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/protocol"
+	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 )
 
 const (
@@ -114,16 +114,11 @@ func getSidetreeConfig(configProvider core.ConfigProvider) (*sidetreeConfig, err
 // newSidetreeContext returns Sidetree node context
 func newSidetreeContext(channelProvider context.ChannelProvider, pc protocolApi.Client) (*SidetreeContext, error) {
 
-	bc := blockchain.New(channelProvider)
-
-	casc := cas.New(channelProvider)
-
 	ctx := &SidetreeContext{
-		protocolClient:   pc,
-		casClient:        casc,
-		blockchainClient: bc,
-		// Mock store will be replaced with real store
-		operationStoreClient: mocks.NewMockOperationStore(nil),
+		protocolClient:       pc,
+		casClient:            cas.New(channelProvider),
+		blockchainClient:     blockchain.New(channelProvider),
+		operationStoreClient: store.New(channelProvider),
 	}
 
 	return ctx, nil
