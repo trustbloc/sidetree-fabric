@@ -7,6 +7,7 @@
 
 declare -a arr=(
    "cmd/chaincode/txn"
+   "cmd/chaincode/doc"
 )
 
 function finish {

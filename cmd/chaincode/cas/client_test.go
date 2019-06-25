@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const collection = "diddoc"
+const collection = "docs"
 
 func TestWrite(t *testing.T) {
 
@@ -73,6 +73,22 @@ func TestRead(t *testing.T) {
 	read, err = client.Read("non-existent")
 	require.Nil(t, err)
 	require.Nil(t, read)
+}
+
+func TestQuery(t *testing.T) {
+
+	client := getClient()
+
+	content := getOperationBytes(getCreateOperation())
+	addr, err := client.Write(content)
+	require.Nil(t, err)
+	require.NotNil(t, addr)
+
+	const query = "{\"selector\":{\"id\":\"1234\"},\"use_index\":[\"_design/indexIDDoc\",\"indexID\"]}"
+	read, err := client.Query(query)
+	require.Nil(t, err)
+	require.NotNil(t, read)
+
 }
 
 func TestRead_GetPrivateError(t *testing.T) {
@@ -137,13 +153,11 @@ func getOperationBytes(op *Operation) []byte {
 }
 
 func getCreateOperation() *Operation {
-	return &Operation{UniqueSuffix: "abc", Type: "create"}
+	return &Operation{ID: "abc", Type: "create"}
 }
 
 // Operation defines sample operation
 type Operation struct {
-	//Operation type
-	Type string
-	//The unique suffix - encoded hash of the original create document
-	UniqueSuffix string
+	Type string `json:"type"`
+	ID   string `json:"id"`
 }
