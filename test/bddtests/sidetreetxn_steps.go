@@ -9,25 +9,26 @@ package bddtests
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/DATA-DOG/godog"
 
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
 )
 
-// SidetreeSteps ...
-type SidetreeSteps struct {
+// SidetreeTxnSteps ...
+type SidetreeTxnSteps struct {
 	BDDContext *bddtests.BDDContext
 	content    string
 	address    string
 }
 
 // NewSidetreeSteps define custom steps
-func NewSidetreeSteps(context *bddtests.BDDContext) *SidetreeSteps {
-	return &SidetreeSteps{BDDContext: context}
+func NewSidetreeSteps(context *bddtests.BDDContext) *SidetreeTxnSteps {
+	return &SidetreeTxnSteps{BDDContext: context}
 }
 
-func (t *SidetreeSteps) writeContent(content, ccID, orgIDs, channelID string) error {
+func (t *SidetreeTxnSteps) writeContent(content, ccID, orgIDs, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
@@ -43,7 +44,7 @@ func (t *SidetreeSteps) writeContent(content, ccID, orgIDs, channelID string) er
 	return nil
 }
 
-func (t *SidetreeSteps) readContent(ccID, orgIDs, channelID string) error {
+func (t *SidetreeTxnSteps) readContent(ccID, orgIDs, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
@@ -60,7 +61,7 @@ func (t *SidetreeSteps) readContent(ccID, orgIDs, channelID string) error {
 	return nil
 }
 
-func (t *SidetreeSteps) anchorBatch(didID, ccID, orgIDs, channelID string) error {
+func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, orgIDs, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
@@ -88,6 +89,55 @@ func (t *SidetreeSteps) anchorBatch(didID, ccID, orgIDs, channelID string) error
 	return nil
 }
 
+func (t *SidetreeTxnSteps) writeDocument(op string, ccID, orgIDs, channelID string) error {
+
+	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
+
+	args := []string{"write", op}
+	_, err := commonSteps.InvokeCCWithArgs(ccID, channelID, commonSteps.OrgPeers(orgIDs, channelID), args, nil)
+	if err != nil {
+		return fmt.Errorf("InvokeCCWithArgs return error: %s", err)
+	}
+
+	return nil
+}
+
+func (t *SidetreeTxnSteps) createDocument(docID, ccID, orgIDs, channelID string) error {
+	return t.writeDocument(getCreateOperation(docID), ccID, orgIDs, channelID)
+}
+
+func (t *SidetreeTxnSteps) updateDocument(docID, ccID, orgIDs, channelID string) error {
+	return t.writeDocument(getUpdateOperation(docID), ccID, orgIDs, channelID)
+}
+
+func (t *SidetreeTxnSteps) queryDocumentByIndex(docID, ccID, numOfDocs, orgIDs, channelID string) error {
+
+	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
+
+	args := []string{"queryByID", docID}
+	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil, commonSteps.OrgPeers(orgIDs, channelID)[0])
+	if err != nil {
+		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
+	}
+
+	var operations [][]byte
+	err = json.Unmarshal([]byte(payload), &operations)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal operations: %s", err)
+	}
+
+	docsNum, err := strconv.Atoi(numOfDocs)
+	if err != nil {
+		return err
+	}
+
+	if len(operations) != docsNum {
+		return fmt.Errorf("expecting %d, got %d", docsNum, len(operations))
+	}
+
+	return nil
+}
+
 func getJSON(op Operation) string {
 
 	bytes, err := json.Marshal(op)
@@ -101,9 +151,9 @@ func getJSON(op Operation) string {
 // Operation defines sample operation
 type Operation struct {
 	//Operation type
-	Type string
+	Type string `json:"type"`
 	//ID is full ID for this document - includes namespace + unique suffix
-	ID string
+	ID string `json:"id"`
 }
 
 // AnchorFile defines the schema of a Anchor File and its related operations.
@@ -159,10 +209,13 @@ func getAnchorFileBytes(batchFileHash string, merkleRoot string) string {
 }
 
 // RegisterSteps registers sidetree txn steps
-func (t *SidetreeSteps) RegisterSteps(s *godog.Suite) {
+func (t *SidetreeTxnSteps) RegisterSteps(s *godog.Suite) {
 	s.BeforeScenario(t.BDDContext.BeforeScenario)
 	s.AfterScenario(t.BDDContext.AfterScenario)
 	s.Step(`^client writes content "([^"]*)" using "([^"]*)" on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.writeContent)
 	s.Step(`^client verifies that written content at the returned address from "([^"]*)" matches original content on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.readContent)
 	s.Step(`^client writes operations batch file and anchor file for ID "([^"]*)" using "([^"]*)" on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.anchorBatch)
+	s.Step(`^client creates document with ID "([^"]*)" using "([^"]*)" on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.createDocument)
+	s.Step(`^client updates document with ID "([^"]*)" using "([^"]*)" on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.updateDocument)
+	s.Step(`^client verifies that query by index ID "([^"]*)" from "([^"]*)" will return "([^"]*)" versions of the document on one peer in the "([^"]*)" org on the "([^"]*)" channel$`, t.queryDocumentByIndex)
 }
