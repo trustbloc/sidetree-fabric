@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 
 	"github.com/hyperledger/fabric/common/flogging"
@@ -170,10 +172,13 @@ func (o *observer) processBatchFile(batchFileAddress string, sidetreeTxn notifie
 	logger.Debugf("batch file operations: %s", bf.Operations)
 
 	for index, op := range bf.Operations {
-		updatedOp, err := updateOperation([]byte(op), index, sidetreeTxn)
+
+		updatedOp, err := updateOperation(op, index, sidetreeTxn)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update operation with blockchain metadata")
 		}
+
+		logger.Debugf("updated operation with blockchain time: %s", string(updatedOp))
 
 		addr, err := o.putContent(updatedOp)
 		if err != nil {
@@ -186,9 +191,14 @@ func (o *observer) processBatchFile(batchFileAddress string, sidetreeTxn notifie
 	return nil
 }
 
-func updateOperation(value []byte, index int, sidetreeTxn notifier.SidetreeTxn) ([]byte, error) {
+func updateOperation(encodedOp string, index int, sidetreeTxn notifier.SidetreeTxn) ([]byte, error) {
 
-	doc, err := document.FromBytes(value)
+	decodedOp, err := docutil.DecodeString(encodedOp)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := document.FromBytes(decodedOp)
 	if err != nil {
 		return nil, err
 	}

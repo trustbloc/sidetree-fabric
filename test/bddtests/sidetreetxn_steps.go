@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package bddtests
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -65,7 +66,7 @@ func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, orgIDs, channelID string) er
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
-	// Create default operations for this did (for now two create and update)
+	// Create default encoded operations for this did (for now two create and update)
 	operations := getDefaultOperations(didID)
 
 	batchFile := getBatchFileBytes(operations)
@@ -74,7 +75,7 @@ func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, orgIDs, channelID string) er
 		return fmt.Errorf("write batch file to DCAS return error: %s", err)
 	}
 
-	anchor := getAnchorFileBytes(t.address, "")
+	anchor := getAnchorFileBytes(t.address, "root")
 	err = t.writeContent(anchor, ccID, orgIDs, channelID)
 	if err != nil {
 		return fmt.Errorf("write anchor file to DCAS return error: %s", err)
@@ -172,18 +173,22 @@ type BatchFile struct {
 	Operations []string `json:"operations"`
 }
 
-func getCreateOperation(did string) string {
-	op := Operation{ID: did, Type: "create"}
+func getCreateOperation(id string) string {
+	op := Operation{ID: id, Type: "create"}
 	return getJSON(op)
 }
 
-func getUpdateOperation(did string) string {
-	op := Operation{ID: did, Type: "update"}
+func getUpdateOperation(id string) string {
+	op := Operation{ID: id, Type: "update"}
 	return getJSON(op)
 }
 
-func getDefaultOperations(did string) []string {
-	return []string{getCreateOperation(did), getUpdateOperation(did)}
+func encode(op string) string {
+	return base64.URLEncoding.EncodeToString([]byte(op))
+}
+
+func getDefaultOperations(id string) []string {
+	return []string{encode(getCreateOperation(id)), encode(getUpdateOperation(id))}
 }
 
 func getBatchFileBytes(operations []string) string {

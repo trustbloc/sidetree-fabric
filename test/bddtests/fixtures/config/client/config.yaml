@@ -127,7 +127,7 @@ organizations:
 peers:
   peer0.org1.example.com:
     # this URL is used to send endorsement and query requests
-    url: localhost:7051
+    url: peer0.org1.example.com:7051
 
     grpcOptions:
       ssl-target-name-override: peer0.org1.example.com
@@ -146,9 +146,40 @@ peers:
       # Certificate location absolute path
       path: /etc/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
 
+orderers:
+  orderer.example.com:
+    url:  orderer.example.com:7050
+
+    # these are standard properties defined by the gRPC library
+    # they will be passed in as-is to gRPC client constructor
+    grpcOptions:
+      ssl-target-name-override: orderer.example.com
+      grpc-max-send-message-length: 15
+      #     These parameters should be set in coordination with the keepalive policy on the server,
+      #     as incompatible settings can result in closing of connection.
+      #     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+    tlsCACerts:
+      # Certificate location absolute path
+      path: /etc/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem
+
+
+
 entityMatchers:
 
   peer:
     - pattern: peer0.org1.example.com:(\d+)
-      urlSubstitutionExp: localhost:7051
+      urlSubstitutionExp: peer0.org1.example.com:7051
       mappedHost: peer0.org1.example.com
+
+  orderer:
+    - pattern: (\w+).example.(\w+)
+      urlSubstitutionExp: orderer.example.com:7050
+      sslTargetOverrideUrlSubstitutionExp: orderer.example.com
+      mappedHost: orderer.example.com

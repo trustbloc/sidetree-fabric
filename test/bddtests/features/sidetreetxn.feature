@@ -34,5 +34,9 @@ Feature:
 
         # write sidetree transaction
         When client writes operations batch file and anchor file for ID "did:sidetree:123abc" using "sidetreetxn_cc" on all peers in the "peerorg1" org on the "mychannel" channel
+
+        # batch writer needs some time to cut batch
+        Then we wait 5 seconds
+
         Then client verifies that query by index ID "did:sidetree:123abc" from "document_cc" will return "2" versions of the document on one peer in the "peerorg1" org on the "mychannel" channel
 

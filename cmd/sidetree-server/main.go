@@ -12,12 +12,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
@@ -25,6 +26,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler/didvalidator"
 	"github.com/trustbloc/sidetree-core-go/pkg/processor"
 	"github.com/trustbloc/sidetree-fabric/pkg/context"
+	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 	"github.com/trustbloc/sidetree-node/pkg/requesthandler"
 	"github.com/trustbloc/sidetree-node/restapi"
 	"github.com/trustbloc/sidetree-node/restapi/operations"
@@ -36,7 +38,7 @@ func main() {
 
 	swaggerSpec, handlerErr := loads.Embedded(restapi.SwaggerJSON, restapi.FlatSwaggerJSON)
 	if handlerErr != nil {
-		log.Fatalln(handlerErr)
+		panic(handlerErr)
 	}
 
 	api := operations.NewSidetreeAPI(swaggerSpec)
@@ -50,7 +52,7 @@ func main() {
 	for _, optsGroup := range api.CommandLineOptionsGroups {
 		_, err := parser.AddGroup(optsGroup.ShortDescription, optsGroup.LongDescription, optsGroup.Options)
 		if err != nil {
-			log.Fatalln(err)
+			panic(err)
 		}
 	}
 
@@ -67,13 +69,13 @@ func main() {
 	// Custom: Configure handler
 	handler, handlerErr := configureAPI(api)
 	if handlerErr != nil {
-		log.Fatalln(handlerErr)
+		panic(handlerErr)
 	}
 
 	server.SetHandler(handler)
 
 	if err := server.Serve(); err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 
 }
@@ -141,14 +143,23 @@ func configureAPI(api *operations.SidetreeAPI) (http.Handler, error) {
 
 	logger.Info("starting sidetree node...")
 
-	ctx, err := context.New(config)
+	channelProvider, err := context.GetChannelProvider(config)
 	if err != nil {
-		logger.Errorf("Failed to create new context: %s", err.Error())
+		logger.Errorf("Failed to create channel provider: %s", err.Error())
 		return nil, err
 	}
 
+	ctx, err := context.New(config, channelProvider)
+	if err != nil {
+		logger.Errorf("Failed to create new batch writer context: %s", err.Error())
+		return nil, err
+	}
+
+	didDocStore := store.New(channelProvider, didDocNamespace)
+
 	// create new batch writer
-	batchWriter, err := batch.New(ctx)
+	// TODO: Make batch timeout configurable
+	batchWriter, err := batch.New(ctx, batch.WithBatchTimeout(1*time.Second))
 	if err != nil {
 		logger.Errorf("Failed to create batch writer: %s", err.Error())
 		return nil, err
@@ -161,9 +172,9 @@ func configureAPI(api *operations.SidetreeAPI) (http.Handler, error) {
 	didDocHandler := dochandler.New(
 		didDocNamespace,
 		ctx.Protocol(),
-		didvalidator.New(ctx.OperationStore()),
+		didvalidator.New(didDocStore),
 		batchWriter,
-		processor.New(ctx.OperationStore()),
+		processor.New(didDocStore),
 	)
 
 	didResolutionHandler := requesthandler.NewResolutionHandler(didDocNamespace, ctx.Protocol(), didDocHandler)

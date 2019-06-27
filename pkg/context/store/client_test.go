@@ -22,11 +22,13 @@ import (
 const (
 	chID = "mychannel"
 	id   = "id"
+
+	namespace = "did:sidetree:"
 )
 
 func TestNew(t *testing.T) {
 	ctx := channelProvider(chID)
-	c := New(ctx)
+	c := New(ctx, namespace)
 	require.NotNil(t, c)
 }
 
@@ -34,7 +36,7 @@ func TestGetClientError(t *testing.T) {
 	testErr := errors.New("provider error")
 	ctx := channelProviderWithError(testErr)
 
-	c := New(ctx)
+	c := New(ctx, namespace)
 	require.NotNil(t, c)
 
 	payload, err := c.Get(id)
@@ -44,13 +46,14 @@ func TestGetClientError(t *testing.T) {
 }
 
 func TestWriteContent(t *testing.T) {
-	c := New(channelProvider(chID))
+	c := New(channelProvider(chID), namespace)
 
 	c.channelClient = mocks.NewMockChannelClient()
 
-	read, err := c.Get(id)
+	ops, err := c.Get(id)
 	require.Nil(t, err)
-	require.NotNil(t, read)
+	require.NotNil(t, ops)
+	require.Equal(t, 1, len(ops))
 }
 
 func TestReadContentError(t *testing.T) {
@@ -59,13 +62,21 @@ func TestReadContentError(t *testing.T) {
 	cc := mocks.NewMockChannelClient()
 	cc.Err = testErr
 
-	c := New(channelProvider(chID))
+	c := New(channelProvider(chID), namespace)
 	c.channelClient = cc
 
 	read, err := c.Get(id)
 	require.NotNil(t, err)
 	require.Nil(t, read)
 	require.Contains(t, err.Error(), testErr.Error())
+}
+
+func TestGetOperationsError(t *testing.T) {
+
+	doc, err := getOperations([]byte("[test : 123]"))
+	require.NotNil(t, err)
+	require.Nil(t, doc)
+	require.Contains(t, err.Error(), "invalid character")
 }
 
 func channelProvider(channelID string) context.ChannelProvider {

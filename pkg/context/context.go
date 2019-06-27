@@ -17,11 +17,9 @@ import (
 	"github.com/spf13/viper"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
-	"github.com/trustbloc/sidetree-core-go/pkg/processor"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/blockchain"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/cas"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/protocol"
-	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 )
 
 const (
@@ -36,20 +34,31 @@ var logger = logrus.New()
 
 // SidetreeContext implements 'Fabric' version of Sidetree node context
 type SidetreeContext struct {
-	protocolClient       protocolApi.Client
-	casClient            batch.CASClient
-	blockchainClient     batch.BlockchainClient
-	operationStoreClient processor.OperationStoreClient
+	protocolClient   protocolApi.Client
+	casClient        batch.CASClient
+	blockchainClient batch.BlockchainClient
 }
 
 // New creates new Sidetree context
-func New(cfg *viper.Viper) (*SidetreeContext, error) {
+func New(cfg *viper.Viper, channelProvider context.ChannelProvider) (*SidetreeContext, error) {
 
 	pc, err := getProtocolClient(cfg)
 	if err != nil {
 		logger.Errorf("Failed to load protocol: %s", err.Error())
 		return nil, err
 	}
+
+	ctx := &SidetreeContext{
+		protocolClient:   pc,
+		casClient:        cas.New(channelProvider),
+		blockchainClient: blockchain.New(channelProvider),
+	}
+
+	return ctx, nil
+}
+
+// GetChannelProvider creates new channel provider
+func GetChannelProvider(cfg *viper.Viper) (context.ChannelProvider, error) {
 
 	configProvider := getConfigProvider(cfg)
 	sdk, err := fabsdk.New(configProvider)
@@ -64,10 +73,10 @@ func New(cfg *viper.Viper) (*SidetreeContext, error) {
 		return nil, err
 	}
 
-	chCtx := sdk.ChannelContext(sidetreeCfg.Channel, fabsdk.WithUser(sidetreeCfg.User))
-	logger.Debugf("Created channel context for %s with user %s", sidetreeCfg.Channel, sidetreeCfg.User)
+	chProvider := sdk.ChannelContext(sidetreeCfg.Channel, fabsdk.WithUser(sidetreeCfg.User))
+	logger.Debugf("Created channel provider for %s with user %s", sidetreeCfg.Channel, sidetreeCfg.User)
 
-	return newSidetreeContext(chCtx, pc)
+	return chProvider, nil
 }
 
 func getProtocolClient(cfg *viper.Viper) (*protocol.Client, error) {
@@ -111,19 +120,6 @@ func getSidetreeConfig(configProvider core.ConfigProvider) (*sidetreeConfig, err
 	return &sidetreeCfg, nil
 }
 
-// newSidetreeContext returns Sidetree node context
-func newSidetreeContext(channelProvider context.ChannelProvider, pc protocolApi.Client) (*SidetreeContext, error) {
-
-	ctx := &SidetreeContext{
-		protocolClient:       pc,
-		casClient:            cas.New(channelProvider),
-		blockchainClient:     blockchain.New(channelProvider),
-		operationStoreClient: store.New(channelProvider),
-	}
-
-	return ctx, nil
-}
-
 // Protocol returns protocol client
 func (m *SidetreeContext) Protocol() protocolApi.Client {
 	return m.protocolClient
@@ -137,11 +133,6 @@ func (m *SidetreeContext) Blockchain() batch.BlockchainClient {
 // CAS returns content addressable storage client
 func (m *SidetreeContext) CAS() batch.CASClient {
 	return m.casClient
-}
-
-// OperationStore gets operation store client
-func (m *SidetreeContext) OperationStore() processor.OperationStoreClient {
-	return m.operationStoreClient
 }
 
 //sidetreeConfig defines 'fabric' channel used for recording Sidetree transaction
