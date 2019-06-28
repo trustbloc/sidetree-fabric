@@ -7,10 +7,13 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/hyperledger/fabric/protos/ledger/rwset/kvrwset"
@@ -193,7 +196,7 @@ func TestUnmarshalBatchFile(t *testing.T) {
 
 func TestUpdateOperation(t *testing.T) {
 
-	doc, err := updateOperation([]byte("[test : 123]"), 1, notifier.SidetreeTxn{})
+	doc, err := updateOperation(docutil.EncodeToString([]byte("[test : 123]")), 1, notifier.SidetreeTxn{})
 	require.NotNil(t, err)
 	require.Nil(t, doc)
 	require.Contains(t, err.Error(), "invalid character")
@@ -217,18 +220,12 @@ type Operation struct {
 	UniqueSuffix string
 }
 
-func getCreateOperation(uniqueSuffix string) string {
-	op := Operation{UniqueSuffix: uniqueSuffix, Type: "create"}
-	return getJSON(op)
-}
-
-func getUpdateOperation(uniqueSuffix string) string {
-	op := Operation{UniqueSuffix: uniqueSuffix, Type: "update"}
-	return getJSON(op)
+func encode(op Operation) string {
+	return base64.URLEncoding.EncodeToString([]byte(getJSON(op)))
 }
 
 func getDefaultOperations(did string) []string {
-	return []string{getCreateOperation(did), getUpdateOperation(did)}
+	return []string{encode(Operation{UniqueSuffix: uniqueSuffix, Type: "create"}), encode(Operation{UniqueSuffix: uniqueSuffix, Type: "update"})}
 }
 
 func getBatchFileBytes(operations []string) []byte {

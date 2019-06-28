@@ -31,7 +31,7 @@ func (cc *MockChannelClient) Query(request channel.Request, options ...channel.R
 	return channel.Response{Payload: getDefaultOperations()}, nil
 }
 
-func getJSON(ops []Operation) []byte {
+func getJSON(ops [][]byte) []byte {
 
 	bytes, err := json.Marshal(ops)
 	if err != nil {
@@ -48,6 +48,15 @@ type Operation struct {
 }
 
 func getDefaultOperations() []byte {
-	ops := []Operation{{ID: "did:sidetree:abc", Type: "create"}}
+
+	var ops [][]byte
+
+	bytes, err := json.Marshal(Operation{ID: "did:sidetree:abc", Type: "create"})
+	if err != nil {
+		panic(err)
+	}
+
+	ops = append(ops, bytes)
+
 	return getJSON(ops)
 }
