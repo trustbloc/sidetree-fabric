@@ -292,6 +292,7 @@ github.com/trustbloc/fabric-peer-ext v0.0.0-20190626183708-8f13fb5c70f7/go.mod h
 github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20190626183708-8f13fb5c70f7/go.mod h1:vSo9L/xMUFAR3MAnmqceGTPkUUto6/FSr9qNrXk8VdY=
 github.com/trustbloc/sidetree-core-go v0.0.0-20190627181621-b296187670c6 h1:q3GqQeayCfOBiru+ZZXGf60rWfvUJAU5TcH1Z8meLjE=
 github.com/trustbloc/sidetree-core-go v0.0.0-20190627181621-b296187670c6/go.mod h1:9hDYZffBzCeL1SJG9oOLyQTbzDrC/IPa2lQcAr7coh0=
+github.com/trustbloc/sidetree-core-go v0.0.0-20190703191711-b3562d2d9c99/go.mod h1:4OAmI4hk+c3NUftL2PnAdEjGBsE+0zuqN3m6Rob15S8=
 github.com/trustbloc/sidetree-node v0.0.0-20190627183933-1e09f18640f3/go.mod h1:kXdKQNJs/gILgROA3hL59oi9Ms5rA6h7TzElbMcvsL4=
 github.com/ugorji/go v1.1.1/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=
 github.com/urfave/cli v1.18.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
