@@ -69,6 +69,12 @@ func (c *Client) Get(uniqueSuffix string) ([]batch.Operation, error) {
 	return getOperations(response.Payload)
 }
 
+// Put stores an operation
+func (c *Client) Put(op batch.Operation) error {
+	// TODO: Not sure where/if this is useds
+	panic("not implemented")
+}
+
 func getOperations(payload []byte) ([]batch.Operation, error) {
 
 	var ops [][]byte

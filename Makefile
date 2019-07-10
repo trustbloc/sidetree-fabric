@@ -116,7 +116,7 @@ sidetree-docker:
 	--build-arg GOPROXY=$(GOPROXY) .
 
 
-build-cc: clean
+build-cc:
 	@echo "Building cc"
 	@mkdir -p ./.build
 	@scripts/copycc.sh

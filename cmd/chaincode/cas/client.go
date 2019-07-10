@@ -7,11 +7,10 @@ SPDX-License-Identifier: Apache-2.0
 package cas
 
 import (
-	"crypto"
-	"encoding/base64"
-
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/pkg/errors"
+	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
 )
 
 // New returns a new client for managing content
@@ -36,9 +35,12 @@ type Client struct {
 // returns the SHA256 hash in base64url encoding which represents the address of the content
 func (mc *Client) Write(content []byte) (string, error) {
 
-	address := calculateAddress(content)
+	address, bytes, err := dcas.GetCASKeyAndValue(content)
+	if err != nil {
+		return "", err
+	}
 
-	if err := mc.stub.PutPrivateData(mc.collection, address, content); err != nil {
+	if err := mc.stub.PutPrivateData(mc.collection, base58.Encode([]byte(address)), bytes); err != nil {
 		return "", errors.Wrap(err, "failed to store content")
 	}
 
@@ -49,7 +51,7 @@ func (mc *Client) Write(content []byte) (string, error) {
 // returns the content of the given address
 func (mc *Client) Read(address string) ([]byte, error) {
 
-	payload, err := mc.stub.GetPrivateData(mc.collection, address)
+	payload, err := mc.stub.GetPrivateData(mc.collection, base58.Encode([]byte(address)))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read content")
 	}
@@ -76,21 +78,4 @@ func (mc *Client) Query(query string) ([][]byte, error) {
 	}
 
 	return results, nil
-}
-
-// getHash will compute the hash for the supplied bytes using SHA256
-func getHash(bytes []byte) []byte {
-	h := crypto.SHA256.New()
-	// added no lint directive because there's no error from source code
-	// error cannot be produced, checked google source
-	h.Write(bytes) //nolint
-	return h.Sum(nil)
-}
-
-func calculateAddress(content []byte) string {
-	hash := getHash(content)
-	buf := make([]byte, base64.URLEncoding.EncodedLen(len(hash)))
-	base64.URLEncoding.Encode(buf, hash)
-
-	return string(buf)
 }

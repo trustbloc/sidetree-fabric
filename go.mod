@@ -6,6 +6,7 @@ module github.com/trustbloc/sidetree-fabric
 
 require (
 	github.com/Shopify/sarama v1.22.1 // indirect
+	github.com/btcsuite/btcutil v0.0.0-20170419141449-a5ecb5d9547a
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-openapi/errors v0.19.0
 	github.com/go-openapi/loads v0.19.0
@@ -22,14 +23,14 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
 	github.com/trustbloc/fabric-peer-ext v0.0.0
-	github.com/trustbloc/sidetree-core-go v0.0.0-20190703191711-b3562d2d9c99
+	github.com/trustbloc/sidetree-core-go v0.0.0-20190723213325-9ae9c0fa5b72
 	github.com/trustbloc/sidetree-node v0.0.0-20190627183933-1e09f18640f3
 	go.uber.org/atomic v1.4.0 // indirect
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
 )
 
-replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.0.0-20190617203614-83c67efef785
+replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.0.0-20190712185837-29cb9ff43ce9
 
-replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20190626183708-8f13fb5c70f7
+replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20190727220920-5b43af1b95ea
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.0.0-20190626183708-8f13fb5c70f7
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.0.0-20190727220920-5b43af1b95ea

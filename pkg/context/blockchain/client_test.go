@@ -62,6 +62,14 @@ func TestWriteAnchorError(t *testing.T) {
 	require.Contains(t, err.Error(), testErr.Error())
 }
 
+func TestClient_Read(t *testing.T) {
+	require.PanicsWithValue(t, "not implemented", func() {
+		c := New(channelProvider(chID))
+		c.channelClient = mocks.NewMockChannelClient()
+		c.Read(1000)
+	})
+}
+
 func channelProvider(channelID string) context.ChannelProvider {
 	channelProvider := func() (context.Channel, error) {
 		return fabMocks.NewMockChannel(channelID)

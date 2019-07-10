@@ -29,12 +29,12 @@ func NewSidetreeSteps(context *bddtests.BDDContext) *SidetreeTxnSteps {
 	return &SidetreeTxnSteps{BDDContext: context}
 }
 
-func (t *SidetreeTxnSteps) writeContent(content, ccID, orgIDs, channelID string) error {
+func (t *SidetreeTxnSteps) writeContent(content, ccID, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	args := []string{"writeContent", content}
-	resp, err := commonSteps.InvokeCCWithArgs(ccID, channelID, commonSteps.OrgPeers(orgIDs, channelID), args, nil)
+	resp, err := commonSteps.InvokeCCWithArgs(ccID, channelID, nil, args, nil)
 	if err != nil {
 		return fmt.Errorf("InvokeCCWithArgs return error: %s", err)
 	}
@@ -45,12 +45,12 @@ func (t *SidetreeTxnSteps) writeContent(content, ccID, orgIDs, channelID string)
 	return nil
 }
 
-func (t *SidetreeTxnSteps) readContent(ccID, orgIDs, channelID string) error {
+func (t *SidetreeTxnSteps) readContent(ccID, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	args := []string{"readContent", t.address}
-	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil, commonSteps.OrgPeers(orgIDs, channelID)...)
+	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil)
 	if err != nil {
 		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
 	}
@@ -62,7 +62,7 @@ func (t *SidetreeTxnSteps) readContent(ccID, orgIDs, channelID string) error {
 	return nil
 }
 
-func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, orgIDs, channelID string) error {
+func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
@@ -70,19 +70,19 @@ func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, orgIDs, channelID string) er
 	operations := getDefaultOperations(didID)
 
 	batchFile := getBatchFileBytes(operations)
-	err := t.writeContent(batchFile, ccID, orgIDs, channelID)
+	err := t.writeContent(batchFile, ccID, channelID)
 	if err != nil {
 		return fmt.Errorf("write batch file to DCAS return error: %s", err)
 	}
 
 	anchor := getAnchorFileBytes(t.address, "root")
-	err = t.writeContent(anchor, ccID, orgIDs, channelID)
+	err = t.writeContent(anchor, ccID, channelID)
 	if err != nil {
 		return fmt.Errorf("write anchor file to DCAS return error: %s", err)
 	}
 
 	args := []string{"writeAnchor", t.address}
-	_, err = commonSteps.InvokeCCWithArgs(ccID, channelID, commonSteps.OrgPeers(orgIDs, channelID), args, nil)
+	_, err = commonSteps.InvokeCCWithArgs(ccID, channelID, nil, args, nil)
 	if err != nil {
 		return fmt.Errorf("InvokeCCWithArgs return error: %s", err)
 	}
@@ -90,12 +90,12 @@ func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, orgIDs, channelID string) er
 	return nil
 }
 
-func (t *SidetreeTxnSteps) writeDocument(op string, ccID, orgIDs, channelID string) error {
+func (t *SidetreeTxnSteps) writeDocument(op string, ccID, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	args := []string{"write", op}
-	_, err := commonSteps.InvokeCCWithArgs(ccID, channelID, commonSteps.OrgPeers(orgIDs, channelID), args, nil)
+	_, err := commonSteps.InvokeCCWithArgs(ccID, channelID, nil, args, nil)
 	if err != nil {
 		return fmt.Errorf("InvokeCCWithArgs return error: %s", err)
 	}
@@ -103,20 +103,20 @@ func (t *SidetreeTxnSteps) writeDocument(op string, ccID, orgIDs, channelID stri
 	return nil
 }
 
-func (t *SidetreeTxnSteps) createDocument(docID, ccID, orgIDs, channelID string) error {
-	return t.writeDocument(getCreateOperation(docID), ccID, orgIDs, channelID)
+func (t *SidetreeTxnSteps) createDocument(docID, ccID, channelID string) error {
+	return t.writeDocument(getCreateOperation(docID), ccID, channelID)
 }
 
-func (t *SidetreeTxnSteps) updateDocument(docID, ccID, orgIDs, channelID string) error {
-	return t.writeDocument(getUpdateOperation(docID), ccID, orgIDs, channelID)
+func (t *SidetreeTxnSteps) updateDocument(docID, ccID, channelID string) error {
+	return t.writeDocument(getUpdateOperation(docID), ccID, channelID)
 }
 
-func (t *SidetreeTxnSteps) queryDocumentByIndex(docID, ccID, numOfDocs, orgIDs, channelID string) error {
+func (t *SidetreeTxnSteps) queryDocumentByIndex(docID, ccID, numOfDocs, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	args := []string{"queryByID", docID}
-	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil, commonSteps.OrgPeers(orgIDs, channelID)[0])
+	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil)
 	if err != nil {
 		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
 	}
@@ -217,10 +217,10 @@ func getAnchorFileBytes(batchFileHash string, merkleRoot string) string {
 func (t *SidetreeTxnSteps) RegisterSteps(s *godog.Suite) {
 	s.BeforeScenario(t.BDDContext.BeforeScenario)
 	s.AfterScenario(t.BDDContext.AfterScenario)
-	s.Step(`^client writes content "([^"]*)" using "([^"]*)" on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.writeContent)
-	s.Step(`^client verifies that written content at the returned address from "([^"]*)" matches original content on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.readContent)
-	s.Step(`^client writes operations batch file and anchor file for ID "([^"]*)" using "([^"]*)" on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.anchorBatch)
-	s.Step(`^client creates document with ID "([^"]*)" using "([^"]*)" on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.createDocument)
-	s.Step(`^client updates document with ID "([^"]*)" using "([^"]*)" on all peers in the "([^"]*)" org on the "([^"]*)" channel$`, t.updateDocument)
-	s.Step(`^client verifies that query by index ID "([^"]*)" from "([^"]*)" will return "([^"]*)" versions of the document on one peer in the "([^"]*)" org on the "([^"]*)" channel$`, t.queryDocumentByIndex)
+	s.Step(`^client writes content "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.writeContent)
+	s.Step(`^client verifies that written content at the returned address from "([^"]*)" matches original content on the "([^"]*)" channel$`, t.readContent)
+	s.Step(`^client writes operations batch file and anchor file for ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.anchorBatch)
+	s.Step(`^client creates document with ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.createDocument)
+	s.Step(`^client updates document with ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.updateDocument)
+	s.Step(`^client verifies that query by index ID "([^"]*)" from "([^"]*)" will return "([^"]*)" versions of the document on the "([^"]*)" channel$`, t.queryDocumentByIndex)
 }

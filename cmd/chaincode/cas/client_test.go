@@ -8,10 +8,11 @@ package cas
 import (
 	"crypto"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"testing"
 
+	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/mocks"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -25,21 +26,35 @@ func TestWrite(t *testing.T) {
 
 	client := getClient()
 
-	content := getOperationBytes(getCreateOperation())
-	addr, err := client.Write(content)
-	require.Nil(t, err)
-	require.NotNil(t, addr)
-	require.Equal(t, encodedSHA256Hash(content), addr)
+	t.Run("Success", func(t *testing.T) {
+		content := getOperationBytes(getCreateOperation())
+		addr, err := client.Write(content)
+		require.Nil(t, err)
+		require.NotNil(t, addr)
+		require.Equal(t, encodedSHA256Hash(content), addr)
 
-	payload, err := client.Read(addr)
-	require.Nil(t, err)
-	require.NotNil(t, payload)
-	require.Equal(t, content, payload)
+		payload, err := client.Read(addr)
+		require.Nil(t, err)
+		require.NotNil(t, payload)
+		require.Equal(t, content, payload)
 
-	// test write same content
-	addr2, err := client.Write(content)
-	require.Nil(t, err)
-	require.Equal(t, addr, addr2)
+		// test write same content
+		addr2, err := client.Write(content)
+		require.Nil(t, err)
+		require.Equal(t, addr, addr2)
+	})
+
+	t.Run("Marshal error", func(t *testing.T) {
+		reset := dcas.SetJSONMarshaller(func(m map[string]interface{}) (bytes []byte, e error) {
+			return nil, errors.New("injected marshal error")
+		})
+		defer reset()
+
+		content := getOperationBytes(getCreateOperation())
+		addr, err := client.Write(content)
+		require.Error(t, err)
+		require.Empty(t, addr)
+	})
 }
 
 func TestWrite_PutPrivateError(t *testing.T) {
@@ -76,19 +91,27 @@ func TestRead(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
+	const query = "{\"selector\":{\"id\":\"1234\"},\"use_index\":[\"_design/indexIDDoc\",\"indexID\"]}"
 
 	client := getClient()
 
-	content := getOperationBytes(getCreateOperation())
-	addr, err := client.Write(content)
-	require.Nil(t, err)
-	require.NotNil(t, addr)
+	t.Run("Success", func(t *testing.T) {
+		content := getOperationBytes(getCreateOperation())
+		addr, err := client.Write(content)
+		require.Nil(t, err)
+		require.NotNil(t, addr)
 
-	const query = "{\"selector\":{\"id\":\"1234\"},\"use_index\":[\"_design/indexIDDoc\",\"indexID\"]}"
-	read, err := client.Query(query)
-	require.Nil(t, err)
-	require.NotNil(t, read)
+		read, err := client.Query(query)
+		require.Nil(t, err)
+		require.NotNil(t, read)
+	})
 
+	t.Run("Query error", func(t *testing.T) {
+		client.stub.(*mocks.MockStub).GetPrivateQueryErr = errors.New("injected query error")
+		results, err := client.Query(query)
+		require.Error(t, err)
+		require.Nil(t, results)
+	})
 }
 
 func TestRead_GetPrivateError(t *testing.T) {
@@ -144,7 +167,7 @@ func getClient() *Client {
 
 func getOperationBytes(op *Operation) []byte {
 
-	bytes, err := json.Marshal(op)
+	bytes, err := docutil.MarshalCanonical(op)
 	if err != nil {
 		panic(err)
 	}

@@ -47,6 +47,8 @@ client:
       eventServiceIdle: 2m
       channelConfig: 60s
       channelMembership: 30s
+      discovery: 1s
+      selection: 1s
 
   # Root of the MSP directories with keys and certs.
   cryptoconfig:

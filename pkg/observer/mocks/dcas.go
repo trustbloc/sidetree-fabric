@@ -38,9 +38,12 @@ func (m *MockDCASClient) Put(ns, coll string, content []byte) (string, error) {
 		m.m[ns+coll] = make(map[string][]byte)
 	}
 
-	key := dcas.GetCASKey(content)
+	key, bytes, err := dcas.GetCASKeyAndValue(content)
+	if err != nil {
+		return "", err
+	}
 
-	m.m[ns+coll][key] = content
+	m.m[ns+coll][key] = bytes
 
 	return key, nil
 

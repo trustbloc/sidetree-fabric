@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
+	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/store/mocks"
 
 	"github.com/pkg/errors"
@@ -77,6 +77,16 @@ func TestGetOperationsError(t *testing.T) {
 	require.NotNil(t, err)
 	require.Nil(t, doc)
 	require.Contains(t, err.Error(), "invalid character")
+}
+
+func TestClient_Put(t *testing.T) {
+	c := New(channelProvider(chID), namespace)
+	c.channelClient = mocks.NewMockChannelClient()
+
+	require.PanicsWithValue(t, "not implemented", func() {
+		err := c.Put(batch.Operation{})
+		require.NoError(t, err)
+	})
 }
 
 func channelProvider(channelID string) context.ChannelProvider {

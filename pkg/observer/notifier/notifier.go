@@ -49,7 +49,7 @@ func (n *Notifier) RegisterForSidetreeTxn() <-chan []sidetreeobserver.SidetreeTx
 		}
 		if !kvWrite.IsDelete && strings.HasPrefix(kvWrite.Key, anchorAddrPrefix) {
 			logger.Debugf("found anchor address key[%s], value [%s]", kvWrite.Key, string(kvWrite.Value))
-			anchorFileAddressChan <- []sidetreeobserver.SidetreeTxn{{BlockNumber: txMetadata.BlockNum, TxNum: txMetadata.TxNum, AnchorAddress: string(kvWrite.Value)}}
+			anchorFileAddressChan <- []sidetreeobserver.SidetreeTxn{{TransactionTime: txMetadata.BlockNum, TransactionNumber: txMetadata.TxNum, AnchorAddress: string(kvWrite.Value)}}
 		}
 		return nil
 	})
