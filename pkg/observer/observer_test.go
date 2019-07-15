@@ -72,7 +72,7 @@ func TestDCASPut(t *testing.T) {
 	getDCAS = func(channelID string) dcasClient {
 		return client
 	}
-	err := dcas{}.Put([]batch.Operation{{Type: "1"}})
+	err := (&dcas{}).Put([]batch.Operation{{Type: "1"}})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "dcas put failed")
 }

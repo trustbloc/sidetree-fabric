@@ -66,11 +66,11 @@ type dcas struct {
 	dcas      dcasClient
 }
 
-func (d dcas) Read(key string) ([]byte, error) {
+func (d *dcas) Read(key string) ([]byte, error) {
 	return d.getDCASClient().Get(sidetreeNs, sidetreeColl, key)
 }
 
-func (d dcas) Put(ops []batch.Operation) error {
+func (d *dcas) Put(ops []batch.Operation) error {
 	for _, op := range ops {
 		bytes, err := json.Marshal(op)
 		if err != nil {
@@ -111,8 +111,8 @@ func Start(cfg cfg) error {
 		for _, channelID := range cfg.GetChannels() {
 			// register to receive Sidetree transactions from blocks
 			n := notifier.New(getBlockPublisher(channelID))
-			dcas := dcas{channelID: channelID}
-			sidetreeobserver.Start(n, dcas, dcas)
+			dcasVal := &dcas{channelID: channelID}
+			sidetreeobserver.Start(n, dcasVal, dcasVal)
 		}
 
 	} else {
