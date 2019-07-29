@@ -9,11 +9,11 @@ package main
 import (
 	"crypto"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/mocks"
@@ -236,7 +236,7 @@ func invoke(stub *mocks.MockStub, args [][]byte) ([]byte, error) {
 
 func getOperationBytes(op *Operation) []byte {
 
-	bytes, err := json.Marshal(op)
+	bytes, err := docutil.MarshalCanonical(op)
 	if err != nil {
 		panic(err)
 	}

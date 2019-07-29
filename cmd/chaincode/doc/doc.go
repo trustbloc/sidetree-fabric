@@ -30,7 +30,7 @@ const (
 	// this chaincode can be 'generic' if we pass in collection name to each function
 	collection = "docs"
 
-	queryByIDTemplate = "{\"selector\":{\"id\":\"%s\"},\"use_index\":[\"_design/indexIDDoc\",\"indexID\"]}"
+	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","hashAlgorithmInMultiHashCode","operationIndex","operationNumber","patch","previousOperationHash","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
 )
 
 // funcMap is a map of functions by function name

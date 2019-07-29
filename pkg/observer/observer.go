@@ -10,11 +10,10 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"github.com/hyperledger/fabric/common/flogging"
-	"github.com/hyperledger/fabric/core/peer"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
+	"github.com/hyperledger/fabric/extensions/gossip/blockpublisher"
+	"github.com/pkg/errors"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
@@ -40,7 +39,7 @@ type publisher interface {
 
 // getBlockPublisher returns block publisher for channel
 var getBlockPublisher = func(channelID string) publisher {
-	return peer.BlockPublisher.ForChannel(channelID)
+	return blockpublisher.GetProvider().ForChannel(channelID)
 }
 
 type dcasClient interface {

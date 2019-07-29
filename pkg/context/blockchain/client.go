@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
 	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
@@ -55,6 +56,12 @@ func (c *Client) WriteAnchor(anchor string) error {
 	}
 
 	return nil
+}
+
+// Read ledger transaction
+func (c *Client) Read(sinceTransactionNumber int) (bool, *observer.SidetreeTxn) {
+	// TODO: Not sure where/if this function is used
+	panic("not implemented")
 }
 
 func (c *Client) getClient() (chClient, error) {

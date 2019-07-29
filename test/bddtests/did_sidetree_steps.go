@@ -75,15 +75,16 @@ func (d *DIDSideSteps) checkErrorResp(errorMsg string) error {
 }
 
 func (d *DIDSideSteps) checkSuccessResp(msg string) error {
+	documentHash, err := docutil.CalculateID(didDocNamespace, d.reqEncodedDIDDoc, sha2256)
+	if err != nil {
+		return err
+	}
+
 	if d.resp.ErrorMsg != "" {
-		return errors.Errorf("error resp %s", d.resp.ErrorMsg)
+		return errors.Errorf("error resp: [%s] - DID ID [%s]", d.resp.ErrorMsg, documentHash)
 	}
 
 	if msg == "#didDocumentHash" {
-		documentHash, err := docutil.CalculateID(didDocNamespace, d.reqEncodedDIDDoc, sha2256)
-		if err != nil {
-			return err
-		}
 		msg = strings.Replace(msg, "#didDocumentHash", documentHash, -1)
 	}
 	logger.Infof("check success resp %s contain %s", string(d.resp.Payload), msg)

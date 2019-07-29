@@ -109,8 +109,7 @@ func getDefaultDCASClient() *dcasmocks.MockDCASClient {
 func getSidetreeTxnPrerequisites(uniqueSuffix string) (batchBytes, anchorBytes []byte) {
 
 	operations := getDefaultOperations(uniqueSuffix)
-	batchBytes = getBatchFileBytes(operations)
-	batchAddr := offledgerdcas.GetCASKey(batchBytes)
+	batchAddr, batchBytes := getBatchFileBytes(operations)
 
 	anchorBytes = getAnchorFileBytes(batchAddr, "")
 	return batchBytes, anchorBytes
@@ -142,14 +141,18 @@ func getJSON(op Operation) string {
 	return string(bytes)
 }
 
-func getBatchFileBytes(operations []string) []byte {
+func getBatchFileBytes(operations []string) (string, []byte) {
 	bf := sidetreeobserver.BatchFile{Operations: operations}
 	bytes, err := json.Marshal(bf)
 	if err != nil {
 		panic(err)
 	}
 
-	return bytes
+	key, bytes, err := offledgerdcas.GetCASKeyAndValue(bytes)
+	if err != nil {
+		panic(err)
+	}
+	return key, bytes
 }
 
 func getAnchorFileBytes(batchFileHash string, merkleRoot string) []byte {
@@ -157,11 +160,16 @@ func getAnchorFileBytes(batchFileHash string, merkleRoot string) []byte {
 		BatchFileHash: batchFileHash,
 		MerkleRoot:    merkleRoot,
 	}
-	s, err := json.Marshal(af)
+	bytes, err := json.Marshal(af)
 	if err != nil {
 		panic(err)
 	}
-	return s
+
+	_, bytes, err = offledgerdcas.GetCASKeyAndValue(bytes)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
 }
 
 type mockBlockPublisher struct {
@@ -174,5 +182,9 @@ func (m *mockBlockPublisher) AddWriteHandler(writeHandler gossipapi.WriteHandler
 
 func getAnchorAddress(uniqueSuffix string) string {
 	_, anchorBytes := getSidetreeTxnPrerequisites(uniqueSuffix)
-	return offledgerdcas.GetCASKey(anchorBytes)
+	key, _, err := offledgerdcas.GetCASKeyAndValue(anchorBytes)
+	if err != nil {
+		panic(err.Error())
+	}
+	return key
 }
