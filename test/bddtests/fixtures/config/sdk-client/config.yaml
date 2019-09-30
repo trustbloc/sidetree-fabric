@@ -98,6 +98,63 @@ client:
         path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.crt
 
 channels:
+  _default:
+    policies:
+      discovery:
+        #[Optional] Maximum number of random targets
+        maxTargets: 2
+        #[Optional] retry options
+        retryOpts:
+          #[Optional] number of retry attempts
+          attempts: 5
+          #[Optional] the back off interval for the first retry attempt
+          initialBackoff: 100ms
+          #[Optional] the maximum back off interval for any retry attempt
+          maxBackoff: 5s
+          #[Optional] the factor by which the initial back off period is exponentially incremented
+          backoffFactor: 2.0
+      eventService:
+        # #[Optional] balancer is the balancer to use when choosing a peer to connect to from the local
+        # org when the local peer is too far behind in block height. If all peers in the local org
+        # are behind in block count then this balancer is used to choose a peer from another org.
+        # Possible values: [Random (default), RoundRobin]
+        balancer: Random
+        # #[Optional] blockHeightLagThreshold sets the block height lag threshold. This value is used for choosing a peer
+        # to connect to. If the local peer is lagging behind the most up-to-date peer by more than the given number of
+        # blocks then it will be excluded from selection.
+        # If set to 0 then only the most up-to-date peers are considered.
+        # If set to -1 then all peers (regardless of block height) are considered for selection.
+        # Default: 5
+        blockHeightLagThreshold: 5
+        # #[Optional] reconnectBlockHeightLagThreshold - if >0 then the event client will disconnect from the peer if the peer's
+        # block height falls behind the specified number of blocks and will reconnect to a better performing peer.
+        # If set to 0 then this feature is disabled.
+        # Default: 10
+        # NOTES:
+        #   - peerMonitorPeriod must be >0 to enable this feature
+        #   - Setting this value too low may cause the event client to disconnect/reconnect too frequently, thereby
+        #     affecting performance.
+        reconnectBlockHeightLagThreshold: 10
+        # #[Optional] peerMonitorPeriod is the period in which the connected peer is monitored to see if
+        # the event client should disconnect from it and reconnect to another peer.
+        # Default: 0 (disabled)
+        peerMonitorPeriod: 2s
+      queryChannelConfig:
+        #[Optional] min number of success responses (from targets/peers)
+        minResponses: 1
+        #[Optional] channel config will be retrieved for these number of random targets
+        maxTargets: 2
+        #[Optional] retry options for query config block
+        retryOpts:
+          #[Optional] number of retry attempts
+          attempts: 10
+          #[Optional] the back off interval for the first retry attempt
+          initialBackoff: 500ms
+          #[Optional] the maximum back off interval for any retry attempt
+          maxBackoff: 5s
+          #[Optional] the factor by which the initial back off period is exponentially incremented
+          backoffFactor: 2.0
+
   # name of the channel
   mychannel:
     orderers:
@@ -251,7 +308,7 @@ peers:
       keep-alive-time: 0s
       keep-alive-timeout: 20s
       keep-alive-permit: false
-      fail-fast: false
+      fail-fast: true
       #will be taken into consideration if address has no protocol defined and secured connection fails
       allow-insecure: false
 
@@ -272,7 +329,7 @@ peers:
       keep-alive-time: 0s
       keep-alive-timeout: 20s
       keep-alive-permit: false
-      fail-fast: false
+      fail-fast: true
       #will be taken into consideration if address has no protocol defined and secured connection fails
       allow-insecure: false
 
@@ -293,7 +350,7 @@ peers:
       keep-alive-time: 0s
       keep-alive-timeout: 20s
       keep-alive-permit: false
-      fail-fast: false
+      fail-fast: true
       #will be taken into consideration if address has no protocol defined and secured connection fails
       allow-insecure: false
 
@@ -314,7 +371,7 @@ peers:
       keep-alive-time: 0s
       keep-alive-timeout: 20s
       keep-alive-permit: false
-      fail-fast: false
+      fail-fast: true
       #will be taken into consideration if address has no protocol defined and secured connection fails
       allow-insecure: false
 

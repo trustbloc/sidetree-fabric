@@ -55,7 +55,8 @@ license:
 	@scripts/check_license.sh
 
 lint:
-	@scripts/check_lint.sh
+# TODO: Disable linting for now since the linter panics with "out of memory". Re-enable once golangcli-lint 1.20.0 is released
+# 	@scripts/check_lint.sh
 
 unit-test: checks
 	@scripts/unit.sh
@@ -77,7 +78,7 @@ channel-config-gen:
 		$(FABRIC_TOOLS_IMAGE):$(FABRIC_TOOLS_TAG) \
 		//bin/bash -c "FABRIC_VERSION_DIR=fabric/ /opt/workspace/${PROJECT_NAME}/scripts/generate_channeltx.sh"
 
-populate-fixtures: clean
+populate-fixtures:
 	@scripts/populate-fixtures.sh -f
 
 
@@ -85,7 +86,7 @@ bddtests: clean checks populate-fixtures docker-thirdparty bddtests-fabric-peer-
 	@scripts/integration.sh
 
 
-bddtests-fabric-peer-cli: clean
+bddtests-fabric-peer-cli:
 	@echo "Building fabric-peer cli"
 	@mkdir -p ./.build/bin
 	@cd test/bddtests/fixtures/fabric/peer/cmd && go build -o ../../../../../../.build/bin/fabric-peer github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/peer/cmd
