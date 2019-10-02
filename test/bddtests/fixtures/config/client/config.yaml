@@ -21,8 +21,8 @@ client:
   # Global configuration for peer, event service and orderer timeouts
   peer:
     timeout:
-      connection: 30s
-      response: 120s
+      connection: 10s
+      response: 20s
       discovery:
         # Expiry period for discovery service greylist filter
         # The channel client will greylist peers that are found to be offline
@@ -89,11 +89,48 @@ client:
         path: /etc/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.crt
 
 channels:
+  _default:
+    policies:
+      discovery:
+        #[Optional] Maximum number of random targets
+        maxTargets: 2
+        #[Optional] retry options
+        retryOpts:
+          #[Optional] number of retry attempts
+          attempts: 8
+          #[Optional] the back off interval for the first retry attempt
+          initialBackoff: 500ms
+          #[Optional] the maximum back off interval for any retry attempt
+          maxBackoff: 2s
+          #[Optional] the factor by which the initial back off period is exponentially incremented
+          backoffFactor: 2.0
+      queryChannelConfig:
+        #[Optional] min number of success responses (from targets/peers)
+        minResponses: 1
+        #[Optional] channel config will be retrieved for these number of random targets
+        maxTargets: 2
+        #[Optional] retry options for query config block
+        retryOpts:
+          #[Optional] number of retry attempts
+          attempts: 5
+          #[Optional] the back off interval for the first retry attempt
+          initialBackoff: 100ms
+          #[Optional] the maximum back off interval for any retry attempt
+          maxBackoff: 2s
+          #[Optional] the factor by which the initial back off period is exponentially incremented
+          backoffFactor: 2.0
+
   # name of the channel
   mychannel:
     # Required. list of peers from participating orgs
     peers:
       peer0.org1.example.com:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+      peer1.org1.example.com:
         endorsingPeer: true
         chaincodeQuery: true
         ledgerQuery: true
@@ -114,6 +151,7 @@ organizations:
 
     peers:
       - peer0.org1.example.com
+      - peer1.org1.example.com
 
     # [Optional]. Certificate Authorities issue certificates for identification purposes in a Fabric based
     # network. Typically certificates provisioning is done in a separate process outside of the
@@ -140,7 +178,28 @@ peers:
       keep-alive-time: 0s
       keep-alive-timeout: 20s
       keep-alive-permit: false
-      fail-fast: false
+      fail-fast: true
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+    tlsCACerts:
+      # Certificate location absolute path
+      path: /etc/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
+
+  peer1.org1.example.com:
+    # this URL is used to send endorsement and query requests
+    url: peer1.org1.example.com:7051
+
+    grpcOptions:
+      ssl-target-name-override: peer1.org1.example.com
+      grpc.http2.keepalive_time: 15
+      #     These parameters should be set in coordination with the keepalive policy on the server,
+      #     as incompatible settings can result in closing of connection.
+      #     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: true
       #will be taken into consideration if address has no protocol defined and secured connection fails
       allow-insecure: false
 
@@ -179,6 +238,10 @@ entityMatchers:
     - pattern: peer0.org1.example.com:(\d+)
       urlSubstitutionExp: peer0.org1.example.com:7051
       mappedHost: peer0.org1.example.com
+
+    - pattern: peer1.org1.example.com:(\d+)
+      urlSubstitutionExp: peer1.org1.example.com:7051
+      mappedHost: peer1.org1.example.com
 
   orderer:
     - pattern: (\w+).example.(\w+)

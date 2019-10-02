@@ -20,7 +20,7 @@ import (
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
 )
 
-var composition *bddtests.Composition
+var context *bddtests.BDDContext
 
 func TestMain(m *testing.M) {
 
@@ -35,20 +35,14 @@ func TestMain(m *testing.M) {
 
 	initBDDConfig()
 
+	compose := os.Getenv("DISABLE_COMPOSITION") != "true"
 	status := godog.RunWithOptions("godogs", func(s *godog.Suite) {
 		s.BeforeSuite(func() {
 
-			if os.Getenv("DISABLE_COMPOSITION") != "true" {
-
-				// Need a unique name, but docker does not allow '-' in names
-				composeProjectName := strings.Replace(GenerateUUID(), "-", "", -1)
-				newComposition, err := bddtests.NewComposition(composeProjectName, "docker-compose.yml", "./fixtures")
-				if err != nil {
+			if compose {
+				if err := context.Composition().Up(); err != nil {
 					panic(fmt.Sprintf("Error composing system in BDD context: %s", err))
 				}
-
-				composition = newComposition
-
 				fmt.Println("docker-compose up ... waiting for peer to start ...")
 				testSleep := 5
 				if os.Getenv("TEST_SLEEP") != "" {
@@ -61,9 +55,14 @@ func TestMain(m *testing.M) {
 		})
 
 		s.AfterSuite(func() {
-			if composition != nil {
-				composition.GenerateLogs("./fixtures")
-				composition.Decompose("./fixtures")
+			if compose {
+				composition := context.Composition()
+				if err := composition.GenerateLogs(); err != nil {
+					logger.Warnf("Error generating logs: %s", err)
+				}
+				if _, err := composition.Decompose(); err != nil {
+					logger.Warnf("Error decomposing: %s", err)
+				}
 			}
 		})
 
@@ -89,15 +88,25 @@ func FeatureContext(s *godog.Suite) {
 	peersMspID["peer1.org1.example.com"] = "Org1MSP"
 	peersMspID["peer0.org2.example.com"] = "Org2MSP"
 	peersMspID["peer1.org2.example.com"] = "Org2MSP"
-	context, err := bddtests.NewBDDContext([]string{"peerorg1", "peerorg2"}, "orderer.example.com", "./fixtures/config/sdk-client/",
+
+	var err error
+	context, err = bddtests.NewBDDContext([]string{"peerorg1", "peerorg2"}, "orderer.example.com", "./fixtures/config/sdk-client/",
 		"config.yaml", peersMspID, "../../.build/cc", "./fixtures/testdata")
 	if err != nil {
 		panic(fmt.Sprintf("Error returned from NewBDDContext: %s", err))
 	}
 
+	composeProjectName := strings.Replace(GenerateUUID(), "-", "", -1)
+	composition, err := bddtests.NewDockerCompose(composeProjectName, "docker-compose.yml", "./fixtures")
+	if err != nil {
+		panic(fmt.Sprintf("Error creating a Docker-Compose client: %s", err))
+	}
+	context.SetComposition(composition)
+
 	// Context is shared between tests - for now
 	// Note: Each test after NewcommonSteps. should add unique steps only
 	bddtests.NewCommonSteps(context).RegisterSteps(s)
+	bddtests.NewDockerSteps(context).RegisterSteps(s)
 	NewOffLedgerSteps(context).RegisterSteps(s)
 	NewSidetreeSteps(context).RegisterSteps(s)
 	NewDIDSideSteps(context).RegisterSteps(s)
