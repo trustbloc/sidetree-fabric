@@ -9,7 +9,7 @@ require (
 	github.com/btcsuite/btcutil v0.0.0-20170419141449-a5ecb5d9547a
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-openapi/errors v0.19.0
-	github.com/go-openapi/loads v0.19.0
+	github.com/go-openapi/loads v0.19.3
 	github.com/go-openapi/runtime v0.19.0
 	github.com/hyperledger/fabric v2.0.0-alpha+incompatible
 	github.com/hyperledger/fabric-protos-go v0.0.0-20190823190507-26c33c998676 // indirect
