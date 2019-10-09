@@ -55,8 +55,7 @@ license:
 	@scripts/check_license.sh
 
 lint:
-# TODO: Disable linting for now since the linter panics with "out of memory". Re-enable once golangcli-lint 1.20.0 is released
-# 	@scripts/check_lint.sh
+	@scripts/check_lint.sh
 
 unit-test: checks
 	@scripts/unit.sh
