@@ -13,15 +13,10 @@ import (
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/hyperledger/fabric/protos/ledger/rwset/kvrwset"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
 var logger = flogging.MustGetLogger("notifier")
-
-const (
-	sideTreeTxnCCName = "sidetreetxn_cc"
-	// anchor address prefix
-	anchorAddrPrefix = "sidetreetxn_"
-)
 
 // blockPublisher allows clients to add handlers for various block events
 type blockPublisher interface {
@@ -43,11 +38,11 @@ func New(publisher blockPublisher) *Notifier {
 func (n *Notifier) RegisterForSidetreeTxn() <-chan []sidetreeobserver.SidetreeTxn {
 	anchorFileAddressChan := make(chan []sidetreeobserver.SidetreeTxn, 100)
 	n.publisher.AddWriteHandler(func(txMetadata gossipapi.TxMetadata, namespace string, kvWrite *kvrwset.KVWrite) error {
-		if namespace != sideTreeTxnCCName {
-			logger.Debugf("write NameSpace: %s not equal %s will skip this kvrwset", namespace, sideTreeTxnCCName)
+		if namespace != common.SidetreeNs {
+			logger.Debugf("write NameSpace: %s not equal %s will skip this kvrwset", namespace, common.SidetreeNs)
 			return nil
 		}
-		if !kvWrite.IsDelete && strings.HasPrefix(kvWrite.Key, anchorAddrPrefix) {
+		if !kvWrite.IsDelete && strings.HasPrefix(kvWrite.Key, common.AnchorAddrPrefix) {
 			logger.Debugf("found anchor address key[%s], value [%s]", kvWrite.Key, string(kvWrite.Value))
 			anchorFileAddressChan <- []sidetreeobserver.SidetreeTxn{{TransactionTime: txMetadata.BlockNum, TransactionNumber: txMetadata.TxNum, AnchorAddress: string(kvWrite.Value)}}
 		}

@@ -12,7 +12,7 @@ require (
 	github.com/sirupsen/logrus v1.3.0
 	github.com/spf13/viper v1.3.2
 	github.com/trustbloc/fabric-peer-test-common v0.0.0-20191001161824-e89c26cf9121
-	github.com/trustbloc/sidetree-core-go v0.0.0-20190930163854-f6c43863f1a2
+	github.com/trustbloc/sidetree-core-go v0.0.0-20191009163332-b52509c73f12
 	github.com/trustbloc/sidetree-node v0.0.0-20190627183933-1e09f18640f3
 )
 
