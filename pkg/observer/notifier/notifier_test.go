@@ -14,6 +14,7 @@ import (
 	"github.com/hyperledger/fabric/protos/ledger/rwset/kvrwset"
 	"github.com/stretchr/testify/require"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
 const (
@@ -40,7 +41,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 				}
 			}
 		}()
-		require.NoError(t, p.writeHandler(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: true, Value: []byte(v1)}))
+		require.NoError(t, p.writeHandler(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, common.SidetreeNs, &kvrwset.KVWrite{Key: common.AnchorAddrPrefix + k1, IsDelete: true, Value: []byte(v1)}))
 		result := <-done
 		require.Empty(t, result)
 	})
@@ -59,7 +60,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 				}
 			}
 		}()
-		require.NoError(t, p.writeHandler(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, "n1", &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: true, Value: []byte(v1)}))
+		require.NoError(t, p.writeHandler(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, "n1", &kvrwset.KVWrite{Key: common.AnchorAddrPrefix + k1, IsDelete: true, Value: []byte(v1)}))
 		result := <-done
 		require.Empty(t, result)
 	})
@@ -78,7 +79,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 				}
 			}
 		}()
-		require.NoError(t, p.writeHandler(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(v1)}))
+		require.NoError(t, p.writeHandler(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, common.SidetreeNs, &kvrwset.KVWrite{Key: common.AnchorAddrPrefix + k1, IsDelete: false, Value: []byte(v1)}))
 		result := <-done
 		require.Equal(t, result[0].AnchorAddress, v1)
 	})

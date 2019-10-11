@@ -46,11 +46,7 @@ func setup() {
 func startObserver() error {
 	observingChannels := getObserverChannels()
 	cfg := config.New(observingChannels)
-	if err := observer.Start(cfg); err != nil {
-		return err
-	}
-
-	return nil
+	return observer.New(cfg).Start()
 }
 
 // getObserverChannels returns the channels that will be observed for Sidetree transaction
