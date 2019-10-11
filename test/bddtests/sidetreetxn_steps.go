@@ -13,7 +13,6 @@ import (
 	"strconv"
 
 	"github.com/DATA-DOG/godog"
-
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
 )
 
@@ -30,17 +29,16 @@ func NewSidetreeSteps(context *bddtests.BDDContext) *SidetreeTxnSteps {
 }
 
 func (t *SidetreeTxnSteps) writeContent(content, ccID, channelID string) error {
-
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	args := []string{"writeContent", content}
-	resp, err := commonSteps.InvokeCCWithArgs(ccID, channelID, nil, args, nil)
+	resp, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil)
 	if err != nil {
-		return fmt.Errorf("InvokeCCWithArgs return error: %s", err)
+		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
 	}
 
 	t.content = content
-	t.address = string(resp.Payload)
+	t.address = resp
 
 	return nil
 }
@@ -63,24 +61,27 @@ func (t *SidetreeTxnSteps) readContent(ccID, channelID string) error {
 }
 
 func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, channelID string) error {
-
+	logger.Infof("Preparing to write anchor batch on channel [%s]", channelID)
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	// Create default encoded operations for this did (for now two create and update)
 	operations := getDefaultOperations(didID)
 
 	batchFile := getBatchFileBytes(operations)
+	logger.Infof("... writing batch file on channel [%s]", channelID)
 	err := t.writeContent(batchFile, ccID, channelID)
 	if err != nil {
 		return fmt.Errorf("write batch file to DCAS return error: %s", err)
 	}
 
 	anchor := getAnchorFileBytes(t.address, "root")
+	logger.Infof("... writing anchor file on channel [%s]", channelID)
 	err = t.writeContent(anchor, ccID, channelID)
 	if err != nil {
 		return fmt.Errorf("write anchor file to DCAS return error: %s", err)
 	}
 
+	logger.Infof("... committing anchor address [%s] to ledger on channel [%s]", t.address, channelID)
 	args := []string{"writeAnchor", t.address}
 	_, err = commonSteps.InvokeCCWithArgs(ccID, channelID, nil, args, nil)
 	if err != nil {
@@ -112,11 +113,27 @@ func (t *SidetreeTxnSteps) updateDocument(docID, ccID, channelID string) error {
 }
 
 func (t *SidetreeTxnSteps) queryDocumentByIndex(docID, ccID, numOfDocs, channelID string) error {
+	return t.queryDocumentByIndexOnTargets(docID, ccID, numOfDocs, channelID, "")
+}
+
+func (t *SidetreeTxnSteps) queryDocumentByIndexOnTargets(docID, ccID, numOfDocs, channelID, peerIDs string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
+	var targets bddtests.Peers
+	if peerIDs != "" {
+		logger.Infof("Querying for document [%s] on peers [%s]", docID, peerIDs)
+		var err error
+		targets, err = commonSteps.Peers(peerIDs)
+		if err != nil {
+			return err
+		}
+	} else {
+		logger.Infof("Querying for document [%s]", docID)
+	}
+
 	args := []string{"queryByID", docID}
-	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil)
+	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil, targets...)
 	if err != nil {
 		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
 	}
@@ -223,4 +240,5 @@ func (t *SidetreeTxnSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^client creates document with ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.createDocument)
 	s.Step(`^client updates document with ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.updateDocument)
 	s.Step(`^client verifies that query by index ID "([^"]*)" from "([^"]*)" will return "([^"]*)" versions of the document on the "([^"]*)" channel$`, t.queryDocumentByIndex)
+	s.Step(`^client verifies that query by index ID "([^"]*)" from "([^"]*)" will return "([^"]*)" versions of the document on the "([^"]*)" channel on peers "([^"]*)"$`, t.queryDocumentByIndexOnTargets)
 }

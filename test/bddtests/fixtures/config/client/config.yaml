@@ -21,7 +21,7 @@ client:
   # Global configuration for peer, event service and orderer timeouts
   peer:
     timeout:
-      connection: 10s
+      connection: 5s
       response: 20s
       discovery:
         # Expiry period for discovery service greylist filter
@@ -43,7 +43,7 @@ client:
       execute: 120s
       resmgmt: 120s
     cache:
-      connectionIdle: 30s
+      connectionIdle: 5s
       eventServiceIdle: 2m
       channelConfig: 60s
       channelMembership: 30s
@@ -165,12 +165,8 @@ organizations:
 # and event listener registration.
 #
 peers:
-  peer0.org1.example.com:
-    # this URL is used to send endorsement and query requests
-    url: peer0.org1.example.com:7051
-
+  _default:
     grpcOptions:
-      ssl-target-name-override: peer0.org1.example.com
       grpc.http2.keepalive_time: 15
       #     These parameters should be set in coordination with the keepalive policy on the server,
       #     as incompatible settings can result in closing of connection.
@@ -181,6 +177,13 @@ peers:
       fail-fast: true
       #will be taken into consideration if address has no protocol defined and secured connection fails
       allow-insecure: false
+
+  peer0.org1.example.com:
+    # this URL is used to send endorsement and query requests
+    url: peer0.org1.example.com:7051
+
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
 
     tlsCACerts:
       # Certificate location absolute path
@@ -192,16 +195,6 @@ peers:
 
     grpcOptions:
       ssl-target-name-override: peer1.org1.example.com
-      grpc.http2.keepalive_time: 15
-      #     These parameters should be set in coordination with the keepalive policy on the server,
-      #     as incompatible settings can result in closing of connection.
-      #     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
-      keep-alive-time: 0s
-      keep-alive-timeout: 20s
-      keep-alive-permit: false
-      fail-fast: true
-      #will be taken into consideration if address has no protocol defined and secured connection fails
-      allow-insecure: false
 
     tlsCACerts:
       # Certificate location absolute path
@@ -222,15 +215,13 @@ orderers:
       keep-alive-time: 0s
       keep-alive-timeout: 20s
       keep-alive-permit: false
-      fail-fast: false
+      fail-fast: true
       #will be taken into consideration if address has no protocol defined and secured connection fails
       allow-insecure: false
 
     tlsCACerts:
       # Certificate location absolute path
       path: /etc/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem
-
-
 
 entityMatchers:
 

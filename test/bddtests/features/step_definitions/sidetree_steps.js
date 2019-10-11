@@ -26,6 +26,9 @@ var myStepDefinitionsWrapper = function () {
     this.Then(/^client verifies that query by index ID "([^"]*)" from "([^"]*)" will return "([^"]*)" versions of the document on the "([^"]*)" channel$/, function (arg1, arg2, arg3, arg4, callback) {
         callback.pending();
     });
+    this.Then(/^client verifies that query by index ID "([^"]*)" from "([^"]*)" will return "([^"]*)" versions of the document on the "([^"]*)" channel on peers "([^"]*)"$/, function (arg1, arg2, arg3, arg4, arg5, callback) {
+        callback.pending();
+    });
     this.When(/^client writes operations batch file and anchor file for ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, callback) {
         callback.pending();
     });

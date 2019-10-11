@@ -65,7 +65,7 @@ services:
       # metrics config
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
-      - CORE_LEDGER_ROLES=endorser,committer,validator,observer
+      - CORE_LEDGER_ROLES=endorser,committer,validator,sidetree,observer
       # channels to observe for Sidetree transaction
       - CORE_LEDGER_SIDETREE_OBSERVER_CHANNELS=mychannel
       # # the following setting starts chaincode containers on the same
@@ -121,6 +121,7 @@ services:
       # metrics config
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
+      - CORE_LEDGER_ROLES=endorser,committer,validator,sidetree
       # channels to observe for Sidetree transaction
       - CORE_LEDGER_SIDETREE_OBSERVER_CHANNELS=mychannel
       # # the following setting starts chaincode containers on the same
@@ -176,6 +177,7 @@ services:
       # metrics config
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
+      - CORE_LEDGER_ROLES=endorser,committer,validator,sidetree
       # channels to observe for Sidetree transaction
       - CORE_LEDGER_SIDETREE_OBSERVER_CHANNELS=mychannel
       # # the following setting starts chaincode containers on the same
@@ -230,6 +232,7 @@ services:
       # metrics config
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
+      - CORE_LEDGER_ROLES=endorser,committer,validator,sidetree
       # channels to observe for Sidetree transaction
       - CORE_LEDGER_SIDETREE_OBSERVER_CHANNELS=mychannel
       # # the following setting starts chaincode containers on the same
