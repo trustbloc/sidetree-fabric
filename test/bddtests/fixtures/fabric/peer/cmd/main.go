@@ -7,6 +7,7 @@ package main
 
 import (
 	"strings"
+	"time"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/config"
@@ -15,8 +16,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Configure channels that will be observed for sidetree txn
-const confObserverChannels = "ledger.sidetree.observer.channels"
+const (
+	// Configure channels that will be observed for sidetree txn
+	confObserverChannels = "ledger.sidetree.observer.channels"
+
+	// confMonitorPeriod is the period in which the monitor checks for presence of documents in the local DCAS store
+	confMonitorPeriod = "ledger.sidetree.monitor.period"
+
+	// defaultMonitorPeriod is the default value for monitor period
+	defaultMonitorPeriod = 5 * time.Second
+)
 
 func main() {
 
@@ -45,7 +54,8 @@ func setup() {
 
 func startObserver() error {
 	observingChannels := getObserverChannels()
-	cfg := config.New(observingChannels)
+	monitorPeriod := getMonitorPeriod()
+	cfg := config.New(observingChannels, monitorPeriod)
 	return observer.New(cfg).Start()
 }
 
@@ -53,6 +63,15 @@ func startObserver() error {
 func getObserverChannels() []string {
 	channels := viper.GetString(confObserverChannels)
 	return strings.Split(channels, ",")
+}
+
+// getMonitorPeriod returns the period in which the monitor checks for presence of documents in the local DCAS store
+func getMonitorPeriod() time.Duration {
+	monitorPeriod := viper.GetDuration(confMonitorPeriod)
+	if monitorPeriod == 0 {
+		monitorPeriod = defaultMonitorPeriod
+	}
+	return monitorPeriod
 }
 
 func startPeer() error {

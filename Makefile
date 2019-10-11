@@ -17,6 +17,7 @@
 #   bddtests:                   run bddtests
 #   docker-thirdparty:          pulls thirdparty images
 #   sidetree-docker:            build sidetree-fabric image
+#   generate:                   generates mocks
 #
 
 
@@ -59,6 +60,9 @@ lint:
 
 unit-test: checks
 	@scripts/unit.sh
+
+generate:
+	go generate ./...
 
 all: clean checks unit-test bddtests
 

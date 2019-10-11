@@ -8,6 +8,7 @@ package observer
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/hyperledger/fabric/common/flogging"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
@@ -18,6 +19,7 @@ import (
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 )
 
@@ -25,6 +27,7 @@ var logger = flogging.MustGetLogger("observer")
 
 const (
 	observerRole = "observer"
+	sidetreeRole = "sidetree"
 )
 
 // publisher allows clients to add handlers for various block events
@@ -40,10 +43,19 @@ var getBlockPublisher = func(channelID string) publisher {
 
 type cfg interface {
 	GetChannels() []string
+	GetMonitorPeriod() time.Duration
 }
 
 type dcasClientProvider interface {
 	ForChannel(channelID string) client.DCAS
+}
+
+type offLedgerClientProvider interface {
+	ForChannel(channelID string) client.OffLedger
+}
+
+type blockchainClientProvider interface {
+	ForChannel(channelID string) (client.Blockchain, error)
 }
 
 type dcas struct {
@@ -83,15 +95,24 @@ func (d *dcas) getDCASClient() client.DCAS {
 // Observer observes the ledger for new anchor files and updates the document store accordingly
 type Observer struct {
 	cfg          cfg
+	docMonitor   *monitor.Monitor
 	dcasProvider dcasClientProvider
 }
 
 // New returns a new Observer
 func New(cfg cfg) *Observer {
 	dcasProvider := getDCASClientProvider()
+	docMonitor := monitor.New(
+		&monitor.ClientProviders{
+			Blockchain: getBlockchainClientProvider(),
+			DCAS:       dcasProvider,
+			OffLedger:  getOffLedgerClientProvider(),
+		},
+	)
 	return &Observer{
 		cfg:          cfg,
 		dcasProvider: dcasProvider,
+		docMonitor:   docMonitor,
 	}
 }
 
@@ -105,6 +126,11 @@ func (o *Observer) Start() error {
 	return nil
 }
 
+// Stop stops the channel observer routines
+func (o *Observer) Stop() {
+	o.docMonitor.StopAll()
+}
+
 func (o *Observer) start(channelID string) error {
 	if roles.HasRole(observerRole) {
 		logger.Infof("Starting observer for channel [%s]", channelID)
@@ -114,10 +140,21 @@ func (o *Observer) start(channelID string) error {
 		sidetreeobserver.Start(n, dcasVal, dcasVal)
 		return nil
 	}
-	logger.Infof("Nothing to start for channel [%s]", channelID)
+	if roles.HasRole(sidetreeRole) && roles.IsCommitter() {
+		return o.docMonitor.Start(channelID, o.cfg.GetMonitorPeriod())
+	}
+	logger.Debugf("Nothing to start for channel [%s]", channelID)
 	return nil
 }
 
 var getDCASClientProvider = func() dcasClientProvider {
 	return client.NewDCASProvider()
+}
+
+var getOffLedgerClientProvider = func() offLedgerClientProvider {
+	return client.NewOffLedgerProvider()
+}
+
+var getBlockchainClientProvider = func() blockchainClientProvider {
+	return client.NewBlockchainProvider()
 }
