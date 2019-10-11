@@ -9,7 +9,7 @@ require (
 	github.com/bluele/gcache v0.0.0-20190301044115-79ae3b2d8680
 	github.com/btcsuite/btcutil v0.0.0-20170419141449-a5ecb5d9547a
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/go-openapi/errors v0.19.0
+	github.com/go-openapi/errors v0.19.2
 	github.com/go-openapi/loads v0.19.0
 	github.com/go-openapi/runtime v0.19.0
 	github.com/hyperledger/fabric v2.0.0-alpha+incompatible
