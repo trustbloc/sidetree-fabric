@@ -37,6 +37,8 @@ const (
 	sideTreeTxnCCName = "sidetreetxn_cc"
 	anchorAddrPrefix  = "sidetreetxn_"
 	k1                = "key1"
+
+	monitorPeriod = 5 * time.Second
 )
 
 func TestObserver(t *testing.T) {
@@ -56,7 +58,7 @@ func TestObserver(t *testing.T) {
 		return p
 	}
 
-	cfg := config.New([]string{channel})
+	cfg := config.New([]string{channel}, monitorPeriod)
 	observer := New(cfg)
 	require.NotNil(t, observer)
 	require.NoError(t, observer.Start())
@@ -97,23 +99,32 @@ func TestObserver_Start(t *testing.T) {
 			roles.SetRoles(nil)
 		}()
 
-		cfg := config.New([]string{channel})
+		cfg := config.New([]string{channel}, monitorPeriod)
 		observer := New(cfg)
 		require.NotNil(t, observer)
 		require.NoError(t, observer.Start())
+		observer.Stop()
 	})
-	t.Run("committer role", func(t *testing.T) {
+	t.Run("monitor role", func(t *testing.T) {
 		rolesValue := make(map[roles.Role]struct{})
 		rolesValue[roles.CommitterRole] = struct{}{}
+		rolesValue[sidetreeRole] = struct{}{}
 		roles.SetRoles(rolesValue)
 		defer func() {
 			roles.SetRoles(nil)
 		}()
 
-		cfg := config.New([]string{channel})
+		cfg := config.New([]string{channel}, monitorPeriod)
 		observer := New(cfg)
 		require.NotNil(t, observer)
+
+		err := observer.Start()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "peer.id isn't set")
+
+		viper.Set("peer.id", "peer0.org1.com")
 		require.NoError(t, observer.Start())
+		observer.Stop()
 	})
 }
 
