@@ -23,7 +23,7 @@ require (
 	github.com/sirupsen/logrus v1.3.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/viper v1.3.2
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.4.0
 	github.com/trustbloc/fabric-peer-ext v0.0.0
 	github.com/trustbloc/sidetree-core-go v0.0.0-20191017153620-a489e16494b3
 	github.com/trustbloc/sidetree-node v0.0.0-20191017194101-9674831a60aa
