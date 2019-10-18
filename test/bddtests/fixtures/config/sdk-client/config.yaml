@@ -61,7 +61,7 @@ client:
 
   # Root of the MSP directories with keys and certs.
   cryptoconfig:
-    path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config
+    path: ${PROJECT_PATH}/test/bddtests/fixtures/fabric/crypto-config
 
   # Some SDKs support pluggable KV stores, the properties under "credentialStore"
   # are implementation specific
@@ -93,9 +93,9 @@ client:
 
     client:
       key:
-        path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.key
+        path: ${PROJECT_PATH}/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.key
       cert:
-        path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.crt
+        path: ${PROJECT_PATH}/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/client.crt
 
 channels:
   _default:
@@ -236,7 +236,7 @@ orderers:
 
     tlsCACerts:
       # Certificate location absolute path
-      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem
+      path: ${PROJECT_PATH}/test/bddtests/fixtures/fabric/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem
 
 #
 # list of participating organizations in this network
@@ -317,7 +317,7 @@ peers:
 
     tlsCACerts:
       # Certificate location absolute path
-      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
+      path: ${PROJECT_PATH}/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
 
   peer1.org1.example.com:
     # this URL is used to send endorsement and query requests
@@ -328,7 +328,7 @@ peers:
 
     tlsCACerts:
       # Certificate location absolute path
-      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
+      path: ${PROJECT_PATH}/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
 
   peer0.org2.example.com:
     # this URL is used to send endorsement and query requests
@@ -339,7 +339,7 @@ peers:
 
     tlsCACerts:
       # Certificate location absolute path
-      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
+      path: ${PROJECT_PATH}/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
 
   peer1.org2.example.com:
     # this URL is used to send endorsement and query requests
@@ -350,7 +350,7 @@ peers:
 
     tlsCACerts:
       # Certificate location absolute path
-      path: ${GOPATH}/src/github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
+      path: ${PROJECT_PATH}/test/bddtests/fixtures/fabric/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
 
 entityMatchers:
   peer:
