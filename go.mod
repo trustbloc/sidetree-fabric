@@ -11,7 +11,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-openapi/errors v0.19.0
 	github.com/go-openapi/loads v0.19.0
-	github.com/go-openapi/runtime v0.19.0
+	github.com/go-openapi/runtime v0.19.7
 	github.com/hyperledger/fabric v2.0.0-alpha+incompatible
 	github.com/hyperledger/fabric-protos-go v0.0.0-20190823190507-26c33c998676 // indirect
 	github.com/hyperledger/fabric-sdk-go v1.0.0-beta1.0.20190930220855-cea2ffaf627c
