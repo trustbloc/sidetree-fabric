@@ -19,3 +19,5 @@ replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer
 replace github.com/trustbloc/sidetree-fabric => ../../../../../..
 
 replace github.com/spf13/viper => github.com/spf13/viper v0.0.0-20150908122457-1967d93db724
+
+go 1.13

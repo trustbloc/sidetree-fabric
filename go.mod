@@ -25,8 +25,8 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
 	github.com/trustbloc/fabric-peer-ext v0.0.0
-	github.com/trustbloc/sidetree-core-go v0.0.0-20191009163332-b52509c73f12
-	github.com/trustbloc/sidetree-node v0.0.0-20190627183933-1e09f18640f3
+	github.com/trustbloc/sidetree-core-go v0.0.0-20191017153620-a489e16494b3
+	github.com/trustbloc/sidetree-node v0.0.0-20191017194101-9674831a60aa
 	go.uber.org/atomic v1.4.0 // indirect
 )
 
