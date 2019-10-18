@@ -1,6 +1,5 @@
 /*
 Copyright SecureKey Technologies Inc. All Rights Reserved.
-
 SPDX-License-Identifier: Apache-2.0
 */
 
@@ -8,12 +7,9 @@ package restclient
 
 import (
 	"bytes"
-	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
-
-	"github.com/go-openapi/swag"
 
 	"github.com/trustbloc/sidetree-node/models"
 )
@@ -44,25 +40,14 @@ func SendResolveRequest(url string) (*HttpRespone, error) {
 }
 
 func handleHttpResp(resp *http.Response) (*HttpRespone, error) {
+	gotBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body failed: %w", err)
+	}
 	if status := resp.StatusCode; status != http.StatusOK {
-		r := &models.Error{}
-		err := decode(resp, r)
-		if err != nil {
-			return nil, err
-		}
-		return &HttpRespone{ErrorMsg: swag.StringValue(r.Message)}, nil
+		return &HttpRespone{ErrorMsg: string(gotBody)}, nil
 	}
-
-	r := &models.Response{}
-	err := decode(resp, r)
-	if err != nil {
-		return nil, err
-	}
-	payload, err := r.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	return &HttpRespone{Payload: payload}, nil
+	return &HttpRespone{Payload: gotBody}, nil
 }
 
 func sendHTTPRequest(url string, req *models.Request) (*http.Response, error) {
@@ -80,13 +65,4 @@ func sendHTTPRequest(url string, req *models.Request) (*http.Response, error) {
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	return client.Do(httpReq)
-}
-
-func decode(response *http.Response, v interface{}) error {
-	respBytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-
-	return json.NewDecoder(strings.NewReader(string(respBytes))).Decode(v)
 }
