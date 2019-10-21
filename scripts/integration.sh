@@ -7,6 +7,7 @@
 set -e
 
 echo "Running sidetree-fabric integration tests..."
+echo "$GOPROXY"
 cd test/bddtests/
 go test -count=1 -v -cover . -p 1 -timeout=20m
 cd $PWD
