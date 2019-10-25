@@ -29,3 +29,28 @@ jobs:
     - checkout: self
     - script: make bddtests
       displayName: Run BDD tests
+
+  - job: Publish
+    dependsOn:
+      - UnitTest
+      - BDDTest
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    pool:
+      vmImage: ubuntu-16.04
+    timeoutInMinutes: 30
+    steps:
+      - template: azp-dependencies.yml
+      - checkout: self
+      - bash: |
+          function logout {
+            docker logout
+          }
+          trap logout EXIT
+          source ./.ci-properties
+          echo $DOCKER_PASSWORD | docker login --username $DOCKER_USER --password-stdin
+          make sidetree-docker
+          docker tag trustbloc/sidetree-fabric:latest  trustbloc/sidetree-fabric:$SIDETREE_FABRIC_IMAGE_TAG
+          docker push trustbloc/sidetree-fabric:$SIDETREE_FABRIC_IMAGE_TAG
+        env:
+          DOCKER_USER: $(DOCKER_USER)
+          DOCKER_PASSWORD: $(DOCKER_PASSWORD)

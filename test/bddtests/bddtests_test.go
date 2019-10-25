@@ -25,12 +25,12 @@ var context *bddtests.BDDContext
 
 func TestMain(m *testing.M) {
 	projectPath, err := filepath.Abs("../..")
- 	if err != nil {
- 		panic(err.Error())
- 	}
- 	if err := os.Setenv("PROJECT_PATH", projectPath); err != nil {
- 		panic(err.Error())
- 	}
+	if err != nil {
+		panic(err.Error())
+	}
+	if err := os.Setenv("PROJECT_PATH", projectPath); err != nil {
+		panic(err.Error())
+	}
 
 	// default is to run all tests with tag @all
 	tags := "all"
@@ -52,7 +52,7 @@ func TestMain(m *testing.M) {
 					panic(fmt.Sprintf("Error composing system in BDD context: %s", err))
 				}
 				fmt.Println("docker-compose up ... waiting for peer to start ...")
-				testSleep := 10
+				testSleep := 30
 				if os.Getenv("TEST_SLEEP") != "" {
 					testSleep, _ = strconv.Atoi(os.Getenv("TEST_SLEEP"))
 				}
