@@ -30,9 +30,6 @@ Feature:
     When client sends request to create DID document "fixtures/testdata/didDocument.json" as "JSON"
     Then check success response contains "#didDocumentHash"
 
-    # batch writer needs some time to cut batch
-    Then we wait 10 seconds
-
     When client sends request to resolve DID document
     Then check success response contains "#didDocumentHash"
 

@@ -7,21 +7,23 @@ package restclient
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/trustbloc/sidetree-node/models"
+	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 )
 
-type HttpRespone struct {
-	Payload  []byte
-	ErrorMsg string
+type HttpResponse struct {
+	StatusCode int
+	Payload    []byte
+	ErrorMsg   string
 }
 
 // SendRequest sends a regular POST request to the sidetree-node
 // - If post request has operation "create" then return sidetree document else no response
-func SendRequest(url string, req *models.Request) (*HttpRespone, error) {
+func SendRequest(url string, req *model.Request) (*HttpResponse, error) {
 	resp, err := sendHTTPRequest(url, req)
 	if err != nil {
 		return nil, err
@@ -30,7 +32,7 @@ func SendRequest(url string, req *models.Request) (*HttpRespone, error) {
 }
 
 // SendResolveRequest send a regular GET request to the sidetree-node and expects 'side tree document' argument as a response
-func SendResolveRequest(url string) (*HttpRespone, error) {
+func SendResolveRequest(url string) (*HttpResponse, error) {
 	client := &http.Client{}
 	resp, err := client.Get(url)
 	if err != nil {
@@ -39,20 +41,23 @@ func SendResolveRequest(url string) (*HttpRespone, error) {
 	return handleHttpResp(resp)
 }
 
-func handleHttpResp(resp *http.Response) (*HttpRespone, error) {
+func handleHttpResp(resp *http.Response) (*HttpResponse, error) {
 	gotBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading response body failed: %w", err)
 	}
 	if status := resp.StatusCode; status != http.StatusOK {
-		return &HttpRespone{ErrorMsg: string(gotBody)}, nil
+		return &HttpResponse{
+			StatusCode: status,
+			ErrorMsg:   string(gotBody),
+		}, nil
 	}
-	return &HttpRespone{Payload: gotBody}, nil
+	return &HttpResponse{StatusCode: http.StatusOK, Payload: gotBody}, nil
 }
 
-func sendHTTPRequest(url string, req *models.Request) (*http.Response, error) {
+func sendHTTPRequest(url string, req *model.Request) (*http.Response, error) {
 	client := &http.Client{}
-	b, err := req.MarshalBinary()
+	b, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
