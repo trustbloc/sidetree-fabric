@@ -13,11 +13,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
@@ -64,53 +64,47 @@ func TestServer_Start(t *testing.T) {
 	// Wait for the service to start
 	time.Sleep(time.Second)
 
-	t.Run("Create DID doc", func(t *testing.T) {
+	t.Run("DID doc", func(t *testing.T) {
 		request := &model.Request{}
 		err := json.Unmarshal([]byte(createRequest), request)
 		require.NoError(t, err)
 
 		resp, err := httpPut(t, clientURL+diddochandler.Path, request)
 		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.NotNil(t, resp.Body)
+		require.NotEmpty(t, resp)
 
-		doc, ok := resp.Body.(map[string]interface{})
-		require.True(t, ok)
-		require.Equal(t, didID, doc["id"])
-	})
-	t.Run("Resolve DID doc", func(t *testing.T) {
-		resp, err := httpGet(t, clientURL+diddochandler.Path+"/"+didID)
+		var createdDoc document.Document
+		require.NoError(t, json.Unmarshal(resp, &createdDoc))
+		require.Equal(t, didID, createdDoc["id"])
+
+		resp, err = httpGet(t, clientURL+diddochandler.Path+"/"+didID)
 		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.NotNil(t, resp.Body)
+		require.NotEmpty(t, resp)
 
-		doc, ok := resp.Body.(map[string]interface{})
-		require.True(t, ok)
-		require.Equal(t, didID, doc["id"])
+		var resolvedDoc document.Document
+		require.NoError(t, json.Unmarshal(resp, &resolvedDoc))
+		require.Equal(t, didID, resolvedDoc["id"])
 	})
-	t.Run("Create Sample doc", func(t *testing.T) {
+	t.Run("Sample doc", func(t *testing.T) {
 		request := &model.Request{}
 		err := json.Unmarshal([]byte(createRequest), request)
 		require.NoError(t, err)
 
 		resp, err := httpPut(t, clientURL+samplePath, request)
 		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.NotNil(t, resp.Body)
+		require.NotEmpty(t, resp)
 
-		doc, ok := resp.Body.(map[string]interface{})
-		require.True(t, ok)
-		require.Equal(t, sampleID, doc["id"])
-	})
-	t.Run("Resolve Sample doc", func(t *testing.T) {
-		resp, err := httpGet(t, clientURL+samplePath+"/"+sampleID)
+		var createdDoc document.Document
+		require.NoError(t, json.Unmarshal(resp, &createdDoc))
+		require.Equal(t, sampleID, createdDoc["id"])
+
+		resp, err = httpGet(t, clientURL+samplePath+"/"+sampleID)
 		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.NotNil(t, resp.Body)
+		require.NotEmpty(t, resp)
 
-		doc, ok := resp.Body.(map[string]interface{})
-		require.True(t, ok)
-		require.Equal(t, sampleID, doc["id"])
+		var resolvedDoc document.Document
+		require.NoError(t, json.Unmarshal(resp, &resolvedDoc))
+		require.Equal(t, sampleID, resolvedDoc["id"])
 	})
 	t.Run("Stop", func(t *testing.T) {
 		require.NoError(t, s.Stop(context.Background()))
@@ -120,7 +114,7 @@ func TestServer_Start(t *testing.T) {
 
 // httpPut sends a regular POST request to the sidetree-node
 // - If post request has operation "create" then return sidetree document else no response
-func httpPut(t *testing.T, url string, req *model.Request) (*model.Response, error) {
+func httpPut(t *testing.T, url string, req *model.Request) ([]byte, error) {
 	client := &http.Client{}
 	b, err := json.Marshal(req)
 	require.NoError(t, err)
@@ -128,18 +122,19 @@ func httpPut(t *testing.T, url string, req *model.Request) (*model.Response, err
 	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	require.NoError(t, err)
 
-	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Content-Type", "application/did+ld+json")
 	resp, err := invokeWithRetry(
 		func() (response *http.Response, e error) {
 			return client.Do(httpReq)
 		},
 	)
 	require.NoError(t, err)
+	require.Equal(t, "application/did+ld+json", resp.Header.Get("content-type"))
 	return handleHttpResp(t, resp)
 }
 
 // httpGet send a regular GET request to the sidetree-node and expects 'side tree document' argument as a response
-func httpGet(t *testing.T, url string) (*model.Response, error) {
+func httpGet(t *testing.T, url string) ([]byte, error) {
 	client := &http.Client{}
 	resp, err := invokeWithRetry(
 		func() (response *http.Response, e error) {
@@ -150,23 +145,17 @@ func httpGet(t *testing.T, url string) (*model.Response, error) {
 	return handleHttpResp(t, resp)
 }
 
-func handleHttpResp(t *testing.T, resp *http.Response) (*model.Response, error) {
+func handleHttpResp(t *testing.T, resp *http.Response) ([]byte, error) {
 	if status := resp.StatusCode; status != http.StatusOK {
-		r := &model.Error{}
-		decode(t, resp, r)
-		return nil, fmt.Errorf(r.Message)
+		return nil, fmt.Errorf(string(read(t, resp)))
 	}
-
-	r := &model.Response{}
-	decode(t, resp, r)
-	return r, nil
+	return read(t, resp), nil
 }
 
-func decode(t *testing.T, response *http.Response, v interface{}) {
+func read(t *testing.T, response *http.Response) []byte {
 	respBytes, err := ioutil.ReadAll(response.Body)
 	require.NoError(t, err)
-	err = json.NewDecoder(strings.NewReader(string(respBytes))).Decode(v)
-	require.NoError(t, err)
+	return respBytes
 }
 
 func invokeWithRetry(invoke func() (*http.Response, error)) (*http.Response, error) {
