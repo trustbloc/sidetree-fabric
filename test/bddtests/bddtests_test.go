@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -46,20 +45,11 @@ func TestMain(m *testing.M) {
 	compose := os.Getenv("DISABLE_COMPOSITION") != "true"
 	status := godog.RunWithOptions("godogs", func(s *godog.Suite) {
 		s.BeforeSuite(func() {
-
 			if compose {
 				if err := context.Composition().Up(); err != nil {
 					panic(fmt.Sprintf("Error composing system in BDD context: %s", err))
 				}
-				fmt.Println("docker-compose up ... waiting for peer to start ...")
-				testSleep := 30
-				if os.Getenv("TEST_SLEEP") != "" {
-					testSleep, _ = strconv.Atoi(os.Getenv("TEST_SLEEP"))
-				}
-				fmt.Printf("*** testSleep=%d", testSleep)
-				time.Sleep(time.Second * time.Duration(testSleep))
 			}
-
 		})
 
 		s.AfterSuite(func() {
