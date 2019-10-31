@@ -32,7 +32,7 @@ PROJECT_NAME       = sidetree-fabric
 CONTAINER_IDS      = $(shell docker ps -a -q)
 DEV_IMAGES         = $(shell docker images dev-* -q)
 ARCH               = $(shell go env GOARCH)
-GO_VER             = $(shell grep "GO_VER" .ci-properties |cut -d'=' -f2-)
+GO_VER             = 1.12.5
 export GO111MODULE = on
 
 # Fabric tools docker image (overridable)

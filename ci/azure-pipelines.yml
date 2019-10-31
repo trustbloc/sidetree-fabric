@@ -46,7 +46,7 @@ jobs:
             docker logout
           }
           trap logout EXIT
-          source ./.ci-properties
+          source ci/version_var.sh
           echo $DOCKER_PASSWORD | docker login --username $DOCKER_USER --password-stdin
           make sidetree-docker
           docker tag trustbloc/sidetree-fabric:latest  trustbloc/sidetree-fabric:$SIDETREE_FABRIC_IMAGE_TAG
