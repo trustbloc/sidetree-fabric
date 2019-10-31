@@ -7,7 +7,7 @@
 
 # Release Parameters
 BASE_VERSION=0.1.0
-IS_RELEASE=false
+IS_RELEASE=true
 
 ARCH=$(go env GOARCH)
 
@@ -20,7 +20,3 @@ else
 fi
 
 export SIDETREE_FABRIC_IMAGE_TAG=$ARCH-$PROJECT_VERSION
-
-GO_VER=1.12.5
-GO_MIN_VER=1.12
-GO_MAX_VER=1.12.5
