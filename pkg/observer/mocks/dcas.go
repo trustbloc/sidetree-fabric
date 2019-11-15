@@ -30,3 +30,8 @@ func (m *MockDCASClient) Put(ns, coll string, content []byte) (string, error) {
 	}
 	return key, m.MockOffLedgerClient.Put(ns, coll, key, value)
 }
+
+// PutMultipleValues puts the DCAS values and returns the keys for the values
+func (m *MockDCASClient) PutMultipleValues(ns, coll string, values [][]byte) ([]string, error) {
+	panic("not implemented")
+}

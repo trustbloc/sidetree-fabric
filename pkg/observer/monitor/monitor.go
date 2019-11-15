@@ -16,6 +16,7 @@ import (
 	cb "github.com/hyperledger/fabric/protos/common"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+	olclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
@@ -33,23 +34,11 @@ type MetaData struct {
 	LastBlockProcessed uint64
 }
 
-type blockchainClientProvider interface {
-	ForChannel(channelID string) (client.Blockchain, error)
-}
-
-type dcasClientProvider interface {
-	ForChannel(channelID string) client.DCAS
-}
-
-type offLedgerClientProvider interface {
-	ForChannel(channelID string) client.OffLedger
-}
-
 // ClientProviders contains the providers for off-ledger, DCAS, and blockchain clients
 type ClientProviders struct {
-	OffLedger  offLedgerClientProvider
-	DCAS       dcasClientProvider
-	Blockchain blockchainClientProvider
+	OffLedger  common.OffLedgerClientProvider
+	DCAS       common.DCASClientProvider
+	Blockchain common.BlockchainClientProvider
 }
 
 // Monitor maintains multiple document monitors - one for each channel. A document monitor ensures that the peer
@@ -72,6 +61,8 @@ func New(clientProviders *ClientProviders) *Monitor {
 
 // Start starts a document monitor for the given channel
 func (m *Monitor) Start(channelID string, period time.Duration) error {
+	logger.Infof("Starting monitor for channel [%s]", channelID)
+
 	if period == 0 {
 		logger.Warningf("Document monitor disabled for channel [%s]", channelID)
 		return nil
@@ -132,6 +123,8 @@ type channelMonitor struct {
 }
 
 func newChannelMonitor(channelID string, period time.Duration, clientProviders *ClientProviders) (*channelMonitor, error) {
+	logger.Infof("[%s] Starting channel monitor", channelID)
+
 	peerID, err := getLocalPeerID()
 	if err != nil {
 		return nil, err
@@ -165,7 +158,12 @@ func (m *channelMonitor) run() {
 		select {
 		case <-ticker.C:
 			if err := m.check(); err != nil {
-				logger.Warnf("[%s] Error checking blocks: %s", m.channelID, err)
+				if errors.Cause(err) == client.ErrNoLedger {
+					// This happens before the channel is created. Just log an info since it's not serious.
+					logger.Infof("[%s] Unable to check blocks since the channel doesn't exist", m.channelID)
+				} else {
+					logger.Warnf("[%s] Error checking blocks: %s", m.channelID, err)
+				}
 			}
 		case <-m.done:
 			logger.Infof("[%s] Exiting document monitor", m.channelID)
@@ -262,12 +260,16 @@ func (m *channelMonitor) blockchainClient() (client.Blockchain, error) {
 	return m.Blockchain.ForChannel(m.channelID)
 }
 
-func (m *channelMonitor) offLedgerClient() client.OffLedger {
+func (m *channelMonitor) offLedgerClient() (olclient.OffLedger, error) {
 	return m.OffLedger.ForChannel(m.channelID)
 }
 
 func (m *channelMonitor) lastBlockProcessed() (uint64, error) {
-	data, err := m.offLedgerClient().Get(common.DocNs, docsMetaDataColName, m.peerID)
+	olClient, err := m.offLedgerClient()
+	if err != nil {
+		return 0, err
+	}
+	data, err := olClient.Get(common.DocNs, docsMetaDataColName, m.peerID)
 	if err != nil {
 		return 0, errors.WithMessage(err, "error retrieving meta-data")
 	}
@@ -295,7 +297,12 @@ func (m *channelMonitor) setLastBlockProcessed(bNum uint64) error {
 		return errors.WithMessage(err, "error marshalling meta-data")
 	}
 
-	err = m.offLedgerClient().Put(common.DocNs, docsMetaDataColName, m.peerID, bytes)
+	olClient, err := m.offLedgerClient()
+	if err != nil {
+		return err
+	}
+
+	err = olClient.Put(common.DocNs, docsMetaDataColName, m.peerID, bytes)
 	if err != nil {
 		return errors.WithMessage(err, "error persisting meta-data")
 	}

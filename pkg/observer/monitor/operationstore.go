@@ -8,19 +8,19 @@ package monitor
 
 import (
 	"github.com/pkg/errors"
+	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
 // OperationStore ensures that a given set of operations is persisted in the Document DCAS store
 type OperationStore struct {
-	dcasClientProvider dcasClientProvider
+	dcasClientProvider common.DCASClientProvider
 	channelID          string
 }
 
 // NewOperationStore returns an OperationStore
-func NewOperationStore(channelID string, dcasClientProvider dcasClientProvider) *OperationStore {
+func NewOperationStore(channelID string, dcasClientProvider common.DCASClientProvider) *OperationStore {
 	return &OperationStore{
 		channelID:          channelID,
 		dcasClientProvider: dcasClientProvider,
@@ -43,7 +43,11 @@ func (s *OperationStore) checkOperation(op batch.Operation) error {
 		return errors.Wrapf(err, "failed to get DCAS key and value for operation [%s]", op.ID)
 	}
 
-	dcasClient := s.dcasClient()
+	dcasClient, err := s.dcasClient()
+	if err != nil {
+		return err
+	}
+
 	retrievedBytes, err := dcasClient.Get(common.DocNs, common.DocColl, key)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve operation [%s] by key [%s]", op.ID, key)
@@ -59,6 +63,6 @@ func (s *OperationStore) checkOperation(op batch.Operation) error {
 	return nil
 }
 
-func (s *OperationStore) dcasClient() client.DCAS {
+func (s *OperationStore) dcasClient() (client.DCAS, error) {
 	return s.dcasClientProvider.ForChannel(s.channelID)
 }

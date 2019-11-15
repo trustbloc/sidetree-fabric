@@ -4,28 +4,29 @@ package mocks
 import (
 	"sync"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/client"
+	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
 type BlockchainClientProvider struct {
-	ForChannelStub        func(channelID string) (client.Blockchain, error)
+	ForChannelStub        func(channelID string) (bcclient.Blockchain, error)
 	forChannelMutex       sync.RWMutex
 	forChannelArgsForCall []struct {
 		channelID string
 	}
 	forChannelReturns struct {
-		result1 client.Blockchain
+		result1 bcclient.Blockchain
 		result2 error
 	}
 	forChannelReturnsOnCall map[int]struct {
-		result1 client.Blockchain
+		result1 bcclient.Blockchain
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *BlockchainClientProvider) ForChannel(channelID string) (client.Blockchain, error) {
+func (fake *BlockchainClientProvider) ForChannel(channelID string) (bcclient.Blockchain, error) {
 	fake.forChannelMutex.Lock()
 	ret, specificReturn := fake.forChannelReturnsOnCall[len(fake.forChannelArgsForCall)]
 	fake.forChannelArgsForCall = append(fake.forChannelArgsForCall, struct {
@@ -54,24 +55,24 @@ func (fake *BlockchainClientProvider) ForChannelArgsForCall(i int) string {
 	return fake.forChannelArgsForCall[i].channelID
 }
 
-func (fake *BlockchainClientProvider) ForChannelReturns(result1 client.Blockchain, result2 error) {
+func (fake *BlockchainClientProvider) ForChannelReturns(result1 bcclient.Blockchain, result2 error) {
 	fake.ForChannelStub = nil
 	fake.forChannelReturns = struct {
-		result1 client.Blockchain
+		result1 bcclient.Blockchain
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *BlockchainClientProvider) ForChannelReturnsOnCall(i int, result1 client.Blockchain, result2 error) {
+func (fake *BlockchainClientProvider) ForChannelReturnsOnCall(i int, result1 bcclient.Blockchain, result2 error) {
 	fake.ForChannelStub = nil
 	if fake.forChannelReturnsOnCall == nil {
 		fake.forChannelReturnsOnCall = make(map[int]struct {
-			result1 client.Blockchain
+			result1 bcclient.Blockchain
 			result2 error
 		})
 	}
 	fake.forChannelReturnsOnCall[i] = struct {
-		result1 client.Blockchain
+		result1 bcclient.Blockchain
 		result2 error
 	}{result1, result2}
 }
@@ -99,3 +100,5 @@ func (fake *BlockchainClientProvider) recordInvocation(key string, args []interf
 	}
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
+
+var _ common.BlockchainClientProvider = new(BlockchainClientProvider)
