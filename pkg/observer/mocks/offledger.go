@@ -8,6 +8,9 @@ package mocks
 
 import (
 	"sync"
+
+	commonledger "github.com/hyperledger/fabric/common/ledger"
+	"github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 )
 
 // MockOffLedgerClient mocks the off-ledger client
@@ -104,4 +107,27 @@ func (m *MockOffLedgerClient) GetMap(ns, coll string) (map[string][]byte, error)
 	}
 
 	return m.m[ns+coll], nil
+}
+
+// PutMultipleValues puts the given key/values
+func (m *MockOffLedgerClient) PutMultipleValues(ns, coll string, kvs []*client.KeyValue) error {
+	panic("not implemented")
+}
+
+// Delete deletes the given key(s)
+func (m *MockOffLedgerClient) Delete(ns, coll string, keys ...string) error {
+	panic("not implemented")
+}
+
+// GetMultipleKeys retrieves the values for the given keys
+func (m *MockOffLedgerClient) GetMultipleKeys(ns, coll string, keys ...string) ([][]byte, error) {
+	panic("not implemented")
+}
+
+// Query executes the given query and returns an iterator that contains results.
+// Only used for state databases that support query.
+// (Note that this function is not supported by transient data collections)
+// The returned ResultsIterator contains results of type *KV which is defined in protos/ledger/queryresult.
+func (m *MockOffLedgerClient) Query(ns, coll, query string) (commonledger.ResultsIterator, error) {
+	panic("not implemented")
 }

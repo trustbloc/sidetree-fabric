@@ -8,15 +8,21 @@ package client
 
 import (
 	"github.com/bluele/gcache"
-	"github.com/hyperledger/fabric/core/peer"
-	"github.com/hyperledger/fabric/protos/common"
+	"github.com/hyperledger/fabric/common/flogging"
+	cb "github.com/hyperledger/fabric/protos/common"
 	"github.com/pkg/errors"
+	"github.com/trustbloc/fabric-peer-ext/pkg/collections/common"
 )
+
+var logger = flogging.MustGetLogger("sidetree_client")
+
+// ErrNoLedger indicates that the ledger (channel) doesn't exist
+var ErrNoLedger = errors.New("no ledger")
 
 // Blockchain defines the functions of a Blockchain client
 type Blockchain interface {
-	GetBlockchainInfo() (*common.BlockchainInfo, error)
-	GetBlockByNumber(blockNumber uint64) (*common.Block, error)
+	GetBlockchainInfo() (*cb.BlockchainInfo, error)
+	GetBlockByNumber(blockNumber uint64) (*cb.Block, error)
 }
 
 // BlockchainProvider manages multiple blockchain clients - one per channel
@@ -25,12 +31,14 @@ type BlockchainProvider struct {
 }
 
 // NewBlockchainProvider returns a new blockchain client provider
-func NewBlockchainProvider() *BlockchainProvider {
+func NewBlockchainProvider(ledgerProvider common.LedgerProvider) *BlockchainProvider {
+	logger.Infof("Creating blockchain provider")
+
 	return &BlockchainProvider{
 		cache: gcache.New(0).LoaderFunc(func(channelID interface{}) (interface{}, error) {
-			ledger := getLedger(channelID.(string))
+			ledger := ledgerProvider.GetLedger(channelID.(string))
 			if ledger == nil {
-				return nil, errors.Errorf("no ledger for channel [%s]", channelID)
+				return nil, ErrNoLedger
 			}
 			return ledger, nil
 		}).Build(),
@@ -44,8 +52,4 @@ func (cp *BlockchainProvider) ForChannel(channelID string) (Blockchain, error) {
 		return nil, err
 	}
 	return client.(Blockchain), nil
-}
-
-var getLedger = func(channelID string) Blockchain {
-	return peer.GetLedger(channelID)
 }

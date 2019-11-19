@@ -11,21 +11,34 @@ import (
 
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+)
+
+const (
+	channel1 = "channel1"
+	channel2 = "channel2"
 )
 
 func TestBlockchainClientProvider(t *testing.T) {
-	p := NewBlockchainProvider()
-	require.NotNil(t, p)
 
 	t.Run("Nil client", func(t *testing.T) {
-		getLedger = func(channelID string) Blockchain { return nil }
+		ledgerProvider := &mocks.LedgerProvider{}
+		p := NewBlockchainProvider(ledgerProvider)
+		require.NotNil(t, p)
+
 		client, err := p.ForChannel(channel1)
 		require.Error(t, err)
 		require.Nil(t, client)
 	})
 
 	t.Run("Valid client", func(t *testing.T) {
-		getLedger = func(channelID string) Blockchain { return &mockBlockchainClient{channelID: channelID} }
+		ledgerProvider := &mocks.LedgerProvider{}
+		ledgerProvider.GetLedgerReturnsOnCall(0, &mocks.Ledger{BlockchainInfo: &common.BlockchainInfo{Height: 1000}})
+		ledgerProvider.GetLedgerReturnsOnCall(1, &mocks.Ledger{BlockchainInfo: &common.BlockchainInfo{Height: 2000}})
+
+		p := NewBlockchainProvider(ledgerProvider)
+		require.NotNil(t, p)
+
 		client1, err := p.ForChannel(channel1)
 		require.NoError(t, err)
 		require.NotNil(t, client1)

@@ -14,16 +14,15 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
-	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
 
 func TestOperationStore_Put(t *testing.T) {
-	dcasProvider := &mocks.DCASClientProvider{}
-	dcasClient := obmocks.NewMockDCASClient()
-	dcasProvider.ForChannelReturns(dcasClient)
+	dcasClient := mocks.NewMockDCASClient()
+	dcasClientProvider := &mocks.DCASClientProvider{}
+	dcasClientProvider.ForChannelReturns(dcasClient, nil)
 
-	s := NewOperationStore(channel1, dcasProvider)
+	s := NewOperationStore(channel1, dcasClientProvider)
 	require.NotNil(t, s)
 
 	op1 := batch.Operation{
@@ -48,11 +47,11 @@ func TestOperationStore_Put(t *testing.T) {
 }
 
 func TestOperationStore_PutError(t *testing.T) {
-	dcasProvider := &mocks.DCASClientProvider{}
-	dcasClient := obmocks.NewMockDCASClient()
-	dcasProvider.ForChannelReturns(dcasClient)
+	dcasClient := mocks.NewMockDCASClient()
+	dcasClientProvider := &mocks.DCASClientProvider{}
+	dcasClientProvider.ForChannelReturns(dcasClient, nil)
 
-	s := NewOperationStore(channel1, dcasProvider)
+	s := NewOperationStore(channel1, dcasClientProvider)
 	op1 := batch.Operation{
 		ID: "op1",
 	}

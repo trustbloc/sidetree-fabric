@@ -4,26 +4,28 @@ package mocks
 import (
 	"sync"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/client"
+	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 )
 
-type OffLedgerClientProvider struct {
-	ForChannelStub        func(channelID string) client.OffLedger
+type DCASClientProvider struct {
+	ForChannelStub        func(channelID string) (dcasclient.DCAS, error)
 	forChannelMutex       sync.RWMutex
 	forChannelArgsForCall []struct {
 		channelID string
 	}
 	forChannelReturns struct {
-		result1 client.OffLedger
+		result1 dcasclient.DCAS
+		result2 error
 	}
 	forChannelReturnsOnCall map[int]struct {
-		result1 client.OffLedger
+		result1 dcasclient.DCAS
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OffLedgerClientProvider) ForChannel(channelID string) client.OffLedger {
+func (fake *DCASClientProvider) ForChannel(channelID string) (dcasclient.DCAS, error) {
 	fake.forChannelMutex.Lock()
 	ret, specificReturn := fake.forChannelReturnsOnCall[len(fake.forChannelArgsForCall)]
 	fake.forChannelArgsForCall = append(fake.forChannelArgsForCall, struct {
@@ -35,43 +37,46 @@ func (fake *OffLedgerClientProvider) ForChannel(channelID string) client.OffLedg
 		return fake.ForChannelStub(channelID)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fake.forChannelReturns.result1
+	return fake.forChannelReturns.result1, fake.forChannelReturns.result2
 }
 
-func (fake *OffLedgerClientProvider) ForChannelCallCount() int {
+func (fake *DCASClientProvider) ForChannelCallCount() int {
 	fake.forChannelMutex.RLock()
 	defer fake.forChannelMutex.RUnlock()
 	return len(fake.forChannelArgsForCall)
 }
 
-func (fake *OffLedgerClientProvider) ForChannelArgsForCall(i int) string {
+func (fake *DCASClientProvider) ForChannelArgsForCall(i int) string {
 	fake.forChannelMutex.RLock()
 	defer fake.forChannelMutex.RUnlock()
 	return fake.forChannelArgsForCall[i].channelID
 }
 
-func (fake *OffLedgerClientProvider) ForChannelReturns(result1 client.OffLedger) {
+func (fake *DCASClientProvider) ForChannelReturns(result1 dcasclient.DCAS, result2 error) {
 	fake.ForChannelStub = nil
 	fake.forChannelReturns = struct {
-		result1 client.OffLedger
-	}{result1}
+		result1 dcasclient.DCAS
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *OffLedgerClientProvider) ForChannelReturnsOnCall(i int, result1 client.OffLedger) {
+func (fake *DCASClientProvider) ForChannelReturnsOnCall(i int, result1 dcasclient.DCAS, result2 error) {
 	fake.ForChannelStub = nil
 	if fake.forChannelReturnsOnCall == nil {
 		fake.forChannelReturnsOnCall = make(map[int]struct {
-			result1 client.OffLedger
+			result1 dcasclient.DCAS
+			result2 error
 		})
 	}
 	fake.forChannelReturnsOnCall[i] = struct {
-		result1 client.OffLedger
-	}{result1}
+		result1 dcasclient.DCAS
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *OffLedgerClientProvider) Invocations() map[string][][]interface{} {
+func (fake *DCASClientProvider) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.forChannelMutex.RLock()
@@ -83,7 +88,7 @@ func (fake *OffLedgerClientProvider) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *OffLedgerClientProvider) recordInvocation(key string, args []interface{}) {
+func (fake *DCASClientProvider) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {

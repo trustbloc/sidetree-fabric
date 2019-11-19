@@ -13,19 +13,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-	"github.com/trustbloc/sidetree-fabric/pkg/client"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
-
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/hyperledger/fabric/protos/ledger/rwset/kvrwset"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	offledgerdcas "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
+	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
+	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/config"
-	dcasmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
 
 const (
@@ -46,25 +46,25 @@ func TestObserver(t *testing.T) {
 	testRole := "endorser,observer"
 	viper.Set(confRoles, testRole)
 
-	c := getDefaultDCASClient()
-	getDCASClientProvider = func() dcasClientProvider {
-		return &mockDCASClientProvider{
-			client: c,
-		}
-	}
+	p := mocks.NewBlockPublisher()
 
-	p := &mockBlockPublisher{}
-	getBlockPublisher = func(channelID string) publisher {
-		return p
-	}
+	c := getDefaultDCASClient()
+	dcasProvider := &obmocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(c, nil)
 
 	cfg := config.New([]string{channel}, monitorPeriod)
-	observer := New(cfg)
+
+	providers := &Providers{
+		DCAS:           dcasProvider,
+		OffLedger:      &obmocks.OffLedgerClientProvider{},
+		BlockPublisher: mocks.NewBlockPublisherProvider().WithBlockPublisher(p),
+	}
+	observer := New(cfg, providers)
 	require.NotNil(t, observer)
 	require.NoError(t, observer.Start())
 
 	anchor := getAnchorAddress(uniqueSuffix)
-	require.NoError(t, p.writeHandler(gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(anchor)}))
+	require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(anchor)}))
 	time.Sleep(200 * time.Millisecond)
 
 	// since there was one batch file with two operations we will have two entries in document map
@@ -100,7 +100,12 @@ func TestObserver_Start(t *testing.T) {
 		}()
 
 		cfg := config.New([]string{channel}, monitorPeriod)
-		observer := New(cfg)
+		providers := &Providers{
+			DCAS:           &obmocks.DCASClientProvider{},
+			OffLedger:      &obmocks.OffLedgerClientProvider{},
+			BlockPublisher: mocks.NewBlockPublisherProvider(),
+		}
+		observer := New(cfg, providers)
 		require.NotNil(t, observer)
 		require.NoError(t, observer.Start())
 		observer.Stop()
@@ -115,7 +120,12 @@ func TestObserver_Start(t *testing.T) {
 		}()
 
 		cfg := config.New([]string{channel}, monitorPeriod)
-		observer := New(cfg)
+		providers := &Providers{
+			DCAS:           &obmocks.DCASClientProvider{},
+			OffLedger:      &obmocks.OffLedgerClientProvider{},
+			BlockPublisher: mocks.NewBlockPublisherProvider(),
+		}
+		observer := New(cfg, providers)
 		require.NotNil(t, observer)
 
 		err := observer.Start()
@@ -129,16 +139,15 @@ func TestObserver_Start(t *testing.T) {
 }
 
 type mockDCASClientProvider struct {
-	client *dcasmocks.MockDCASClient
+	client dcasclient.DCAS
 }
 
-func (m *mockDCASClientProvider) ForChannel(channelID string) client.DCAS {
-	return m.client
+func (m *mockDCASClientProvider) ForChannel(channelID string) (dcasclient.DCAS, error) {
+	return m.client, nil
 }
 
-func getDefaultDCASClient() *dcasmocks.MockDCASClient {
-
-	dcasClient := dcasmocks.NewMockDCASClient()
+func getDefaultDCASClient() *obmocks.MockDCASClient {
+	dcasClient := obmocks.NewMockDCASClient()
 
 	batchBytes, anchorBytes := getSidetreeTxnPrerequisites(uniqueSuffix)
 	_, err := dcasClient.Put(common.SidetreeNs, common.SidetreeColl, batchBytes)

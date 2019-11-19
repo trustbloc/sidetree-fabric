@@ -21,15 +21,8 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
-	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
-
-//go:generate counterfeiter -o ./mocks/olclientprovider.gen.go --fake-name OffLedgerClientProvider . offLedgerClientProvider
-//go:generate counterfeiter -o ./mocks/dcasclientprovider.gen.go --fake-name DCASClientProvider . dcasProvider
-//go:generate counterfeiter -o ./mocks/bcclientprovider.gen.go --fake-name BlockchainClientProvider . blockchainClientProvider
-//go:generate counterfeiter -o ./mocks/bcclient.gen.go --fake-name BlockchainClient ../../client Blockchain
-//go:generate counterfeiter -o ./mocks/dcasclient.gen.go --fake-name DCASClient ../../client DCAS
 
 const (
 	channel1      = "channel1"
@@ -310,7 +303,7 @@ type mockClients struct {
 	dcasProvider       *mocks.DCASClientProvider
 	blockchainProvider *mocks.BlockchainClientProvider
 	blockchain         *mocks.BlockchainClient
-	offLedger          *obmocks.MockOffLedgerClient
+	offLedger          *mocks.MockOffLedgerClient
 	dcas               *mocks.DCASClient
 }
 
@@ -324,11 +317,11 @@ func newMonitorWithMocks(t *testing.T) (*Monitor, *mockClients) {
 	clients.blockchain = &mocks.BlockchainClient{}
 	clients.blockchainProvider.ForChannelReturns(clients.blockchain, nil)
 
-	clients.offLedger = obmocks.NewMockOffLedgerClient()
-	clients.offLedgerProvider.ForChannelReturns(clients.offLedger)
+	clients.offLedger = mocks.NewMockOffLedgerClient()
+	clients.offLedgerProvider.ForChannelReturns(clients.offLedger, nil)
 
 	clients.dcas = &mocks.DCASClient{}
-	clients.dcasProvider.ForChannelReturns(clients.dcas)
+	clients.dcasProvider.ForChannelReturns(clients.dcas, nil)
 
 	m := New(&ClientProviders{
 		OffLedger:  clients.offLedgerProvider,
