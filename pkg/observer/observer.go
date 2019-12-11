@@ -28,7 +28,9 @@ const (
 	sidetreeRole = "sidetree"
 )
 
-type cfg interface {
+// Config contains the Observer configuration
+type Config interface {
+	GetPeerID() string
 	GetChannels() []string
 	GetMonitorPeriod() time.Duration
 }
@@ -77,7 +79,7 @@ func (d *dcas) getDCASClient() (dcasclient.DCAS, error) {
 
 // Observer observes the ledger for new anchor files and updates the document store accordingly
 type Observer struct {
-	cfg          cfg
+	cfg          Config
 	docMonitor   *monitor.Monitor
 	dcasProvider common.DCASClientProvider
 	bpProvider   common.BlockPublisherProvider
@@ -89,11 +91,13 @@ type Providers struct {
 	OffLedger      common.OffLedgerClientProvider
 	BlockPublisher common.BlockPublisherProvider
 	Blockchain     common.BlockchainClientProvider
+	Config         Config
 }
 
 // New returns a new Observer
-func New(cfg cfg, providers *Providers) *Observer {
+func New(providers *Providers) *Observer {
 	docMonitor := monitor.New(
+		providers.Config.GetPeerID(),
 		&monitor.ClientProviders{
 			Blockchain: providers.Blockchain,
 			DCAS:       providers.DCAS,
@@ -101,21 +105,25 @@ func New(cfg cfg, providers *Providers) *Observer {
 		},
 	)
 	return &Observer{
-		cfg:          cfg,
+		cfg:          providers.Config,
 		dcasProvider: providers.DCAS,
 		docMonitor:   docMonitor,
 		bpProvider:   providers.BlockPublisher,
 	}
 }
 
-// Start starts channel observer routines
-func (o *Observer) Start() error {
-	for _, channelID := range o.cfg.GetChannels() {
-		if err := o.start(channelID); err != nil {
-			return err
-		}
+// Start starts channel observer routines if applicable to the given channel.
+// Returns true if an observer was started
+func (o *Observer) Start(channelID string) (bool, error) {
+	if !o.isObservedChannel(channelID) {
+		return false, nil
 	}
-	return nil
+
+	if err := o.start(channelID); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // Stop stops the channel observer routines
@@ -137,4 +145,13 @@ func (o *Observer) start(channelID string) error {
 	}
 	logger.Debugf("Nothing to start for channel [%s]", channelID)
 	return nil
+}
+
+func (o *Observer) isObservedChannel(channelID string) bool {
+	for _, cID := range o.cfg.GetChannels() {
+		if channelID == cID {
+			return true
+		}
+	}
+	return false
 }

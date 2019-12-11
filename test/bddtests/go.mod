@@ -14,6 +14,6 @@ require (
 	github.com/trustbloc/sidetree-core-go v0.1.0
 )
 
-replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.0.0-20191001172134-1815f5c382ff
+replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.1-0.20191126151100-5a61374c2e1b
 
 go 1.13

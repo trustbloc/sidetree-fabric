@@ -24,7 +24,7 @@
 # Tool commands (overridable)
 DOCKER_CMD ?= docker
 GO_CMD     ?= go
-ALPINE_VER ?= 3.9
+ALPINE_VER ?= 3.10
 GO_TAGS    ?=
 
 # Local variables used by makefile
@@ -32,7 +32,7 @@ PROJECT_NAME       = sidetree-fabric
 CONTAINER_IDS      = $(shell docker ps -a -q)
 DEV_IMAGES         = $(shell docker images dev-* -q)
 ARCH               = $(shell go env GOARCH)
-GO_VER             = 1.12.5
+GO_VER             = 1.13.4
 export GO111MODULE = on
 
 # Fabric tools docker image (overridable)
@@ -42,7 +42,7 @@ FABRIC_TOOLS_TAG     ?= $(ARCH)-$(FABRIC_TOOLS_VERSION)
 
 # Fabric peer ext docker image (overridable)
 FABRIC_PEER_EXT_IMAGE   ?= trustbloc/fabric-peer
-FABRIC_PEER_EXT_VERSION ?= 0.1.0-snapshot-1ab7e44
+FABRIC_PEER_EXT_VERSION ?= 0.1.1-snapshot-e290b99
 FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
 
 # Namespace for the blocnode image
@@ -85,7 +85,7 @@ populate-fixtures:
 	@scripts/populate-fixtures.sh -f
 
 
-bddtests: clean checks populate-fixtures docker-thirdparty bddtests-fabric-peer-docker sidetree-docker build-cc
+bddtests: clean populate-fixtures docker-thirdparty bddtests-fabric-peer-docker sidetree-docker build-cc
 	@scripts/integration.sh
 
 
@@ -140,8 +140,3 @@ clean:
 	rm -Rf ./test/bddtests/fixtures/fabric/channel
 	rm -Rf ./test/bddtests/fixtures/fabric/crypto-config
 	rm -Rf ./.build
-
-
-
-
-

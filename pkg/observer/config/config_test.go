@@ -16,8 +16,11 @@ func TestNew(t *testing.T) {
 
 	channels := []string{"ch1", "ch2"}
 	monitorPeriod := 5 * time.Second
-	cfg := New(channels, monitorPeriod)
+	peerID := "peer1"
+
+	cfg := New(peerID, channels, monitorPeriod)
 
 	require.Equal(t, channels, cfg.GetChannels())
 	require.Equal(t, monitorPeriod, cfg.GetMonitorPeriod())
+	require.Equal(t, peerID, cfg.GetPeerID())
 }

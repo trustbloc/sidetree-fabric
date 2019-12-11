@@ -12,10 +12,9 @@ import (
 	"testing"
 	"time"
 
-	cb "github.com/hyperledger/fabric/protos/common"
-	pb "github.com/hyperledger/fabric/protos/peer"
+	cb "github.com/hyperledger/fabric-protos-go/common"
+	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
@@ -88,11 +87,14 @@ func TestMonitor(t *testing.T) {
 	clients.dcas.GetReturnsOnCall(3, op2Bytes, nil)
 
 	t.Run("No peer ID", func(t *testing.T) {
+		restore := m.peerID
+		defer func() { m.peerID = restore }()
+
+		m.peerID = ""
 		require.Error(t, m.Start(channel1, monitorPeriod))
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -107,7 +109,6 @@ func TestMonitor(t *testing.T) {
 	})
 
 	t.Run("Start multiple times", func(t *testing.T) {
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		require.NoError(t, m.Start(channel2, monitorPeriod))
 		require.Error(t, m.Start(channel1, monitorPeriod))
@@ -116,7 +117,6 @@ func TestMonitor(t *testing.T) {
 	})
 
 	t.Run("Disabled", func(t *testing.T) {
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, 0))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -135,7 +135,6 @@ func TestMonitor_Error(t *testing.T) {
 	t.Run("Blockchain.ForChannel error", func(t *testing.T) {
 		m, clients := newMonitorWithMocks(t)
 		clients.blockchainProvider.ForChannelReturns(nil, errors.New("blockchain.ForChannel error"))
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -144,7 +143,6 @@ func TestMonitor_Error(t *testing.T) {
 	t.Run("Blockchain.GetBlockchainInfo error", func(t *testing.T) {
 		m, clients := newMonitorWithMocks(t)
 		clients.blockchain.GetBlockchainInfoReturns(nil, errors.New("blockchain.GetBlockchainInfo error"))
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -153,7 +151,6 @@ func TestMonitor_Error(t *testing.T) {
 	t.Run("off-ledger client error", func(t *testing.T) {
 		m, clients := newMonitorWithMocks(t)
 		clients.offLedger.GetErr = errors.New("injected off-ledger error")
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -164,7 +161,6 @@ func TestMonitor_Error(t *testing.T) {
 		bcInfo := &cb.BlockchainInfo{Height: 1002}
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(nil, errors.New("blockchain.GetBlockByNumber error"))
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -177,7 +173,6 @@ func TestMonitor_Error(t *testing.T) {
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 		clients.offLedger.WithGetErrorForKey(common.DocNs, docsMetaDataColName, peer1, errors.New("getLastBlockProcessed error"))
 
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -190,7 +185,6 @@ func TestMonitor_Error(t *testing.T) {
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 		clients.dcas.GetReturnsOnCall(0, nil, errors.New("getAnchorFile error"))
 
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -203,7 +197,6 @@ func TestMonitor_Error(t *testing.T) {
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 		clients.dcas.GetReturns([]byte("invalid anchor file"), nil)
 
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -221,7 +214,6 @@ func TestMonitor_Error(t *testing.T) {
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 		clients.dcas.GetReturnsOnCall(1, nil, errors.New("get batch file error"))
 
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -239,7 +231,6 @@ func TestMonitor_Error(t *testing.T) {
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
 
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -264,7 +255,6 @@ func TestMonitor_Error(t *testing.T) {
 
 		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
 
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -291,7 +281,6 @@ func TestMonitor_Error(t *testing.T) {
 
 		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
 
-		viper.Set("peer.id", peer1)
 		require.NoError(t, m.Start(channel1, monitorPeriod))
 		time.Sleep(sleepTime)
 		m.Stop(channel1)
@@ -323,11 +312,14 @@ func newMonitorWithMocks(t *testing.T) (*Monitor, *mockClients) {
 	clients.dcas = &mocks.DCASClient{}
 	clients.dcasProvider.ForChannelReturns(clients.dcas, nil)
 
-	m := New(&ClientProviders{
-		OffLedger:  clients.offLedgerProvider,
-		DCAS:       clients.dcasProvider,
-		Blockchain: clients.blockchainProvider,
-	})
+	m := New(
+		peer1,
+		&ClientProviders{
+			OffLedger:  clients.offLedgerProvider,
+			DCAS:       clients.dcasProvider,
+			Blockchain: clients.blockchainProvider,
+		},
+	)
 	require.NotNil(t, m)
 
 	return m, clients

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
-	"github.com/hyperledger/fabric/protos/ledger/rwset/kvrwset"
 	"github.com/stretchr/testify/require"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"

@@ -14,7 +14,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/mocks"
 
-	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/stretchr/testify/require"
 )
 

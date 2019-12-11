@@ -11,14 +11,16 @@ require (
 	github.com/trustbloc/sidetree-fabric v0.0.0
 )
 
-replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.1-0.20191115184302-84db05f49385
+replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.1-0.20191210015540-b8e45fd852d0
 
-replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20191118145835-16754f7513cf
+replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20191211145552-e290b9973baa
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.1-0.20191118145835-16754f7513cf
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.1-0.20191211145552-e290b9973baa
 
 replace github.com/trustbloc/sidetree-fabric => ../../../../../..
 
 replace github.com/spf13/viper => github.com/spf13/viper v0.0.0-20150908122457-1967d93db724
+
+replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.1-0.20191126151100-5a61374c2e1b
 
 go 1.13

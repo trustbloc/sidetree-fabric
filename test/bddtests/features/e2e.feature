@@ -11,10 +11,9 @@ Feature:
   @sanity_s1
   Scenario: sanity
     Given the channel "mychannel" is created and all peers have joined
-    And "test" chaincode "e2e_cc" is installed from path "github.com/trustbloc/e2e_cc" to all peers
-    And "test" chaincode "e2e_cc" is instantiated from path "github.com/trustbloc/e2e_cc" on the "mychannel" channel with args "" with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" with collection policy ""
+    And "test" chaincode "e2e_cc" is installed from path "github.com/trustbloc/sidetree-fabric/test/chaincode/e2e_cc" to all peers
+    And "test" chaincode "e2e_cc" is instantiated from path "github.com/trustbloc/sidetree-fabric/test/chaincode/e2e_cc" on the "mychannel" channel with args "" with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" with collection policy ""
     And chaincode "e2e_cc" is warmed up on all peers on the "mychannel" channel
-
 
     # Test transactions
     When client invokes chaincode "e2e_cc" with args "put,k1,20" on the "mychannel" channel
