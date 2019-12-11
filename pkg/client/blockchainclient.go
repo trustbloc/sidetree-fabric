@@ -8,8 +8,8 @@ package client
 
 import (
 	"github.com/bluele/gcache"
+	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
-	cb "github.com/hyperledger/fabric/protos/common"
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/common"
 )

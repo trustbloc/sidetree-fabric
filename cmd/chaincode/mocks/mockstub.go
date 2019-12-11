@@ -16,10 +16,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hyperledger/fabric/protos/ledger/queryresult"
+	"github.com/hyperledger/fabric-chaincode-go/shimtest" //nolint
+	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 
-	"github.com/hyperledger/fabric/core/chaincode/shim"
-	pb "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
+	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/pkg/errors"
 
 	"github.com/op/go-logging"
@@ -37,7 +38,7 @@ type stateMap map[string][]byte
 // MockStub is an implementation of ChaincodeStubInterface for unit testing chaincode.
 // Use this instead of ChaincodeStub in your chaincode's unit test calls to Init or Invoke.
 type MockStub struct {
-	shim.MockStub
+	shimtest.MockStub
 	// arguments the stub was called with
 	args [][]byte
 	// A pointer back to the chaincode that will invoke this, set by constructor.

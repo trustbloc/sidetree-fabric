@@ -11,13 +11,15 @@ import (
 
 // Config stores observer configuration
 type Config struct {
+	peerID        string
 	channels      []string
 	monitorPeriod time.Duration
 }
 
 // New creates observer config
-func New(channels []string, monitorPeriod time.Duration) *Config {
+func New(peerID string, channels []string, monitorPeriod time.Duration) *Config {
 	return &Config{
+		peerID:        peerID,
 		channels:      channels,
 		monitorPeriod: monitorPeriod,
 	}
@@ -31,4 +33,9 @@ func (cfg *Config) GetChannels() []string {
 // GetMonitorPeriod returns the period in which the monitor checks for presence of documents in the local DCAS store
 func (cfg *Config) GetMonitorPeriod() time.Duration {
 	return cfg.monitorPeriod
+}
+
+// GetPeerID returns the ID of the local peer
+func (cfg *Config) GetPeerID() string {
+	return cfg.peerID
 }

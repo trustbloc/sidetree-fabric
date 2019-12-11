@@ -7,49 +7,18 @@ SPDX-License-Identifier: Apache-2.0
 package peer
 
 import (
-	"strings"
-	"time"
-
 	"github.com/hyperledger/fabric/common/flogging"
-	"github.com/spf13/viper"
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/config"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")
-
-const (
-	// Configure channels that will be observed for sidetree txn
-	confObserverChannels = "ledger.sidetree.observer.channels"
-
-	// confMonitorPeriod is the period in which the monitor checks for presence of documents in the local DCAS store
-	confMonitorPeriod = "ledger.sidetree.monitor.period"
-
-	// defaultMonitorPeriod is the default value for monitor period
-	defaultMonitorPeriod = 5 * time.Second
-)
 
 // Initialize initializes the required resources for peer startup
 func Initialize() {
 	resource.Register(client.NewBlockchainProvider)
 	resource.Register(newObserver)
-}
-
-// getObserverChannels returns the channels that will be observed for Sidetree transaction
-func getObserverChannels() []string {
-	channels := viper.GetString(confObserverChannels)
-	return strings.Split(channels, ",")
-}
-
-// getMonitorPeriod returns the period in which the monitor checks for presence of documents in the local DCAS store
-func getMonitorPeriod() time.Duration {
-	monitorPeriod := viper.GetDuration(confMonitorPeriod)
-	if monitorPeriod == 0 {
-		monitorPeriod = defaultMonitorPeriod
-	}
-	return monitorPeriod
 }
 
 type observerResource struct {
@@ -59,16 +28,23 @@ type observerResource struct {
 func newObserver(providers *observer.Providers) *observerResource {
 	logger.Infof("Initializing observer")
 
-	observingChannels := getObserverChannels()
-	monitorPeriod := getMonitorPeriod()
-	cfg := config.New(observingChannels, monitorPeriod)
+	return &observerResource{
+		observer: observer.New(providers),
+	}
+}
 
-	o := observer.New(cfg, providers)
-	if err := o.Start(); err != nil {
-		panic(err)
+// ChannelJoined is invoked when the peer joins a channel
+func (r *observerResource) ChannelJoined(channelID string) {
+	logger.Infof("Joined channel [%s]", channelID)
+	started, err := r.observer.Start(channelID)
+	if err != nil {
+		logger.Errorf("Error starting observer for channel [%s]", channelID)
+		return
 	}
 
-	return &observerResource{observer: o}
+	if started {
+		logger.Infof("Successfully started observer for channel [%s]", channelID)
+	}
 }
 
 // Close stops the observer

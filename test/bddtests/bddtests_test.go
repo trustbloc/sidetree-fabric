@@ -89,7 +89,7 @@ func FeatureContext(s *godog.Suite) {
 
 	var err error
 	context, err = bddtests.NewBDDContext([]string{"peerorg1", "peerorg2"}, "orderer.example.com", "./fixtures/config/sdk-client/",
-		"config.yaml", peersMspID, "../../.build/cc", "./fixtures/testdata")
+		"config.yaml", peersMspID, "../../.build/cc", "../../.build/cc")
 	if err != nil {
 		panic(fmt.Sprintf("Error returned from NewBDDContext: %s", err))
 	}

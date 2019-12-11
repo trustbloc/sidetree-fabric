@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
-	"github.com/hyperledger/fabric/protos/ledger/rwset/kvrwset"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	offledgerdcas "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
@@ -32,6 +32,7 @@ const (
 	confRoles = "ledger.roles"
 
 	channel      = "diddoc"
+	peerID       = "peer1.example.com"
 	uniqueSuffix = "abc123"
 
 	sideTreeTxnCCName = "sidetreetxn_cc"
@@ -52,16 +53,22 @@ func TestObserver(t *testing.T) {
 	dcasProvider := &obmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(c, nil)
 
-	cfg := config.New([]string{channel}, monitorPeriod)
-
 	providers := &Providers{
 		DCAS:           dcasProvider,
 		OffLedger:      &obmocks.OffLedgerClientProvider{},
 		BlockPublisher: mocks.NewBlockPublisherProvider().WithBlockPublisher(p),
+		Config:         config.New(peerID, []string{channel}, monitorPeriod),
 	}
-	observer := New(cfg, providers)
+	observer := New(providers)
 	require.NotNil(t, observer)
-	require.NoError(t, observer.Start())
+
+	started, err := observer.Start(channel)
+	require.NoError(t, err)
+	require.True(t, started)
+
+	started, err = observer.Start("channel2")
+	require.NoError(t, err)
+	require.False(t, started)
 
 	anchor := getAnchorAddress(uniqueSuffix)
 	require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(anchor)}))
@@ -99,17 +106,22 @@ func TestObserver_Start(t *testing.T) {
 			roles.SetRoles(nil)
 		}()
 
-		cfg := config.New([]string{channel}, monitorPeriod)
 		providers := &Providers{
 			DCAS:           &obmocks.DCASClientProvider{},
 			OffLedger:      &obmocks.OffLedgerClientProvider{},
 			BlockPublisher: mocks.NewBlockPublisherProvider(),
+			Config:         config.New(peerID, []string{channel}, monitorPeriod),
 		}
-		observer := New(cfg, providers)
+		observer := New(providers)
 		require.NotNil(t, observer)
-		require.NoError(t, observer.Start())
+
+		started, err := observer.Start(channel)
+		require.NoError(t, err)
+		require.True(t, started)
+
 		observer.Stop()
 	})
+
 	t.Run("monitor role", func(t *testing.T) {
 		rolesValue := make(map[roles.Role]struct{})
 		rolesValue[roles.CommitterRole] = struct{}{}
@@ -119,22 +131,44 @@ func TestObserver_Start(t *testing.T) {
 			roles.SetRoles(nil)
 		}()
 
-		cfg := config.New([]string{channel}, monitorPeriod)
 		providers := &Providers{
 			DCAS:           &obmocks.DCASClientProvider{},
 			OffLedger:      &obmocks.OffLedgerClientProvider{},
 			BlockPublisher: mocks.NewBlockPublisherProvider(),
+			Config:         config.New(peerID, []string{channel}, monitorPeriod),
 		}
-		observer := New(cfg, providers)
+		observer := New(providers)
 		require.NotNil(t, observer)
 
-		err := observer.Start()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "peer.id isn't set")
-
 		viper.Set("peer.id", "peer0.org1.com")
-		require.NoError(t, observer.Start())
+		started, err := observer.Start(channel)
+		require.NoError(t, err)
+		require.True(t, started)
 		observer.Stop()
+	})
+
+	t.Run("start error", func(t *testing.T) {
+		rolesValue := make(map[roles.Role]struct{})
+		rolesValue[roles.CommitterRole] = struct{}{}
+		rolesValue[sidetreeRole] = struct{}{}
+		roles.SetRoles(rolesValue)
+		defer func() {
+			roles.SetRoles(nil)
+		}()
+
+		providers := &Providers{
+			DCAS:           &obmocks.DCASClientProvider{},
+			OffLedger:      &obmocks.OffLedgerClientProvider{},
+			BlockPublisher: mocks.NewBlockPublisherProvider(),
+			Config:         config.New("", []string{channel}, monitorPeriod),
+		}
+		observer := New(providers)
+		require.NotNil(t, observer)
+
+		started, err := observer.Start(channel)
+		require.Error(t, err)
+		require.False(t, started)
+		require.Contains(t, err.Error(), "no peer ID")
 	})
 }
 

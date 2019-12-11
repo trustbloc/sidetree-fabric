@@ -10,13 +10,12 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/hyperledger/fabric-chaincode-go/shim"
+	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
-
-	"github.com/hyperledger/fabric/core/chaincode/shim"
-	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
-var logger = shim.NewLogger("sidetreetxncc")
+var logger = NewLogger("sidetreetxncc")
 
 const (
 	// Available function names

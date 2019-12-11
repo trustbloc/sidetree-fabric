@@ -12,10 +12,9 @@ import (
 	"sync"
 	"time"
 
+	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
-	cb "github.com/hyperledger/fabric/protos/common"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	olclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
@@ -47,13 +46,15 @@ type ClientProviders struct {
 // has the operations stored in the DCAS document store.
 type Monitor struct {
 	*ClientProviders
+	peerID           string
 	monitorByChannel map[string]*channelMonitor
 	lock             sync.RWMutex
 }
 
 // New returns a new document monitor
-func New(clientProviders *ClientProviders) *Monitor {
+func New(localPeerID string, clientProviders *ClientProviders) *Monitor {
 	return &Monitor{
+		peerID:           localPeerID,
 		ClientProviders:  clientProviders,
 		monitorByChannel: make(map[string]*channelMonitor),
 	}
@@ -75,10 +76,11 @@ func (m *Monitor) Start(channelID string, period time.Duration) error {
 		return errors.Errorf("monitor for channel [%s] already started", channelID)
 	}
 
-	chm, err := newChannelMonitor(channelID, period, m.ClientProviders)
+	chm, err := newChannelMonitor(channelID, m.peerID, period, m.ClientProviders)
 	if err != nil {
-		return errors.Errorf("unable to run monitor for channel [%s]: %s", channelID, err)
+		return err
 	}
+
 	go chm.run()
 
 	m.monitorByChannel[channelID] = chm
@@ -122,13 +124,13 @@ type channelMonitor struct {
 	txnProcessor *observer.TxnProcessor
 }
 
-func newChannelMonitor(channelID string, period time.Duration, clientProviders *ClientProviders) (*channelMonitor, error) {
+func newChannelMonitor(channelID, peerID string, period time.Duration, clientProviders *ClientProviders) (*channelMonitor, error) {
 	logger.Infof("[%s] Starting channel monitor", channelID)
 
-	peerID, err := getLocalPeerID()
-	if err != nil {
-		return nil, err
+	if peerID == "" {
+		return nil, errors.New("no peer ID")
 	}
+
 	m := &channelMonitor{
 		ClientProviders: clientProviders,
 		channelID:       channelID,
@@ -307,12 +309,4 @@ func (m *channelMonitor) setLastBlockProcessed(bNum uint64) error {
 		return errors.WithMessage(err, "error persisting meta-data")
 	}
 	return nil
-}
-
-func getLocalPeerID() (string, error) {
-	peerID := viper.GetString("peer.id")
-	if peerID == "" {
-		return "", errors.New("peer.id isn't set")
-	}
-	return peerID, nil
 }
