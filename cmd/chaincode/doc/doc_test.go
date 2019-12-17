@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package main
+package doc
 
 import (
 	"crypto"
@@ -13,13 +13,35 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/mocks"
 )
 
-const testID = "did:sidetree:abc"
+const (
+	testID = "did:sidetree:abc"
+	ccName = "document_cc"
+)
+
+func TestNew(t *testing.T) {
+	req := require.New(t)
+
+	cc := New(ccName)
+	req.NotNil(cc)
+
+	req.Equal(ccName, cc.Name())
+	req.Equal(cc, cc.Chaincode())
+
+	dbArtifacts := cc.GetDBArtifacts()
+	req.NotNil(dbArtifacts)
+
+	artifact, ok := dbArtifacts[couchDB]
+	req.True(ok)
+	req.Empty(artifact.Indexes)
+	req.Len(artifact.CollectionIndexes, 1)
+}
 
 func TestInvoke(t *testing.T) {
 
@@ -205,10 +227,7 @@ func testInvalidFunctionName(t *testing.T, stub *mocks.MockStub) {
 }
 
 func prepareStub() *mocks.MockStub {
-	cc := new()
-	stub := mocks.NewMockStub("sidetreetxncc", cc)
-
-	return stub
+	return mocks.NewMockStub(ccName, New(ccName))
 }
 
 func checkInit(t *testing.T, stub *mocks.MockStub, args [][]byte) {

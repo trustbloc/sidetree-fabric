@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package main
+package txn
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
+	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
 )
 
@@ -35,13 +36,16 @@ type funcMap map[string]func(shim.ChaincodeStubInterface, [][]byte) pb.Response
 
 // SidetreeTxnCC ...
 type SidetreeTxnCC struct {
+	name      string
 	functions funcMap
 }
 
-// new returns chaincode
-func new() shim.Chaincode {
-
-	cc := &SidetreeTxnCC{functions: make(funcMap)}
+// New returns chaincode
+func New(name string) *SidetreeTxnCC {
+	cc := &SidetreeTxnCC{
+		name:      name,
+		functions: make(funcMap),
+	}
 
 	cc.functions[writeContent] = cc.write
 	cc.functions[readContent] = cc.read
@@ -52,13 +56,22 @@ func new() shim.Chaincode {
 	return cc
 }
 
+// Name returns the name of this chaincode
+func (cc *SidetreeTxnCC) Name() string { return cc.name }
+
+// Chaincode returns the SidetreeTxn chaincode
+func (cc *SidetreeTxnCC) Chaincode() shim.Chaincode { return cc }
+
+// GetDBArtifacts returns Couch DB indexes for the 'docs' collection
+func (cc *SidetreeTxnCC) GetDBArtifacts() map[string]*ccapi.DBArtifacts { return nil }
+
 // Init - nothing to do for now
-func (t *SidetreeTxnCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
+func (cc *SidetreeTxnCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
 // Invoke manages metadata lifecycle operations (writeContent, readContent)
-func (t *SidetreeTxnCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Response) {
+func (cc *SidetreeTxnCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Response) {
 
 	txID := stub.GetTxID()
 
@@ -78,9 +91,9 @@ func (t *SidetreeTxnCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Respon
 	}
 
 	functionName := string(args[0])
-	function, valid := t.functions[functionName]
+	function, valid := cc.functions[functionName]
 	if !valid {
-		errMsg := fmt.Sprintf("Invalid invoke function [%s]. Expecting one of: %s", functionName, t.functions.String())
+		errMsg := fmt.Sprintf("Invalid invoke function [%s]. Expecting one of: %s", functionName, cc.functions.String())
 		logger.Debugf("[txID %s] %s", errMsg)
 		return shim.Error(errMsg)
 	}
@@ -88,7 +101,7 @@ func (t *SidetreeTxnCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Respon
 }
 
 // writeContent will write content using cas client
-func (t *SidetreeTxnCC) write(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *SidetreeTxnCC) write(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
 	if len(args) < 1 || len(args[0]) == 0 {
 		err := "missing content"
@@ -109,7 +122,7 @@ func (t *SidetreeTxnCC) write(stub shim.ChaincodeStubInterface, args [][]byte) p
 }
 
 // readContent will read content using cas client
-func (t *SidetreeTxnCC) read(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *SidetreeTxnCC) read(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
 	if len(args) < 1 || len(args[0]) == 0 {
 		errMsg := "missing content address"
@@ -139,7 +152,7 @@ func (t *SidetreeTxnCC) read(stub shim.ChaincodeStubInterface, args [][]byte) pb
 
 // anchorBatch will store batch and anchor files using cas client and
 // record anchor file address on the ledger in one call
-func (t *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
 
 	if len(args) < 2 || len(args[0]) == 0 || len(args[1]) == 0 {
@@ -178,7 +191,7 @@ func (t *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]b
 }
 
 // writeAnchor will record anchor file address on the ledger
-func (t *SidetreeTxnCC) writeAnchor(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *SidetreeTxnCC) writeAnchor(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
 	if len(args) < 1 || len(args[0]) == 0 {
 		errMsg := "missing anchor file address"
@@ -213,7 +226,7 @@ func (m funcMap) String() string {
 }
 
 //nolint -- unused stub variable
-func (t *SidetreeTxnCC) warmup(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *SidetreeTxnCC) warmup(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	return shim.Success(nil)
 }
 
@@ -227,12 +240,5 @@ func handlePanic(resp *pb.Response) {
 		resp.Reset()
 		resp.Status = errResp.Status
 		resp.Message = errResp.Message
-	}
-}
-
-func main() {
-	err := shim.Start(new())
-	if err != nil {
-		fmt.Printf("Error starting SidetreeTxnCC chaincode: %s", err)
 	}
 }
