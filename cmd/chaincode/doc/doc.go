@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package main
+package doc
 
 import (
 	"encoding/json"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
+	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
 )
 
@@ -28,6 +29,8 @@ const (
 	// this chaincode can be 'generic' if we pass in collection name to each function
 	collection = "docs"
 
+	couchDB           = "couchdb"
+	docsCollIndex     = `{"index": {"fields": ["id"]}, "ddoc": "indexIDDoc", "name": "indexID", "type": "json"}`
 	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","hashAlgorithmInMultiHashCode","operationIndex","operationNumber","patch","previousOperationHash","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
 )
 
@@ -36,13 +39,16 @@ type funcMap map[string]func(shim.ChaincodeStubInterface, [][]byte) pb.Response
 
 // DocumentCC ...
 type DocumentCC struct {
+	name      string
 	functions funcMap
 }
 
-// new returns chaincode
-func new() shim.Chaincode {
-
-	cc := &DocumentCC{functions: make(funcMap)}
+// New returns chaincode
+func New(name string) *DocumentCC {
+	cc := &DocumentCC{
+		name:      name,
+		functions: make(funcMap),
+	}
 
 	cc.functions[write] = cc.write
 	cc.functions[read] = cc.read
@@ -52,13 +58,30 @@ func new() shim.Chaincode {
 	return cc
 }
 
+// Name returns the name of this chaincode
+func (cc *DocumentCC) Name() string { return cc.name }
+
+// Chaincode returns the DocumentCC chaincode
+func (cc *DocumentCC) Chaincode() shim.Chaincode { return cc }
+
+// GetDBArtifacts returns Couch DB indexes for the 'docs' collection
+func (cc *DocumentCC) GetDBArtifacts() map[string]*ccapi.DBArtifacts {
+	return map[string]*ccapi.DBArtifacts{
+		couchDB: {
+			CollectionIndexes: map[string][]string{
+				collection: {docsCollIndex},
+			},
+		},
+	}
+}
+
 // Init - nothing to do for now
-func (t *DocumentCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
+func (cc *DocumentCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
 // Invoke manages document lifecycle operations (write, read)
-func (t *DocumentCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Response) {
+func (cc *DocumentCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Response) {
 
 	txID := stub.GetTxID()
 
@@ -78,9 +101,9 @@ func (t *DocumentCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Response)
 	}
 
 	functionName := string(args[0])
-	function, valid := t.functions[functionName]
+	function, valid := cc.functions[functionName]
 	if !valid {
-		errMsg := fmt.Sprintf("invalid invoke function [%s] - expecting one of: %s", functionName, t.functions.String())
+		errMsg := fmt.Sprintf("invalid invoke function [%s] - expecting one of: %s", functionName, cc.functions.String())
 		logger.Debugf("[txID %s] %s", errMsg)
 		return shim.Error(errMsg)
 	}
@@ -88,7 +111,7 @@ func (t *DocumentCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Response)
 }
 
 // write will write content using cas client
-func (t *DocumentCC) write(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *DocumentCC) write(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
 	if len(args) < 1 || len(args[0]) == 0 {
 		err := "missing content"
@@ -108,7 +131,7 @@ func (t *DocumentCC) write(stub shim.ChaincodeStubInterface, args [][]byte) pb.R
 }
 
 // read will read content using cas client
-func (t *DocumentCC) read(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *DocumentCC) read(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
 	if len(args) < 1 || len(args[0]) == 0 {
 		errMsg := "missing content address"
@@ -137,7 +160,7 @@ func (t *DocumentCC) read(stub shim.ChaincodeStubInterface, args [][]byte) pb.Re
 }
 
 // queryByID wiil query all operations for document with specified ID
-func (t *DocumentCC) queryByID(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *DocumentCC) queryByID(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 
 	txID := stub.GetTxID()
 	if len(args) < 1 {
@@ -189,26 +212,18 @@ func (m funcMap) String() string {
 }
 
 //nolint -- unused stub variable
-func (t *DocumentCC) warmup(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
+func (cc *DocumentCC) warmup(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	return shim.Success(nil)
 }
 
 // handlePanic handles a panic (if any) by populating error response
 func handlePanic(resp *pb.Response) {
 	if r := recover(); r != nil {
-
 		logger.Errorf("Recovering from panic: %s", string(debug.Stack()))
 
 		errResp := shim.Error("panic: check server logs")
 		resp.Reset()
 		resp.Status = errResp.Status
 		resp.Message = errResp.Message
-	}
-}
-
-func main() {
-	err := shim.Start(new())
-	if err != nil {
-		fmt.Printf("Error starting DocumentCC chaincode: %s", err)
 	}
 }

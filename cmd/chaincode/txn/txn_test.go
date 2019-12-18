@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package main
+package txn
 
 import (
 	"crypto"
@@ -17,6 +17,21 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/stretchr/testify/require"
 )
+
+const (
+	ccName = "sidetreetxncc"
+)
+
+func TestNew(t *testing.T) {
+	req := require.New(t)
+
+	cc := New(ccName)
+	req.NotNil(cc)
+
+	req.Nil(cc.GetDBArtifacts())
+	req.Equal(ccName, cc.Name())
+	req.Equal(cc, cc.Chaincode())
+}
 
 func TestInvoke(t *testing.T) {
 
@@ -224,10 +239,7 @@ func testInvalidFunctionName(t *testing.T, stub *mocks.MockStub) {
 }
 
 func prepareStub() *mocks.MockStub {
-	cc := new()
-	stub := mocks.NewMockStub("sidetreetxncc", cc)
-
-	return stub
+	return mocks.NewMockStub(ccName, New(ccName))
 }
 
 func checkInit(t *testing.T, stub *mocks.MockStub, args [][]byte) {

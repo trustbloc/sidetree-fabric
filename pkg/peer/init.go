@@ -8,7 +8,11 @@ package peer
 
 import (
 	"github.com/hyperledger/fabric/common/flogging"
+	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
+	"github.com/trustbloc/fabric-peer-ext/pkg/chaincode/ucc"
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
+	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/doc"
+	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/txn"
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 )
@@ -19,6 +23,10 @@ var logger = flogging.MustGetLogger("sidetree_peer")
 func Initialize() {
 	resource.Register(client.NewBlockchainProvider)
 	resource.Register(newObserver)
+
+	// Register chaincode
+	ucc.Register(func() ccapi.UserCC { return doc.New("document_cc") })
+	ucc.Register(func() ccapi.UserCC { return txn.New("sidetreetxn_cc") })
 }
 
 type observerResource struct {
