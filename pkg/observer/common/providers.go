@@ -13,8 +13,8 @@ import (
 	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
 )
 
-//go:generate counterfeiter -o ./../mocks/dcasclient.gen.go --fake-name DCASClient github.com/trustbloc/fabric-peer-ext/pkg/collections/client.DCAS
-//go:generate counterfeiter -o ./../mocks/dcasprovider.gen.go --fake-name DCASClientProvider . DCASClientProvider
+//go:generate counterfeiter -o ./../../mocks/dcasclient.gen.go --fake-name DCASClient github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client.DCAS
+//go:generate counterfeiter -o ./../../mocks/dcasprovider.gen.go --fake-name DCASClientProvider . DCASClientProvider
 //go:generate counterfeiter -o ./../mocks/offledgerprovider.gen.go --fake-name OffLedgerClientProvider . OffLedgerClientProvider
 //go:generate counterfeiter -o ./../mocks/bcclientprovider.gen.go --fake-name BlockchainClientProvider . BlockchainClientProvider
 //go:generate counterfeiter -o ./../mocks/bcclient.gen.go --fake-name BlockchainClient ../../client Blockchain

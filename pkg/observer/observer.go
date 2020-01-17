@@ -13,20 +13,15 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
-	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
+	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
 var logger = flogging.MustGetLogger("observer")
-
-const (
-	observerRole = "observer"
-	sidetreeRole = "sidetree"
-)
 
 // Config contains the Observer configuration
 type Config interface {
@@ -114,16 +109,12 @@ func New(providers *Providers) *Observer {
 
 // Start starts channel observer routines if applicable to the given channel.
 // Returns true if an observer was started
-func (o *Observer) Start(channelID string) (bool, error) {
+func (o *Observer) Start(channelID string) error {
 	if !o.isObservedChannel(channelID) {
-		return false, nil
+		return nil
 	}
 
-	if err := o.start(channelID); err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return o.start(channelID)
 }
 
 // Stop stops the channel observer routines
@@ -132,7 +123,7 @@ func (o *Observer) Stop() {
 }
 
 func (o *Observer) start(channelID string) error {
-	if roles.HasRole(observerRole) {
+	if role.IsObserver() {
 		logger.Infof("Starting observer for channel [%s]", channelID)
 		// register to receive Sidetree transactions from blocks
 		n := notifier.New(o.bpProvider.ForChannel(channelID))
@@ -140,10 +131,13 @@ func (o *Observer) start(channelID string) error {
 		sidetreeobserver.Start(n, dcasVal, dcasVal)
 		return nil
 	}
-	if roles.HasRole(sidetreeRole) && roles.IsCommitter() {
+
+	if role.IsMonitor() {
 		return o.docMonitor.Start(channelID, o.cfg.GetMonitorPeriod())
 	}
+
 	logger.Debugf("Nothing to start for channel [%s]", channelID)
+
 	return nil
 }
 

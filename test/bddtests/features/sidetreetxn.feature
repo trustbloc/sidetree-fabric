@@ -29,15 +29,15 @@ Feature:
         Then client verifies that query by index ID "did:sidetree:abc" from "document_cc" will return "1" versions of the document on the "mychannel" channel
 
         # Bring down peer1.org1 so that it doesn't get the documents via Gossip broadcast
-        Given container "peer1.org1.example.com" is paused
+        Given container "peer1.org1.example.com" is stopped
         # Wait a while so that Discovery will give up on this peer and remove it from the list of 'alive' peers
         And we wait 60 seconds
 
         # write sidetree transaction
         When client writes operations batch file and anchor file for ID "did:sidetree:123abc" using "sidetreetxn_cc" on the "mychannel" channel
-        # Wait a while before unpausing peer1.org1 so that Gossip gives up trying to push the documents to the peer
+        # Wait a while before starting peer1.org1 so that Gossip gives up trying to push the documents to the peer
         And we wait 65 seconds
-        Then container "peer1.org1.example.com" is unpaused
+        Then container "peer1.org1.example.com" is started
         # Wait a while to give peer1.org1 a chance to commit all blocks and get back in Discovery's list of 'alive' peers
         And we wait 15 seconds
 

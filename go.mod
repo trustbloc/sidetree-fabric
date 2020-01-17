@@ -12,23 +12,25 @@ require (
 	github.com/hyperledger/fabric v2.0.0-alpha+incompatible
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20191108205148-17c4b2760b56
 	github.com/hyperledger/fabric-protos-go v0.0.0-20191121202242-f5500d5e3e85
-	github.com/hyperledger/fabric-sdk-go v1.0.0-beta1.0.20190930220855-cea2ffaf627c
+	github.com/hyperledger/fabric-sdk-go v1.0.0-beta1.0.20191219180315-e1055f391525
 	github.com/hyperledger/fabric/extensions v0.0.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/viper v1.3.2
+	github.com/spf13/viper2015 v1.3.2
 	github.com/stretchr/testify v1.4.0
 	github.com/trustbloc/fabric-peer-ext v0.0.0
 	github.com/trustbloc/sidetree-core-go v0.1.0
 )
 
-replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.1-0.20191216193459-e53a0534d4f8
+replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.1-0.20200109180344-55843c4fd520
 
-replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20191217201857-bdd9e46ec4a7
+replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200115192737-570072b21572
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.1-0.20191217201857-bdd9e46ec4a7
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.1-0.20200115192737-570072b21572
 
 replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.1-0.20191126151100-5a61374c2e1b
+
+replace github.com/spf13/viper2015 => github.com/spf13/viper v0.0.0-20150908122457-1967d93db724
 
 go 1.13

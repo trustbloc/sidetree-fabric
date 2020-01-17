@@ -3,15 +3,15 @@
 
     SPDX-License-Identifier: Apache-2.0
 */
-s
+
 var myStepDefinitionsWrapper = function () {
-    this.When(/^client sends request to create DID document "([^"]*)" as "([^"]*)"$/, function (arg1, arg2, callback) {
+    this.When(/^client sends request to "([^"]*)" to create DID document "([^"]*)" as "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
     this.Then(/^check success response contains "([^"]*)"$/, function (arg1, callback) {
         callback.pending();
     });
-    this.When(/^client sends request to resolve DID document$/, function (callback) {
+    this.When(/^client sends request to "([^"]*)" to resolve DID document$/, function (callback) {
         callback.pending();
     });
     this.When(/^client writes content "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, callback) {

@@ -9,6 +9,7 @@ package mocks
 import (
 	"sync"
 
+	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	commonledger "github.com/hyperledger/fabric/common/ledger"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 )
@@ -17,6 +18,7 @@ import (
 type MockOffLedgerClient struct {
 	sync.RWMutex
 	m       map[string]map[string][]byte
+	qr      map[string][]*queryresult.KV
 	PutErr  error
 	GetErr  error
 	putErrs map[string]error
@@ -27,6 +29,7 @@ type MockOffLedgerClient struct {
 func NewMockOffLedgerClient() *MockOffLedgerClient {
 	return &MockOffLedgerClient{
 		m:       make(map[string]map[string][]byte),
+		qr:      make(map[string][]*queryresult.KV),
 		putErrs: make(map[string]error),
 		getErrs: make(map[string]error),
 	}
@@ -53,6 +56,12 @@ func (m *MockOffLedgerClient) WithPutErrorForKey(ns, coll, key string, err error
 // WithGetErrorForKey injects an error when a call is made to get a value for the given namespace, collection, and key
 func (m *MockOffLedgerClient) WithGetErrorForKey(ns, coll, key string, err error) *MockOffLedgerClient {
 	m.getErrs[getKey(ns, coll, key)] = err
+	return m
+}
+
+// WithQueryResults sets the query results for the given query
+func (m *MockOffLedgerClient) WithQueryResults(ns, coll, query string, results []*queryresult.KV) *MockOffLedgerClient {
+	m.qr[getKey(ns, coll, query)] = results
 	return m
 }
 
@@ -129,5 +138,28 @@ func (m *MockOffLedgerClient) GetMultipleKeys(ns, coll string, keys ...string) (
 // (Note that this function is not supported by transient data collections)
 // The returned ResultsIterator contains results of type *KV which is defined in protos/ledger/queryresult.
 func (m *MockOffLedgerClient) Query(ns, coll, query string) (commonledger.ResultsIterator, error) {
-	panic("not implemented")
+	return newResultsIterator(m.qr[getKey(ns, coll, query)]), nil
+}
+
+type resultsIterator struct {
+	results []*queryresult.KV
+	i       int
+}
+
+func newResultsIterator(results []*queryresult.KV) *resultsIterator {
+	return &resultsIterator{
+		results: results,
+	}
+}
+
+func (it *resultsIterator) Next() (commonledger.QueryResult, error) {
+	if it.i >= len(it.results) {
+		return nil, nil
+	}
+	i := it.i
+	it.i++
+	return it.results[i], nil
+}
+
+func (it *resultsIterator) Close() {
 }

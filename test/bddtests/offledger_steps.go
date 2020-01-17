@@ -11,6 +11,7 @@ import (
 
 	"github.com/DATA-DOG/godog"
 	"github.com/hyperledger/fabric-protos-go/common"
+	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
 )
@@ -30,7 +31,7 @@ func NewOffLedgerSteps(context *bddtests.BDDContext) *OffLedgerSteps {
 // DefineOffLedgerCollectionConfig defines a new off-ledger data collection configuration
 func (d *OffLedgerSteps) DefineOffLedgerCollectionConfig(id, name, policy string, requiredPeerCount, maxPeerCount int32, timeToLive string) {
 	d.BDDContext.DefineCollectionConfig(id,
-		func(channelID string) (*common.CollectionConfig, error) {
+		func(channelID string) (*pb.CollectionConfig, error) {
 			sigPolicy, err := d.newChaincodePolicy(policy, channelID)
 			if err != nil {
 				return nil, errors.Wrapf(err, "error creating collection policy for collection [%s]", name)
@@ -43,7 +44,7 @@ func (d *OffLedgerSteps) DefineOffLedgerCollectionConfig(id, name, policy string
 // DefineDCASCollectionConfig defines a new DCAS collection configuration
 func (d *OffLedgerSteps) DefineDCASCollectionConfig(id, name, policy string, requiredPeerCount, maxPeerCount int32, timeToLive string) {
 	d.BDDContext.DefineCollectionConfig(id,
-		func(channelID string) (*common.CollectionConfig, error) {
+		func(channelID string) (*pb.CollectionConfig, error) {
 			sigPolicy, err := d.newChaincodePolicy(policy, channelID)
 			if err != nil {
 				return nil, errors.Wrapf(err, "error creating collection policy for collection [%s]", name)
@@ -91,17 +92,17 @@ func (d *OffLedgerSteps) newChaincodePolicy(ccPolicy, channelID string) (*common
 	return bddtests.NewChaincodePolicy(d.BDDContext, ccPolicy, channelID)
 }
 
-func newOffLedgerCollectionConfig(collName string, requiredPeerCount, maxPeerCount int32, timeToLive string, policy *common.SignaturePolicyEnvelope) *common.CollectionConfig {
-	return &common.CollectionConfig{
-		Payload: &common.CollectionConfig_StaticCollectionConfig{
-			StaticCollectionConfig: &common.StaticCollectionConfig{
+func newOffLedgerCollectionConfig(collName string, requiredPeerCount, maxPeerCount int32, timeToLive string, policy *common.SignaturePolicyEnvelope) *pb.CollectionConfig {
+	return &pb.CollectionConfig{
+		Payload: &pb.CollectionConfig_StaticCollectionConfig{
+			StaticCollectionConfig: &pb.StaticCollectionConfig{
 				Name:              collName,
-				Type:              common.CollectionType_COL_OFFLEDGER,
+				Type:              pb.CollectionType_COL_OFFLEDGER,
 				RequiredPeerCount: requiredPeerCount,
 				MaximumPeerCount:  maxPeerCount,
 				TimeToLive:        timeToLive,
-				MemberOrgsPolicy: &common.CollectionPolicyConfig{
-					Payload: &common.CollectionPolicyConfig_SignaturePolicy{
+				MemberOrgsPolicy: &pb.CollectionPolicyConfig{
+					Payload: &pb.CollectionPolicyConfig_SignaturePolicy{
 						SignaturePolicy: policy,
 					},
 				},
@@ -110,17 +111,17 @@ func newOffLedgerCollectionConfig(collName string, requiredPeerCount, maxPeerCou
 	}
 }
 
-func newDCASCollectionConfig(collName string, requiredPeerCount, maxPeerCount int32, timeToLive string, policy *common.SignaturePolicyEnvelope) *common.CollectionConfig {
-	return &common.CollectionConfig{
-		Payload: &common.CollectionConfig_StaticCollectionConfig{
-			StaticCollectionConfig: &common.StaticCollectionConfig{
+func newDCASCollectionConfig(collName string, requiredPeerCount, maxPeerCount int32, timeToLive string, policy *common.SignaturePolicyEnvelope) *pb.CollectionConfig {
+	return &pb.CollectionConfig{
+		Payload: &pb.CollectionConfig_StaticCollectionConfig{
+			StaticCollectionConfig: &pb.StaticCollectionConfig{
 				Name:              collName,
-				Type:              common.CollectionType_COL_DCAS,
+				Type:              pb.CollectionType_COL_DCAS,
 				RequiredPeerCount: requiredPeerCount,
 				MaximumPeerCount:  maxPeerCount,
 				TimeToLive:        timeToLive,
-				MemberOrgsPolicy: &common.CollectionPolicyConfig{
-					Payload: &common.CollectionPolicyConfig_SignaturePolicy{
+				MemberOrgsPolicy: &pb.CollectionPolicyConfig{
+					Payload: &pb.CollectionPolicyConfig_SignaturePolicy{
 						SignaturePolicy: policy,
 					},
 				},

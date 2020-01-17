@@ -15,17 +15,19 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
-	"github.com/spf13/viper"
+	viper "github.com/spf13/viper2015"
 	"github.com/stretchr/testify/require"
 	offledgerdcas "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
-	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
+	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/config"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
 const (
@@ -43,14 +45,18 @@ const (
 )
 
 func TestObserver(t *testing.T) {
-
-	testRole := "endorser,observer"
-	viper.Set(confRoles, testRole)
+	rolesValue := make(map[extroles.Role]struct{})
+	rolesValue[extroles.EndorserRole] = struct{}{}
+	rolesValue[role.Observer] = struct{}{}
+	extroles.SetRoles(rolesValue)
+	defer func() {
+		extroles.SetRoles(nil)
+	}()
 
 	p := mocks.NewBlockPublisher()
 
 	c := getDefaultDCASClient()
-	dcasProvider := &obmocks.DCASClientProvider{}
+	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(c, nil)
 
 	providers := &Providers{
@@ -62,13 +68,8 @@ func TestObserver(t *testing.T) {
 	observer := New(providers)
 	require.NotNil(t, observer)
 
-	started, err := observer.Start(channel)
+	err := observer.Start(channel)
 	require.NoError(t, err)
-	require.True(t, started)
-
-	started, err = observer.Start("channel2")
-	require.NoError(t, err)
-	require.False(t, started)
 
 	anchor := getAnchorAddress(uniqueSuffix)
 	require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(anchor)}))
@@ -95,19 +96,19 @@ func TestDCASPut(t *testing.T) {
 func TestObserver_Start(t *testing.T) {
 	// Ensure the roles are initialized, otherwise they'll be overwritten
 	// when we run the tests
-	require.True(t, roles.IsEndorser())
+	require.True(t, extroles.IsEndorser())
 
 	t.Run("endorser role", func(t *testing.T) {
 		// create endorser role only
-		rolesValue := make(map[roles.Role]struct{})
-		rolesValue[roles.EndorserRole] = struct{}{}
-		roles.SetRoles(rolesValue)
+		rolesValue := make(map[extroles.Role]struct{})
+		rolesValue[extroles.EndorserRole] = struct{}{}
+		extroles.SetRoles(rolesValue)
 		defer func() {
-			roles.SetRoles(nil)
+			extroles.SetRoles(nil)
 		}()
 
 		providers := &Providers{
-			DCAS:           &obmocks.DCASClientProvider{},
+			DCAS:           &stmocks.DCASClientProvider{},
 			OffLedger:      &obmocks.OffLedgerClientProvider{},
 			BlockPublisher: mocks.NewBlockPublisherProvider(),
 			Config:         config.New(peerID, []string{channel}, monitorPeriod),
@@ -115,24 +116,23 @@ func TestObserver_Start(t *testing.T) {
 		observer := New(providers)
 		require.NotNil(t, observer)
 
-		started, err := observer.Start(channel)
+		err := observer.Start(channel)
 		require.NoError(t, err)
-		require.True(t, started)
 
 		observer.Stop()
 	})
 
 	t.Run("monitor role", func(t *testing.T) {
-		rolesValue := make(map[roles.Role]struct{})
-		rolesValue[roles.CommitterRole] = struct{}{}
-		rolesValue[sidetreeRole] = struct{}{}
-		roles.SetRoles(rolesValue)
+		rolesValue := make(map[extroles.Role]struct{})
+		rolesValue[extroles.CommitterRole] = struct{}{}
+		rolesValue[role.Resolver] = struct{}{}
+		extroles.SetRoles(rolesValue)
 		defer func() {
-			roles.SetRoles(nil)
+			extroles.SetRoles(nil)
 		}()
 
 		providers := &Providers{
-			DCAS:           &obmocks.DCASClientProvider{},
+			DCAS:           &stmocks.DCASClientProvider{},
 			OffLedger:      &obmocks.OffLedgerClientProvider{},
 			BlockPublisher: mocks.NewBlockPublisherProvider(),
 			Config:         config.New(peerID, []string{channel}, monitorPeriod),
@@ -141,23 +141,22 @@ func TestObserver_Start(t *testing.T) {
 		require.NotNil(t, observer)
 
 		viper.Set("peer.id", "peer0.org1.com")
-		started, err := observer.Start(channel)
+		err := observer.Start(channel)
 		require.NoError(t, err)
-		require.True(t, started)
 		observer.Stop()
 	})
 
 	t.Run("start error", func(t *testing.T) {
-		rolesValue := make(map[roles.Role]struct{})
-		rolesValue[roles.CommitterRole] = struct{}{}
-		rolesValue[sidetreeRole] = struct{}{}
-		roles.SetRoles(rolesValue)
+		rolesValue := make(map[extroles.Role]struct{})
+		rolesValue[extroles.CommitterRole] = struct{}{}
+		rolesValue[role.Resolver] = struct{}{}
+		extroles.SetRoles(rolesValue)
 		defer func() {
-			roles.SetRoles(nil)
+			extroles.SetRoles(nil)
 		}()
 
 		providers := &Providers{
-			DCAS:           &obmocks.DCASClientProvider{},
+			DCAS:           &stmocks.DCASClientProvider{},
 			OffLedger:      &obmocks.OffLedgerClientProvider{},
 			BlockPublisher: mocks.NewBlockPublisherProvider(),
 			Config:         config.New("", []string{channel}, monitorPeriod),
@@ -165,9 +164,8 @@ func TestObserver_Start(t *testing.T) {
 		observer := New(providers)
 		require.NotNil(t, observer)
 
-		started, err := observer.Start(channel)
+		err := observer.Start(channel)
 		require.Error(t, err)
-		require.False(t, started)
 		require.Contains(t, err.Error(), "no peer ID")
 	})
 }
@@ -253,14 +251,6 @@ func getAnchorFileBytes(batchFileHash string, merkleRoot string) []byte {
 	return bytes
 }
 
-type mockBlockPublisher struct {
-	writeHandler gossipapi.WriteHandler
-}
-
-func (m *mockBlockPublisher) AddWriteHandler(writeHandler gossipapi.WriteHandler) {
-	m.writeHandler = writeHandler
-}
-
 func getAnchorAddress(uniqueSuffix string) string {
 	_, anchorBytes := getSidetreeTxnPrerequisites(uniqueSuffix)
 	key, _, err := offledgerdcas.GetCASKeyAndValue(anchorBytes)
@@ -268,4 +258,10 @@ func getAnchorAddress(uniqueSuffix string) string {
 		panic(err.Error())
 	}
 	return key
+}
+
+func TestMain(t *testing.M) {
+	// Ensure that the roles are pre-initialized
+	extroles.GetRoles()
+	t.Run()
 }

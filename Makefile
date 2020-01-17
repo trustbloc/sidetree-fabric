@@ -16,7 +16,6 @@
 #   channel-config-gen:         generates test channel configuration transactions and blocks
 #   bddtests:                   run bddtests
 #   docker-thirdparty:          pulls thirdparty images
-#   sidetree-docker:            build sidetree-fabric image
 #   generate:                   generates mocks
 #
 
@@ -85,7 +84,7 @@ populate-fixtures:
 	@scripts/populate-fixtures.sh -f
 
 
-bddtests: clean populate-fixtures docker-thirdparty bddtests-fabric-peer-docker sidetree-docker build-cc
+bddtests: populate-fixtures docker-thirdparty bddtests-fabric-peer-docker build-cc
 	@scripts/integration.sh
 
 
@@ -106,19 +105,6 @@ bddtests-fabric-peer-docker:
 docker-thirdparty:
 	docker pull couchdb:2.2.0
 	docker pull hyperledger/fabric-orderer:$(ARCH)-2.0.0-alpha
-
-sidetree:
-	@echo "Building sidetree"
-	@mkdir -p ./.build/bin
-	@go build -o ./.build/bin/sidetree-fabric cmd/sidetree-server/main.go
-
-sidetree-docker:
-	@docker build -f ./images/sidetree-fabric/Dockerfile --no-cache -t $(DOCKER_OUTPUT_NS)/$(SIDETREE_FABRIC_IMAGE_NAME):latest \
-	--build-arg GO_VER=$(GO_VER) \
-	--build-arg ALPINE_VER=$(ALPINE_VER) \
-	--build-arg GO_TAGS=$(GO_TAGS) \
-	--build-arg GOPROXY=$(GOPROXY) .
-
 
 build-cc:
 	@echo "Building cc"

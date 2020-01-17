@@ -7,66 +7,73 @@ SPDX-License-Identifier: Apache-2.0
 package store
 
 import (
-	"fmt"
-	"sync"
-
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-
-	"github.com/pkg/errors"
-
 	"encoding/json"
+	"fmt"
 
+	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
+	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 )
 
 const (
-	documentCC = "document_cc"
-	queryFcn   = "queryByID"
+	documentCC        = "document_cc"
+	collection        = "docs"
+	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","hashAlgorithmInMultiHashCode","operationIndex","operationNumber","patch","previousOperationHash","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
 )
 
 var logger = logrus.New()
 
-// Client implements client for accessing document operations
-type Client struct {
-	lock            sync.RWMutex
-	channelProvider context.ChannelProvider
-	channelClient   chClient
-	namespace       string
+type dcasClientProvider interface {
+	ForChannel(channelID string) (client.DCAS, error)
 }
 
-type chClient interface {
-	Query(request channel.Request, options ...channel.RequestOption) (channel.Response, error)
+// Client implements client for accessing document operations
+type Client struct {
+	channelID     string
+	namespace     string
+	storeProvider dcasClientProvider
 }
 
 // New returns a new store client
-func New(channelProvider context.ChannelProvider, namespace string) *Client {
-	return &Client{channelProvider: channelProvider, namespace: namespace}
+func New(channelID, namespace string, storeProvider dcasClientProvider) *Client {
+	return &Client{
+		channelID:     channelID,
+		namespace:     namespace,
+		storeProvider: storeProvider,
+	}
 }
 
 // Get retrieves all document operations for specified document ID
 func (c *Client) Get(uniqueSuffix string) ([]batch.Operation, error) {
-
-	client, err := c.getClient()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get channel client")
-	}
-
 	id := c.namespace + uniqueSuffix
 	logger.Debugf("get operations for doc[%s]", id)
 
-	response, err := client.Query(channel.Request{
-		ChaincodeID: documentCC,
-		Fcn:         queryFcn,
-		Args:        [][]byte{[]byte(id)},
-	})
+	sp, err := c.storeProvider.ForChannel(c.channelID)
+	if err != nil {
+		return nil, err
+	}
+
+	iter, err := sp.Query(documentCC, collection, fmt.Sprintf(queryByIDTemplate, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query document operations")
 	}
 
-	return getOperations(response.Payload)
+	var ops [][]byte
+	for {
+		next, err := iter.Next()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to retrieve key and value in the range")
+		}
+		if next == nil {
+			break
+		}
+		kv := next.(*queryresult.KV)
+		ops = append(ops, kv.Value)
+	}
+
+	return getOperations(ops)
 }
 
 // Put stores an operation
@@ -75,48 +82,15 @@ func (c *Client) Put(op batch.Operation) error {
 	panic("not implemented")
 }
 
-func getOperations(payload []byte) ([]batch.Operation, error) {
-
-	var ops [][]byte
-	err := json.Unmarshal(payload, &ops)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal operations: %s", err)
-	}
-
+func getOperations(ops [][]byte) ([]batch.Operation, error) {
 	var operations []batch.Operation
 	for _, opBytes := range ops {
 		var op batch.Operation
-		err = json.Unmarshal(opBytes, &op)
-		if err != nil {
+		if err := json.Unmarshal(opBytes, &op); err != nil {
 			return nil, errors.Wrapf(err, "failed to unmarshal operation")
 		}
 		operations = append(operations, op)
 	}
 
 	return operations, nil
-}
-
-func (c *Client) getClient() (chClient, error) {
-
-	c.lock.RLock()
-	chc := c.channelClient
-	c.lock.RUnlock()
-
-	if chc != nil {
-		return chc, nil
-	}
-
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	if c.channelClient == nil {
-		channelClient, err := channel.New(c.channelProvider)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create channel client")
-		}
-
-		c.channelClient = channelClient
-	}
-
-	return c.channelClient, nil
 }

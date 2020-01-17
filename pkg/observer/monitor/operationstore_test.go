@@ -13,13 +13,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
 
 func TestOperationStore_Put(t *testing.T) {
 	dcasClient := mocks.NewMockDCASClient()
-	dcasClientProvider := &mocks.DCASClientProvider{}
+	dcasClientProvider := &stmocks.DCASClientProvider{}
 	dcasClientProvider.ForChannelReturns(dcasClient, nil)
 
 	s := NewOperationStore(channel1, dcasClientProvider)
@@ -48,7 +49,7 @@ func TestOperationStore_Put(t *testing.T) {
 
 func TestOperationStore_PutError(t *testing.T) {
 	dcasClient := mocks.NewMockDCASClient()
-	dcasClientProvider := &mocks.DCASClientProvider{}
+	dcasClientProvider := &stmocks.DCASClientProvider{}
 	dcasClientProvider.ForChannelReturns(dcasClient, nil)
 
 	s := NewOperationStore(channel1, dcasClientProvider)
