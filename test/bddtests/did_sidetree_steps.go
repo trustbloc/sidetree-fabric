@@ -29,7 +29,6 @@ var logger = logrus.New()
 
 const sha2256 = 18
 const didDocNamespace = "did:sidetree:"
-const testDocumentURL = "http://localhost:48326/document"
 
 // DIDSideSteps
 type DIDSideSteps struct {
@@ -43,11 +42,11 @@ func NewDIDSideSteps(context *bddtests.BDDContext) *DIDSideSteps {
 	return &DIDSideSteps{bddContext: context}
 }
 
-func (d *DIDSideSteps) sendDIDDocument(didDocumentPath, requestType string) error {
-	return d.sendDIDDocumentWithID(didDocumentPath, requestType, "")
+func (d *DIDSideSteps) sendDIDDocument(url, didDocumentPath, requestType string) error {
+	return d.sendDIDDocumentWithID(url, didDocumentPath, requestType, "")
 }
 
-func (d *DIDSideSteps) sendDIDDocumentWithID(didDocumentPath, requestType, didID string) error {
+func (d *DIDSideSteps) sendDIDDocumentWithID(url, didDocumentPath, requestType, didID string) error {
 	var err error
 	logger.Infof("create did document %s with didID %s", didDocumentPath, didID)
 	if didID != "" {
@@ -55,13 +54,18 @@ func (d *DIDSideSteps) sendDIDDocumentWithID(didDocumentPath, requestType, didID
 	}
 
 	if requestType == "JSON" {
+		logger.Infof("Creating DID document [%s] at %s", didID, url)
+
 		req := newCreateRequest(didDocumentPath, didID)
 		d.reqEncodedDIDDoc = req.Payload
-		d.resp, err = restclient.SendRequest(testDocumentURL, req)
+		d.resp, err = restclient.SendRequest(url, req)
 		return err
 	}
+
+	logger.Infof("Resolving DID document [%s] at %s", didID, url)
+
 	d.reqEncodedDIDDoc = encodeDidDocument(didDocumentPath, didID)
-	d.resp, err = restclient.SendResolveRequest(testDocumentURL + "/" + didDocNamespace + d.reqEncodedDIDDoc)
+	d.resp, err = restclient.SendResolveRequest(url + "/" + didDocNamespace + d.reqEncodedDIDDoc)
 	return err
 }
 
@@ -92,15 +96,17 @@ func (d *DIDSideSteps) checkSuccessResp(msg string) error {
 	return nil
 }
 
-func (d *DIDSideSteps) resolveDIDDocument() error {
+func (d *DIDSideSteps) resolveDIDDocument(url string) error {
 	documentHash, err := docutil.CalculateID(didDocNamespace, d.reqEncodedDIDDoc, sha2256)
 	if err != nil {
 		return err
 	}
 
+	logger.Infof("Resolving DID document %s from %s", documentHash, url)
+
 	remainingAttempts := 20
 	for {
-		d.resp, err = restclient.SendResolveRequest(testDocumentURL + "/" + documentHash)
+		d.resp, err = restclient.SendResolveRequest(url + "/" + documentHash)
 		if err != nil {
 			return err
 		}
@@ -153,10 +159,9 @@ func encodeDidDocument(didDocumentPath, didID string) string {
 
 // RegisterSteps registers did sidetree steps
 func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
-	s.Step(`^client sends request to create DID document "([^"]*)" as "([^"]*)" with DID id "([^"]*)"$`, d.sendDIDDocumentWithID)
+	s.Step(`^client sends request to "([^"]*)" to create DID document "([^"]*)" as "([^"]*)" with DID id "([^"]*)"$`, d.sendDIDDocumentWithID)
 	s.Step(`^check error response contains "([^"]*)"$`, d.checkErrorResp)
-	s.Step(`^client sends request to create DID document "([^"]*)" as "([^"]*)"`, d.sendDIDDocument)
+	s.Step(`^client sends request to "([^"]*)" to create DID document "([^"]*)" as "([^"]*)"`, d.sendDIDDocument)
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessResp)
-	s.Step(`^client sends request to resolve DID document$`, d.resolveDIDDocument)
-
+	s.Step(`^client sends request to "([^"]*)" to resolve DID document$`, d.resolveDIDDocument)
 }

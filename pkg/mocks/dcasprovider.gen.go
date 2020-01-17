@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
 type DCASClientProvider struct {
@@ -99,3 +100,5 @@ func (fake *DCASClientProvider) recordInvocation(key string, args []interface{})
 	}
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
+
+var _ common.DCASClientProvider = new(DCASClientProvider)

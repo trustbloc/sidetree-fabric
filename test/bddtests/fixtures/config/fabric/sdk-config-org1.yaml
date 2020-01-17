@@ -1,0 +1,137 @@
+#
+# Copyright SecureKey Technologies Inc. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+client:
+
+  # Which organization does this application instance belong to? The value must be the name of an org
+  # defined under "organizations"
+  organization: peerorg1
+
+  logging:
+    level: info
+
+  # Global configuration for peer, event service and orderer timeouts
+  peer:
+    timeout:
+      connection: 5s
+      response: 20s
+      discovery:
+        # Expiry period for discovery service greylist filter
+        # The channel client will greylist peers that are found to be offline
+        # to prevent re-selecting them in subsequent retries.
+        # This interval will define how long a peer is greylisted
+        greylistExpiry: 5s
+  eventService:
+    timeout:
+      connection: 30s
+      registrationResponse: 10s
+  orderer:
+    timeout:
+      connection: 3s
+      response: 10s
+  global:
+    timeout:
+      query: 120s
+      execute: 120s
+      resmgmt: 120s
+    cache:
+      connectionIdle: 5s
+      eventServiceIdle: 2m
+      channelConfig: 60s
+      channelMembership: 30s
+      discovery: 1s
+      selection: 1s
+
+  credentialStore:
+    # [Optional]. Specific to the CryptoSuite implementation used by GO SDK. Software-based implementations
+    # requiring a key store. PKCS#11 based implementations does not.
+    cryptoStore:
+      # Specific to the underlying KeyValueStore that backs the crypto key store.
+      path: /tmp/msp
+
+  tlsCerts:
+    # [Optional]. Use system certificate pool when connecting to peers, orderers (for negotiating TLS) Default: false
+    systemCertPool: false
+
+    client:
+      key:
+        path: /etc/hyperledger/mutual_tls/peer/client.key
+      cert:
+        path: /etc/hyperledger/mutual_tls/peer/client.crt
+
+channels:
+  _default:
+    policies:
+      discovery:
+        #[Optional] Maximum number of random targets
+        maxTargets: 2
+        #[Optional] retry options
+        retryOpts:
+          #[Optional] number of retry attempts
+          attempts: 8
+          #[Optional] the back off interval for the first retry attempt
+          initialBackoff: 500ms
+          #[Optional] the maximum back off interval for any retry attempt
+          maxBackoff: 2s
+          #[Optional] the factor by which the initial back off period is exponentially incremented
+          backoffFactor: 2.0
+      queryChannelConfig:
+        #[Optional] min number of success responses (from targets/peers)
+        minResponses: 1
+        #[Optional] channel config will be retrieved for these number of random targets
+        maxTargets: 2
+        #[Optional] retry options for query config block
+        retryOpts:
+          #[Optional] number of retry attempts
+          attempts: 8
+          #[Optional] the back off interval for the first retry attempt
+          initialBackoff: 500ms
+          #[Optional] the maximum back off interval for any retry attempt
+          maxBackoff: 2s
+          #[Optional] the factor by which the initial back off period is exponentially incremented
+          backoffFactor: 2.0
+
+#
+# list of participating organizations in this network
+#
+organizations:
+  peerorg1:
+    mspid: Org1MSP
+
+#
+# List of peers to send various requests to, including endorsement, query
+# and event listener registration.
+#
+peers:
+  _default:
+    grpcOptions:
+      grpc.http2.keepalive_time: 15
+      #     These parameters should be set in coordination with the keepalive policy on the server,
+      #     as incompatible settings can result in closing of connection.
+      #     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: true
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+orderers:
+  _default:
+    grpcOptions:
+      grpc-max-send-message-length: 15
+      #     These parameters should be set in coordination with the keepalive policy on the server,
+      #     as incompatible settings can result in closing of connection.
+      #     When duration of the 'keep-alive-time' is set to 0 or less the keep alive client parameters are disabled
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: true
+      #will be taken into consideration if address has no protocol defined and secured connection fails
+      allow-insecure: false
+
+    tlsCACerts:
+      path: /etc/hyperledger/fabric/tls/orderer-ca-cert.pem

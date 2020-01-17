@@ -9,29 +9,26 @@ package cas
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/trustbloc/sidetree-fabric/pkg/context/cas/mocks"
-
 	"github.com/pkg/errors"
-
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
-	fabMocks "github.com/hyperledger/fabric-sdk-go/pkg/fab/mocks"
+	"github.com/stretchr/testify/require"
+	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
 const chID = "mychannel"
 
 func TestNew(t *testing.T) {
-	ctx := channelProvider(chID)
-	c := New(ctx)
+	dcasProvider := &stmocks.DCASClientProvider{}
+	c := New(chID, dcasProvider)
 	require.NotNil(t, c)
 }
 
-func TestGetClientError(t *testing.T) {
+func TestForChannelError(t *testing.T) {
 	testErr := errors.New("provider error")
-	ctx := channelProviderWithError(testErr)
 
-	c := New(ctx)
+	dcasProvider := &stmocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(nil, testErr)
+
+	c := New(chID, dcasProvider)
 	require.NotNil(t, c)
 
 	content := []byte("content")
@@ -41,17 +38,23 @@ func TestGetClientError(t *testing.T) {
 	require.Contains(t, err.Error(), testErr.Error())
 
 	payload, err := c.Read("address")
-	require.NotNil(t, err)
-	require.Nil(t, payload)
-	require.Contains(t, err.Error(), testErr.Error())
+	require.EqualError(t, err, testErr.Error())
+	require.Empty(t, payload)
 }
 
 func TestWriteContent(t *testing.T) {
-	cas := New(channelProvider(chID))
-
-	cas.channelClient = mocks.NewMockChannelClient()
-
 	content := []byte("content")
+
+	dcasClient := &stmocks.DCASClient{}
+	dcasClient.PutReturns("address", nil)
+	dcasClient.GetReturns(content, nil)
+
+	dcasProvider := &stmocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(dcasClient, nil)
+
+	cas := New(chID, dcasProvider)
+	require.NotNil(t, cas)
+
 	address, err := cas.Write(content)
 	require.Nil(t, err)
 	require.NotEmpty(t, address)
@@ -63,13 +66,14 @@ func TestWriteContent(t *testing.T) {
 }
 
 func TestWriteContentError(t *testing.T) {
-
 	testErr := errors.New("channel error")
-	cc := mocks.NewMockChannelClient()
-	cc.Err = testErr
 
-	cas := New(channelProvider(chID))
-	cas.channelClient = cc
+	dcasClient := &stmocks.DCASClient{}
+	dcasClient.PutReturns("", testErr)
+	dcasProvider := &stmocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(dcasClient, nil)
+
+	cas := New(chID, dcasProvider)
 
 	content := []byte("content")
 	address, err := cas.Write(content)
@@ -81,28 +85,16 @@ func TestWriteContentError(t *testing.T) {
 func TestReadContentError(t *testing.T) {
 
 	testErr := errors.New("channel error")
-	cc := mocks.NewMockChannelClient()
-	cc.Err = testErr
 
-	cas := New(channelProvider(chID))
-	cas.channelClient = cc
+	dcasClient := &stmocks.DCASClient{}
+	dcasClient.GetReturns(nil, testErr)
+	dcasProvider := &stmocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(dcasClient, nil)
+
+	cas := New(chID, dcasProvider)
 
 	read, err := cas.Read("address")
 	require.NotNil(t, err)
 	require.Nil(t, read)
 	require.Contains(t, err.Error(), testErr.Error())
-}
-
-func channelProvider(channelID string) context.ChannelProvider {
-	channelProvider := func() (context.Channel, error) {
-		return fabMocks.NewMockChannel(channelID)
-	}
-	return channelProvider
-}
-
-func channelProviderWithError(err error) context.ChannelProvider {
-	channelProvider := func() (context.Channel, error) {
-		return nil, err
-	}
-	return channelProvider
 }

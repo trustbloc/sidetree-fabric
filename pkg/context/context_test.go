@@ -9,65 +9,26 @@ package context
 import (
 	"testing"
 
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
-	"github.com/spf13/viper"
+	viper "github.com/spf13/viper2015"
 	"github.com/stretchr/testify/require"
-
-	fabMocks "github.com/hyperledger/fabric-sdk-go/pkg/fab/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
+
+//go:generate counterfeiter -o ./../mocks/txnserviceprovider.gen.go --fake-name TxnServiceProvider . txnServiceProvider
+//go:generate counterfeiter -o ./../mocks/txnservice.gen.go --fake-name TxnService github.com/trustbloc/fabric-peer-ext/pkg/txn/api.Service
 
 const (
 	sdkConfigFile      = "./testdata/config.yaml"
 	protocolConfigFile = "./testdata/protocol.json"
 )
 
-const channelID = "mychannel"
-
-func TestGetChannelProvider(t *testing.T) {
-	config := viper.New()
-
-	config.Set(keyConfigFile, sdkConfigFile)
-	config.Set(keyProtocolFile, protocolConfigFile)
-
-	chProvider, err := GetChannelProvider(config)
-	require.Nil(t, err)
-	require.NotNil(t, chProvider)
-
-}
-
-func TestGetChannelProvider_NewSDKConfigError(t *testing.T) {
-	config := viper.New()
-
-	config.Set(keyConfigFile, "./invalid/config.yaml")
-	config.Set(keyProtocolFile, protocolConfigFile)
-
-	chProvider, err := GetChannelProvider(config)
-	require.NotNil(t, err)
-	require.Nil(t, chProvider)
-	require.Contains(t, err.Error(), "failed to initialize configuration")
-
-}
-
-func TestGetChannelProvider_SidetreeConfigError(t *testing.T) {
-	config := viper.New()
-
-	config.Set(keyConfigFile, "./testdata/config-nosidetree.yaml")
-	config.Set(keyProtocolFile, protocolConfigFile)
-
-	chProvider, err := GetChannelProvider(config)
-	require.NotNil(t, err)
-	require.Nil(t, chProvider)
-	require.Contains(t, err.Error(), "sidetree configuration key not found")
-
-}
-
 func TestNew(t *testing.T) {
-	config := viper.New()
+	viper.Set(keyProtocolFile, protocolConfigFile)
 
-	config.Set(keyConfigFile, sdkConfigFile)
-	config.Set(keyProtocolFile, protocolConfigFile)
+	txnProvider := &mocks.TxnServiceProvider{}
+	dcasProvider := &mocks.DCASClientProvider{}
 
-	sctx, err := New(config, mockChannelProvider(channelID))
+	sctx, err := New(&configProvider{}, txnProvider, dcasProvider)
 	require.Nil(t, err)
 
 	require.NotNil(t, sctx.Protocol())
@@ -77,21 +38,22 @@ func TestNew(t *testing.T) {
 }
 
 func TestNew_ProtocolError(t *testing.T) {
-	config := viper.New()
+	viper.Set(keyProtocolFile, "./invalid/protocol.json")
 
-	config.Set(keyConfigFile, sdkConfigFile)
-	config.Set(keyProtocolFile, "./invalid/protocol.json")
+	txnProvider := &mocks.TxnServiceProvider{}
+	dcasProvider := &mocks.DCASClientProvider{}
 
-	sctx, err := New(config, mockChannelProvider(channelID))
+	sctx, err := New(&configProvider{}, txnProvider, dcasProvider)
 	require.NotNil(t, err)
 	require.Nil(t, sctx)
 	require.Contains(t, err.Error(), "no such file or directory")
 
 }
 
-func mockChannelProvider(channelID string) context.ChannelProvider {
-	channelProvider := func() (context.Channel, error) {
-		return fabMocks.NewMockChannel(channelID)
-	}
-	return channelProvider
+type configProvider struct {
+	channelID string
+}
+
+func (p *configProvider) ChannelID() string {
+	return p.channelID
 }

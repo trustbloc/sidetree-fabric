@@ -19,6 +19,7 @@ import (
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
+	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
@@ -289,18 +290,18 @@ func TestMonitor_Error(t *testing.T) {
 
 type mockClients struct {
 	offLedgerProvider  *mocks.OffLedgerClientProvider
-	dcasProvider       *mocks.DCASClientProvider
+	dcasProvider       *stmocks.DCASClientProvider
 	blockchainProvider *mocks.BlockchainClientProvider
 	blockchain         *mocks.BlockchainClient
 	offLedger          *mocks.MockOffLedgerClient
-	dcas               *mocks.DCASClient
+	dcas               *stmocks.DCASClient
 }
 
 func newMonitorWithMocks(t *testing.T) (*Monitor, *mockClients) {
 	clients := &mockClients{}
 
 	clients.offLedgerProvider = &mocks.OffLedgerClientProvider{}
-	clients.dcasProvider = &mocks.DCASClientProvider{}
+	clients.dcasProvider = &stmocks.DCASClientProvider{}
 	clients.blockchainProvider = &mocks.BlockchainClientProvider{}
 
 	clients.blockchain = &mocks.BlockchainClient{}
@@ -309,7 +310,7 @@ func newMonitorWithMocks(t *testing.T) (*Monitor, *mockClients) {
 	clients.offLedger = mocks.NewMockOffLedgerClient()
 	clients.offLedgerProvider.ForChannelReturns(clients.offLedger, nil)
 
-	clients.dcas = &mocks.DCASClient{}
+	clients.dcas = &stmocks.DCASClient{}
 	clients.dcasProvider.ForChannelReturns(clients.dcas, nil)
 
 	m := New(

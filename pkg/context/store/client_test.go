@@ -7,16 +7,15 @@ SPDX-License-Identifier: Apache-2.0
 package store
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-	"github.com/trustbloc/sidetree-fabric/pkg/context/store/mocks"
-
-	"github.com/pkg/errors"
-
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
-	fabMocks "github.com/hyperledger/fabric-sdk-go/pkg/fab/mocks"
+	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
 
 const (
@@ -27,28 +26,43 @@ const (
 )
 
 func TestNew(t *testing.T) {
-	ctx := channelProvider(chID)
-	c := New(ctx, namespace)
+	dcasProvider := &stmocks.DCASClientProvider{}
+	dcasClient := obmocks.NewMockDCASClient()
+	dcasProvider.ForChannelReturns(dcasClient, nil)
+
+	c := New(chID, namespace, dcasProvider)
 	require.NotNil(t, c)
 }
 
-func TestGetClientError(t *testing.T) {
+func TestProviderError(t *testing.T) {
 	testErr := errors.New("provider error")
-	ctx := channelProviderWithError(testErr)
+	dcasProvider := &stmocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(nil, testErr)
 
-	c := New(ctx, namespace)
+	c := New(chID, namespace, dcasProvider)
 	require.NotNil(t, c)
 
 	payload, err := c.Get(id)
-	require.NotNil(t, err)
+	require.EqualError(t, err, testErr.Error())
 	require.Nil(t, payload)
-	require.Contains(t, err.Error(), testErr.Error())
 }
 
 func TestWriteContent(t *testing.T) {
-	c := New(channelProvider(chID), namespace)
+	dcasProvider := &stmocks.DCASClientProvider{}
+	dcasClient := obmocks.NewMockDCASClient()
+	dcasProvider.ForChannelReturns(dcasClient, nil)
 
-	c.channelClient = mocks.NewMockChannelClient()
+	didID := namespace + id
+
+	vk1 := &queryresult.KV{
+		Namespace: documentCC + "~" + collection,
+		Key:       didID,
+		Value:     []byte("{}"),
+	}
+
+	query := fmt.Sprintf(queryByIDTemplate, didID)
+	dcasClient.WithQueryResults(documentCC, collection, query, []*queryresult.KV{vk1})
+	c := New(chID, namespace, dcasProvider)
 
 	ops, err := c.Get(id)
 	require.Nil(t, err)
@@ -56,49 +70,19 @@ func TestWriteContent(t *testing.T) {
 	require.Equal(t, 1, len(ops))
 }
 
-func TestReadContentError(t *testing.T) {
-
-	testErr := errors.New("channel error")
-	cc := mocks.NewMockChannelClient()
-	cc.Err = testErr
-
-	c := New(channelProvider(chID), namespace)
-	c.channelClient = cc
-
-	read, err := c.Get(id)
-	require.NotNil(t, err)
-	require.Nil(t, read)
-	require.Contains(t, err.Error(), testErr.Error())
-}
-
 func TestGetOperationsError(t *testing.T) {
 
-	doc, err := getOperations([]byte("[test : 123]"))
+	doc, err := getOperations([][]byte{[]byte("[test : 123]")})
 	require.NotNil(t, err)
 	require.Nil(t, doc)
 	require.Contains(t, err.Error(), "invalid character")
 }
 
 func TestClient_Put(t *testing.T) {
-	c := New(channelProvider(chID), namespace)
-	c.channelClient = mocks.NewMockChannelClient()
+	c := New(chID, namespace, &stmocks.DCASClientProvider{})
 
 	require.PanicsWithValue(t, "not implemented", func() {
 		err := c.Put(batch.Operation{})
 		require.NoError(t, err)
 	})
-}
-
-func channelProvider(channelID string) context.ChannelProvider {
-	channelProvider := func() (context.Channel, error) {
-		return fabMocks.NewMockChannel(channelID)
-	}
-	return channelProvider
-}
-
-func channelProviderWithError(err error) context.ChannelProvider {
-	channelProvider := func() (context.Channel, error) {
-		return nil, err
-	}
-	return channelProvider
 }

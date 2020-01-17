@@ -7,11 +7,12 @@ SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/hyperledger/fabric/peer/node"
-	"github.com/spf13/viper"
+	viper "github.com/spf13/viper2015"
 	extpeer "github.com/trustbloc/fabric-peer-ext/pkg/peer"
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/config"
@@ -42,10 +43,10 @@ func main() {
 }
 
 func setup() {
-	// For environment variables.
+	replacer := strings.NewReplacer(".", "_")
+
 	viper.SetEnvPrefix(node.CmdRoot)
 	viper.AutomaticEnv()
-	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 
 	node.InitCmd(nil, nil)
@@ -53,6 +54,8 @@ func setup() {
 
 type configProvider struct {
 	*config.Config
+	listenURL    string
+	batchTimeout time.Duration
 }
 
 func newConfigProvider() *configProvider {
@@ -66,7 +69,29 @@ func newConfigProvider() *configProvider {
 			peerID,
 			getObserverChannels(),
 			getMonitorPeriod()),
+		listenURL:    getListenURL(),
+		batchTimeout: time.Second, // TODO: Make configurable
 	}
+}
+
+func getListenURL() string {
+	host := viper.GetString("sidetree.host")
+	if host == "" {
+		host = "0.0.0.0"
+	}
+	port := viper.GetInt("sidetree.port")
+	if port == 0 {
+		panic("port is not set")
+	}
+	return fmt.Sprintf("%s:%d", host, port)
+}
+
+func (c *configProvider) GetBatchTimeout() time.Duration {
+	return c.batchTimeout
+}
+
+func (c *configProvider) GetListenURL() string {
+	return c.listenURL
 }
 
 // getObserverChannels returns the channels that will be observed for Sidetree transaction

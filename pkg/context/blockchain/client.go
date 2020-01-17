@@ -7,13 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package blockchain
 
 import (
-	"sync"
-
 	"github.com/pkg/errors"
+	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
-
-	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
 )
 
 const (
@@ -21,36 +17,35 @@ const (
 	writeAnchorFcn = "writeAnchor"
 )
 
-// Client implements blockchain client for writing anchors
-type Client struct {
-	lock            sync.RWMutex
-	channelProvider context.ChannelProvider
-	channelClient   chClient
+type txnServiceProvider interface {
+	ForChannel(channelID string) (txnapi.Service, error)
 }
 
-type chClient interface {
-	Execute(request channel.Request, options ...channel.RequestOption) (channel.Response, error)
+// Client implements blockchain client for writing anchors
+type Client struct {
+	channelID   string
+	txnProvider txnServiceProvider
 }
 
 // New returns a new blockchain client
-func New(channelProvider context.ChannelProvider) *Client {
-	return &Client{channelProvider: channelProvider}
+func New(channelID string, txnProvider txnServiceProvider) *Client {
+	return &Client{
+		channelID:   channelID,
+		txnProvider: txnProvider,
+	}
 }
 
 // WriteAnchor writes anchor file address to blockchain
 func (c *Client) WriteAnchor(anchor string) error {
-
-	client, err := c.getClient()
+	txnService, err := c.txnProvider.ForChannel(c.channelID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get channel client")
+		return err
 	}
 
-	_, err = client.Execute(channel.Request{
+	_, err = txnService.EndorseAndCommit(&txnapi.Request{
 		ChaincodeID: sidetreeTxnCC,
-		Fcn:         writeAnchorFcn,
-		Args:        [][]byte{[]byte(anchor)},
+		Args:        [][]byte{[]byte(writeAnchorFcn), []byte(anchor)},
 	})
-
 	if err != nil {
 		return errors.Wrap(err, "failed to store anchor file address")
 	}
@@ -62,29 +57,4 @@ func (c *Client) WriteAnchor(anchor string) error {
 func (c *Client) Read(sinceTransactionNumber int) (bool, *observer.SidetreeTxn) {
 	// TODO: Not sure where/if this function is used
 	panic("not implemented")
-}
-
-func (c *Client) getClient() (chClient, error) {
-
-	c.lock.RLock()
-	chc := c.channelClient
-	c.lock.RUnlock()
-
-	if chc != nil {
-		return chc, nil
-	}
-
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	if c.channelClient == nil {
-		channelClient, err := channel.New(c.channelProvider)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create channel client")
-		}
-
-		c.channelClient = channelClient
-	}
-
-	return c.channelClient, nil
 }

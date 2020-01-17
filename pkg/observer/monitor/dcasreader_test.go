@@ -10,13 +10,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
 
 func TestSidetreeDCASReader_Read(t *testing.T) {
 	dcasClient := obmocks.NewMockDCASClient()
-	dcasClientProvider := &obmocks.DCASClientProvider{}
+	dcasClientProvider := &stmocks.DCASClientProvider{}
 	dcasClientProvider.ForChannelReturns(dcasClient, nil)
 	r := NewSidetreeDCASReader(channel1, dcasClientProvider)
 	require.NotNil(t, r)
