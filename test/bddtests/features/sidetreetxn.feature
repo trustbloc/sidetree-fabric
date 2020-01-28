@@ -24,12 +24,16 @@ Feature:
 
     And we wait 10 seconds
 
+    # Configure the following Sidetree namespaces on channel 'mychannel'
+    # - did:bloc:sidetree       - Path: /document
+    # - did:bloc:trustbloc.dev  - Path: /trustbloc.dev
     Then fabric-cli context "mychannel" is used
-    And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/org1-config.json --noprompt"
-    And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/org2-config.json --noprompt"
+    And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-consortium-config.json --noprompt"
+    And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-org1-config.json --noprompt"
+    And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-org2-config.json --noprompt"
 
     # Wait for the Sidetree services to start up on mychannel
-    And we wait 3 seconds
+    And we wait 10 seconds
 
   @sidetree_1
   Scenario: Sidetree Txn Test

@@ -9,8 +9,8 @@ package context
 import (
 	"testing"
 
-	viper "github.com/spf13/viper2015"
 	"github.com/stretchr/testify/require"
+	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
@@ -18,42 +18,20 @@ import (
 //go:generate counterfeiter -o ./../mocks/txnservice.gen.go --fake-name TxnService github.com/trustbloc/fabric-peer-ext/pkg/txn/api.Service
 
 const (
-	sdkConfigFile      = "./testdata/config.yaml"
-	protocolConfigFile = "./testdata/protocol.json"
+	channelID = "channel1"
+	namespace = "did:sidetree"
 )
 
 func TestNew(t *testing.T) {
-	viper.Set(keyProtocolFile, protocolConfigFile)
-
 	txnProvider := &mocks.TxnServiceProvider{}
 	dcasProvider := &mocks.DCASClientProvider{}
 
-	sctx, err := New(&configProvider{}, txnProvider, dcasProvider)
-	require.Nil(t, err)
+	protocolVersions := map[string]protocolApi.Protocol{}
+
+	sctx := New(channelID, namespace, protocolVersions, txnProvider, dcasProvider)
 
 	require.NotNil(t, sctx.Protocol())
 	require.NotNil(t, sctx.CAS())
 	require.NotNil(t, sctx.Blockchain())
-
-}
-
-func TestNew_ProtocolError(t *testing.T) {
-	viper.Set(keyProtocolFile, "./invalid/protocol.json")
-
-	txnProvider := &mocks.TxnServiceProvider{}
-	dcasProvider := &mocks.DCASClientProvider{}
-
-	sctx, err := New(&configProvider{}, txnProvider, dcasProvider)
-	require.NotNil(t, err)
-	require.Nil(t, sctx)
-	require.Contains(t, err.Error(), "no such file or directory")
-
-}
-
-type configProvider struct {
-	channelID string
-}
-
-func (p *configProvider) ChannelID() string {
-	return p.channelID
+	require.NotEmpty(t, sctx.Namespace())
 }

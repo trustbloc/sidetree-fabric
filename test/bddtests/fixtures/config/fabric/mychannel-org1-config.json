@@ -1,0 +1,63 @@
+{
+  "MspID": "Org1MSP",
+  "Peers": [
+    {
+      "PeerID": "peer0.org1.example.com",
+      "Apps": [
+        {
+          "AppName": "txn",
+          "Version": "1",
+          "Components": [
+            {
+              "Name": "general",
+              "Version": "1",
+              "Config": "file://./txn-config.json",
+              "Format": "json"
+            },
+            {
+              "Name": "sdk",
+              "Version": "1",
+              "Config": "file://./sdk-config-org1.yaml",
+              "Format": "yaml"
+            }
+          ]
+        },
+        {
+          "AppName": "sidetree",
+          "Version": "1",
+          "Config": "file://./mychannel-sidetree-config-org1.json",
+          "Format": "json"
+        }
+      ]
+    },
+    {
+      "PeerID": "peer1.org1.example.com",
+      "Apps": [
+        {
+          "AppName": "txn",
+          "Version": "1",
+          "Components": [
+            {
+              "Name": "general",
+              "Version": "1",
+              "Config": "file://./txn-config.json",
+              "Format": "json"
+            },
+            {
+              "Name": "sdk",
+              "Version": "1",
+              "Config": "file://./sdk-config-org1.yaml",
+              "Format": "yaml"
+            }
+          ]
+        },
+        {
+          "AppName": "sidetree",
+          "Version": "1",
+          "Config": "file://./mychannel-sidetree-config-org1.json",
+          "Format": "json"
+        }
+      ]
+    }
+  ]
+}

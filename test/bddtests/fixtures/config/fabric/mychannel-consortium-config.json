@@ -1,0 +1,39 @@
+{
+  "MspID": "general",
+  "Apps": [
+    {
+      "AppName": "did:sidetree",
+      "Version": "1",
+      "Config": "file://./did-sidetree-config.yaml",
+      "Format": "yaml",
+      "Components": [
+        {
+          "Name": "protocol",
+          "Version": "0.4",
+          "Config": "file://./did-sidetree-protocol-v0_4.json",
+          "Format": "json"
+        },
+        {
+          "Name": "protocol",
+          "Version": "0.5",
+          "Config": "file://./did-sidetree-protocol-v0_5.json",
+          "Format": "json"
+        }
+      ]
+    },
+    {
+      "AppName": "did:bloc:trustbloc.dev",
+      "Version": "1",
+      "Config": "file://./did-trustbloc-config.yaml",
+      "Format": "yaml",
+      "Components": [
+        {
+          "Name": "protocol",
+          "Version": "0.5",
+          "Config": "file://./did-trustbloc-protocol-v0_5.json",
+          "Format": "json"
+        }
+      ]
+    }
+  ]
+}

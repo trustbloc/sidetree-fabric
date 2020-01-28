@@ -1,0 +1,6 @@
+{
+  "startingBlockchainTime": 10,
+  "hashAlgorithmInMultihashCode": 18,
+  "maxOperationByteSize": 20000,
+  "maxOperationsPerBatch": 100
+}

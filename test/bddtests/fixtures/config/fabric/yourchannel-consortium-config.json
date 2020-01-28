@@ -1,0 +1,19 @@
+{
+  "MspID": "general",
+  "Apps": [
+    {
+      "AppName": "did:bloc:yourdomain.com",
+      "Version": "1",
+      "Config": "file://./did-yourdomain-config.yaml",
+      "Format": "yaml",
+      "Components": [
+        {
+          "Name": "protocol",
+          "Version": "0.5",
+          "Config": "file://./did-yourdomain-protocol-v0_5.json",
+          "Format": "json"
+        }
+      ]
+    }
+  ]
+}

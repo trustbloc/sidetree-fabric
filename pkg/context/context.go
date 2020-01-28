@@ -7,8 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package context
 
 import (
-	"github.com/hyperledger/fabric/common/flogging"
-	viper "github.com/spf13/viper2015"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
@@ -18,15 +16,10 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/context/protocol"
 )
 
-const (
-	keyProtocolFile     = "sidetree.protocol.file"
-	defaultProtocolFile = "protocol.json"
-)
-
-var logger = flogging.MustGetLogger("sidetree_context")
-
 // SidetreeContext implements 'Fabric' version of Sidetree node context
 type SidetreeContext struct {
+	channelID        string
+	namespace        string
 	protocolClient   protocolApi.Client
 	casClient        batch.CASClient
 	blockchainClient batch.BlockchainClient
@@ -40,32 +33,20 @@ type dcasClientProvider interface {
 	ForChannel(channelID string) (client.DCAS, error)
 }
 
-type sidetreeConfigProvider interface {
-	ChannelID() string
-}
-
 // New creates new Sidetree context
-func New(cfg sidetreeConfigProvider, txnProvider txnServiceProvider, dcasProvider dcasClientProvider) (*SidetreeContext, error) {
-	pc, err := getProtocolClient()
-	if err != nil {
-		logger.Errorf("Failed to load protocol: %s", err.Error())
-		return nil, err
-	}
-
+func New(channelID, namespace string, protocolVersions map[string]protocolApi.Protocol, txnProvider txnServiceProvider, dcasProvider dcasClientProvider) *SidetreeContext {
 	return &SidetreeContext{
-		protocolClient:   pc,
-		casClient:        cas.New(cfg.ChannelID(), dcasProvider),
-		blockchainClient: blockchain.New(cfg.ChannelID(), txnProvider),
-	}, nil
+		channelID:        channelID,
+		namespace:        namespace,
+		protocolClient:   protocol.New(protocolVersions),
+		casClient:        cas.New(channelID, dcasProvider),
+		blockchainClient: blockchain.New(channelID, txnProvider),
+	}
 }
 
-func getProtocolClient() (*protocol.Client, error) {
-	protocolConfigFile := defaultProtocolFile
-	if viper.IsSet(keyProtocolFile) {
-		protocolConfigFile = viper.GetString(keyProtocolFile)
-	}
-
-	return protocol.New(protocolConfigFile)
+// Namespace returns the namespace
+func (m *SidetreeContext) Namespace() string {
+	return m.namespace
 }
 
 // Protocol returns protocol client
