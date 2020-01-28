@@ -7,9 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package protocol
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"path/filepath"
 	"sort"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
@@ -21,20 +18,7 @@ type Client struct {
 }
 
 //New initializes the protocol parameters from file
-func New(protocolFileName string) (*Client, error) {
-
-	protocolFileName = filepath.Clean(protocolFileName)
-	protocolParameterFileBytes, err := ioutil.ReadFile(protocolFileName) //nolint:gas
-	if err != nil {
-		return nil, err
-	}
-
-	var protocolVersions map[string]protocol.Protocol
-	err = json.Unmarshal(protocolParameterFileBytes, &protocolVersions)
-	if err != nil {
-		return nil, err
-	}
-
+func New(protocolVersions map[string]protocol.Protocol) *Client {
 	// Creating the list of the protocol versions
 	protocols := make([]protocol.Protocol, 0, len(protocolVersions))
 	for _, v := range protocolVersions {
@@ -46,7 +30,7 @@ func New(protocolFileName string) (*Client, error) {
 		return protocols[j].StartingBlockChainTime > protocols[i].StartingBlockChainTime
 	})
 
-	return &Client{protocols: protocols}, nil
+	return &Client{protocols: protocols}
 }
 
 //Current returns the latest version of protocol

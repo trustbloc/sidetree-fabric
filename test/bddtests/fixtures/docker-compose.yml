@@ -66,8 +66,6 @@ services:
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
       - CORE_LEDGER_ROLES=endorser,committer,sidetree-batch-writer,sidetree-resolver
-      # channels to observe for Sidetree transaction
-      - CORE_LEDGER_SIDETREE_OBSERVER_CHANNELS=mychannel
       # # the following setting starts chaincode containers on the same
       # # bridge network as the peers
       # # https://docs.docker.com/compose/networking/
@@ -79,8 +77,6 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer0-org1.couchdb:5984
-      - CORE_SIDETREE_PROTOCOL_FILE=/etc/sidetree-fabric/protocol.json
-      - CORE_SIDETREE_CONFIG_FILE=/etc/sidetree-fabric/config.yaml
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -95,8 +91,6 @@ services:
       - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca-cert.pem
       - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls:/etc/hyperledger/mutual_tls/peer
       - ${COMPOSE_DIR}/config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
-      - ./config/client/protocol.json:/etc/sidetree-fabric/protocol.json
-      - ./config/client/config.yaml:/etc/sidetree-fabric/config.yaml
     depends_on:
       - builder
       - orderer.example.com
@@ -130,8 +124,6 @@ services:
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
       - CORE_LEDGER_ROLES=endorser,committer,sidetree-resolver,sidetree-observer
-      # channels to observe for Sidetree transaction
-      - CORE_LEDGER_SIDETREE_OBSERVER_CHANNELS=mychannel
       # # the following setting starts chaincode containers on the same
       # # bridge network as the peers
       # # https://docs.docker.com/compose/networking/
@@ -143,8 +135,6 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer1-org1.couchdb:5984
-      - CORE_SIDETREE_PROTOCOL_FILE=/etc/sidetree-fabric/protocol.json
-      - CORE_SIDETREE_CONFIG_FILE=/etc/sidetree-fabric/config.yaml
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -159,8 +149,6 @@ services:
       - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca-cert.pem
       - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls:/etc/hyperledger/mutual_tls/peer
       - ${COMPOSE_DIR}/config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
-      - ./config/client/protocol.json:/etc/sidetree-fabric/protocol.json
-      - ./config/client/config.yaml:/etc/sidetree-fabric/config.yaml
     depends_on:
       - builder
       - orderer.example.com
@@ -193,8 +181,6 @@ services:
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
       - CORE_LEDGER_ROLES=endorser,committer,sidetree-resolver,sidetree-batch-writer
-      # channels to observe for Sidetree transaction
-      - CORE_LEDGER_SIDETREE_OBSERVER_CHANNELS=mychannel
       # # the following setting starts chaincode containers on the same
       # # bridge network as the peers
       # # https://docs.docker.com/compose/networking/
@@ -206,8 +192,6 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer0-org2.couchdb:5984
-      - CORE_SIDETREE_PROTOCOL_FILE=/etc/sidetree-fabric/protocol.json
-      - CORE_SIDETREE_CONFIG_FILE=/etc/sidetree-fabric/config.yaml
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -221,8 +205,6 @@ services:
       - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca-cert.pem
       - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls:/etc/hyperledger/mutual_tls/peer
       - ${COMPOSE_DIR}/config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
-      - ./config/client/protocol.json:/etc/sidetree-fabric/protocol.json
-      - ./config/client/config.yaml:/etc/sidetree-fabric/config.yaml
     depends_on:
       - builder
       - orderer.example.com
@@ -256,8 +238,6 @@ services:
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
       - CORE_LEDGER_ROLES=endorser,committer,sidetree-resolver
-      # channels to observe for Sidetree transaction
-      - CORE_LEDGER_SIDETREE_OBSERVER_CHANNELS=mychannel
       # # the following setting starts chaincode containers on the same
       # # bridge network as the peers
       # # https://docs.docker.com/compose/networking/
@@ -269,8 +249,6 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer1-org2.couchdb:5984
-      - CORE_SIDETREE_PROTOCOL_FILE=/etc/sidetree-fabric/protocol.json
-      - CORE_SIDETREE_CONFIG_FILE=/etc/sidetree-fabric/config.yaml
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -284,8 +262,6 @@ services:
       - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca-cert.pem
       - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls:/etc/hyperledger/mutual_tls/peer
       - ${COMPOSE_DIR}/config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
-      - ./config/client/protocol.json:/etc/sidetree-fabric/protocol.json
-      - ./config/client/config.yaml:/etc/sidetree-fabric/config.yaml
     depends_on:
       - builder
       - orderer.example.com

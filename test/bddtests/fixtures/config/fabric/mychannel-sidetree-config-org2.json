@@ -1,0 +1,15 @@
+{
+  "Monitor": {
+    "Period": "3s"
+  },
+  "Namespaces": [
+    {
+      "Namespace": "did:sidetree",
+      "BasePath": "/document"
+    },
+    {
+      "Namespace": "did:bloc:trustbloc.dev",
+      "BasePath": "/trustbloc.dev"
+    }
+  ]
+}

@@ -10,24 +10,32 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
 
 func TestNew(t *testing.T) {
-	client, err := New("testdata/protocol.json")
-	require.Nil(t, err)
+	versions := map[string]protocol.Protocol{}
+	client := New(versions)
 	require.NotNil(t, client)
 }
 
-func TestNewError(t *testing.T) {
-	client, err := New("testdata/invalid.json")
-	require.NotNil(t, err)
-	require.Nil(t, client)
-	require.Contains(t, err.Error(), "no such file or directory")
-}
-
 func TestCurrentProtocol(t *testing.T) {
-	client, err := New("testdata/protocol.json")
-	require.Nil(t, err)
+	versions := map[string]protocol.Protocol{
+		"1.0": {
+			StartingBlockChainTime:       500000,
+			HashAlgorithmInMultiHashCode: 18,
+			MaxOperationByteSize:         2000,
+			MaxOperationsPerBatch:        10000,
+		},
+		"0.1": {
+			StartingBlockChainTime:       0,
+			HashAlgorithmInMultiHashCode: 18,
+			MaxOperationByteSize:         500,
+			MaxOperationsPerBatch:        100,
+		},
+	}
+
+	client := New(versions)
 	require.NotNil(t, client)
 
 	protocol := client.Current()

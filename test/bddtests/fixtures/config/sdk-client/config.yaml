@@ -157,8 +157,6 @@ channels:
 
   # name of the channel
   mychannel:
-    orderers:
-      - orderer.example.com
     # Required. list of peers from participating orgs
     peers:
       peer0.org1.example.com:
@@ -186,8 +184,6 @@ channels:
         eventSource: true
 
   yourchannel:
-    orderers:
-      - orderer.example.com
     # Required. list of peers from participating orgs
     peers:
       peer0.org1.example.com:

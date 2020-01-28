@@ -8,7 +8,6 @@ package observer
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
@@ -16,19 +15,10 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
-	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
-var logger = flogging.MustGetLogger("observer")
-
-// Config contains the Observer configuration
-type Config interface {
-	GetPeerID() string
-	GetChannels() []string
-	GetMonitorPeriod() time.Duration
-}
+var logger = flogging.MustGetLogger("sidetree_observer")
 
 type dcas struct {
 	channelID      string
@@ -74,8 +64,7 @@ func (d *dcas) getDCASClient() (dcasclient.DCAS, error) {
 
 // Observer observes the ledger for new anchor files and updates the document store accordingly
 type Observer struct {
-	cfg          Config
-	docMonitor   *monitor.Monitor
+	channelID    string
 	dcasProvider common.DCASClientProvider
 	bpProvider   common.BlockPublisherProvider
 }
@@ -86,66 +75,30 @@ type Providers struct {
 	OffLedger      common.OffLedgerClientProvider
 	BlockPublisher common.BlockPublisherProvider
 	Blockchain     common.BlockchainClientProvider
-	Config         Config
 }
 
 // New returns a new Observer
-func New(providers *Providers) *Observer {
-	docMonitor := monitor.New(
-		providers.Config.GetPeerID(),
-		&monitor.ClientProviders{
-			Blockchain: providers.Blockchain,
-			DCAS:       providers.DCAS,
-			OffLedger:  providers.OffLedger,
-		},
-	)
+func New(channelID string, providers *Providers) *Observer {
 	return &Observer{
-		cfg:          providers.Config,
+		channelID:    channelID,
 		dcasProvider: providers.DCAS,
-		docMonitor:   docMonitor,
 		bpProvider:   providers.BlockPublisher,
 	}
 }
 
-// Start starts channel observer routines if applicable to the given channel.
-// Returns true if an observer was started
-func (o *Observer) Start(channelID string) error {
-	if !o.isObservedChannel(channelID) {
-		return nil
-	}
+// Start starts channel observer
+func (o *Observer) Start() error {
+	logger.Infof("[%s] Starting observer for channel", o.channelID)
 
-	return o.start(channelID)
-}
-
-// Stop stops the channel observer routines
-func (o *Observer) Stop() {
-	o.docMonitor.StopAll()
-}
-
-func (o *Observer) start(channelID string) error {
-	if role.IsObserver() {
-		logger.Infof("Starting observer for channel [%s]", channelID)
-		// register to receive Sidetree transactions from blocks
-		n := notifier.New(o.bpProvider.ForChannel(channelID))
-		dcasVal := newDCAS(channelID, o.dcasProvider)
-		sidetreeobserver.Start(n, dcasVal, dcasVal)
-		return nil
-	}
-
-	if role.IsMonitor() {
-		return o.docMonitor.Start(channelID, o.cfg.GetMonitorPeriod())
-	}
-
-	logger.Debugf("Nothing to start for channel [%s]", channelID)
+	// register to receive Sidetree transactions from blocks
+	n := notifier.New(o.bpProvider.ForChannel(o.channelID))
+	dcasVal := newDCAS(o.channelID, o.dcasProvider)
+	sidetreeobserver.Start(n, dcasVal, dcasVal)
 
 	return nil
 }
 
-func (o *Observer) isObservedChannel(channelID string) bool {
-	for _, cID := range o.cfg.GetChannels() {
-		if channelID == cID {
-			return true
-		}
-	}
-	return false
+// Stop stops the channel observer routines
+func (o *Observer) Stop() {
+	// TODO: Need to have a way of stopping the Observer
 }

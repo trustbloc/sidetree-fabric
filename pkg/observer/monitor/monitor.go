@@ -9,7 +9,6 @@ package monitor
 import (
 	"encoding/json"
 	"strings"
-	"sync"
 	"time"
 
 	cb "github.com/hyperledger/fabric-protos-go/common"
@@ -22,7 +21,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
-var logger = flogging.MustGetLogger("observer")
+var logger = flogging.MustGetLogger("sidetree_observer")
 
 const (
 	docsMetaDataColName = "meta_data"
@@ -46,76 +45,6 @@ type ClientProviders struct {
 // has the operations stored in the DCAS document store.
 type Monitor struct {
 	*ClientProviders
-	peerID           string
-	monitorByChannel map[string]*channelMonitor
-	lock             sync.RWMutex
-}
-
-// New returns a new document monitor
-func New(localPeerID string, clientProviders *ClientProviders) *Monitor {
-	return &Monitor{
-		peerID:           localPeerID,
-		ClientProviders:  clientProviders,
-		monitorByChannel: make(map[string]*channelMonitor),
-	}
-}
-
-// Start starts a document monitor for the given channel
-func (m *Monitor) Start(channelID string, period time.Duration) error {
-	logger.Infof("Starting monitor for channel [%s]", channelID)
-
-	if period == 0 {
-		logger.Warningf("Document monitor disabled for channel [%s]", channelID)
-		return nil
-	}
-
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	if _, ok := m.monitorByChannel[channelID]; ok {
-		return errors.Errorf("monitor for channel [%s] already started", channelID)
-	}
-
-	chm, err := newChannelMonitor(channelID, m.peerID, period, m.ClientProviders)
-	if err != nil {
-		return err
-	}
-
-	go chm.run()
-
-	m.monitorByChannel[channelID] = chm
-
-	return nil
-}
-
-// Stop stops the document monitor for the given channel
-func (m *Monitor) Stop(channelID string) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	chm, ok := m.monitorByChannel[channelID]
-	if !ok {
-		logger.Warningf("[%s] Monitor not found", channelID)
-		return
-	}
-	chm.stop()
-	delete(m.monitorByChannel, channelID)
-}
-
-// StopAll stops all document monitors
-func (m *Monitor) StopAll() {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	for _, chm := range m.monitorByChannel {
-		chm.stop()
-	}
-
-	m.monitorByChannel = make(map[string]*channelMonitor)
-}
-
-type channelMonitor struct {
-	*ClientProviders
 	channelID    string
 	peerID       string
 	period       time.Duration
@@ -124,33 +53,47 @@ type channelMonitor struct {
 	txnProcessor *observer.TxnProcessor
 }
 
-func newChannelMonitor(channelID, peerID string, period time.Duration, clientProviders *ClientProviders) (*channelMonitor, error) {
-	logger.Infof("[%s] Starting channel monitor", channelID)
-
-	if peerID == "" {
-		return nil, errors.New("no peer ID")
-	}
-
-	m := &channelMonitor{
-		ClientProviders: clientProviders,
+// New returns a new document monitor
+func New(channelID, localPeerID string, period time.Duration, clientProviders *ClientProviders) *Monitor {
+	m := &Monitor{
 		channelID:       channelID,
-		peerID:          peerID,
+		peerID:          localPeerID,
 		period:          period,
+		ClientProviders: clientProviders,
 		txnProcessor: observer.NewTxnProcessor(
 			NewSidetreeDCASReader(channelID, clientProviders.DCAS),
 			NewOperationStore(channelID, clientProviders.DCAS),
 		),
-		done: make(chan struct{}),
+		done: make(chan struct{}, 1),
 	}
+
 	m.blockVisitor = blockvisitor.New(channelID, blockvisitor.WithWriteHandler(m.handleWrite))
-	return m, nil
+
+	return m
 }
 
-func (m *channelMonitor) stop() {
+// Start starts a document monitor
+func (m *Monitor) Start() error {
+	logger.Infof("[%s] Starting monitor", m.channelID)
+
+	if m.period == 0 {
+		logger.Warningf("Document monitor disabled for channel [%s]", m.channelID)
+		return nil
+	}
+
+	go m.run()
+
+	return nil
+}
+
+// Stop stops the document monitor for the given channel
+func (m *Monitor) Stop() {
+	logger.Infof("[%s] Stopping monitor", m.channelID)
+
 	m.done <- struct{}{}
 }
 
-func (m *channelMonitor) run() {
+func (m *Monitor) run() {
 	logger.Infof("[%s] Starting document monitor with a period of %s", m.channelID, m.period)
 
 	ticker := time.NewTicker(m.period)
@@ -174,7 +117,7 @@ func (m *channelMonitor) run() {
 	}
 }
 
-func (m *channelMonitor) check() error {
+func (m *Monitor) check() error {
 	bcInfo, err := m.getBlockchainInfo()
 	if err != nil {
 		return err
@@ -197,7 +140,7 @@ func (m *channelMonitor) check() error {
 	return nil
 }
 
-func (m *channelMonitor) checkBlock(bNum uint64) error {
+func (m *Monitor) checkBlock(bNum uint64) error {
 	var block *cb.Block
 	var err error
 	if block, err = m.getBlockByNumber(bNum); err != nil {
@@ -212,17 +155,17 @@ func (m *channelMonitor) checkBlock(bNum uint64) error {
 	return nil
 }
 
-func (m *channelMonitor) handleWrite(w *blockvisitor.Write) error {
+func (m *Monitor) handleWrite(w *blockvisitor.Write) error {
 	if w.Namespace != common.SidetreeNs {
-		logger.Debugf("[%s] Ignoring w to namespace [%s] in block [%d] and TxNum [%d] since it is not the Sidetree namespace [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.SidetreeNs)
+		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since it is not the Sidetree namespace [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.SidetreeNs)
 		return nil
 	}
 	if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
-		logger.Debugf("[%s] Ignoring w to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, common.SidetreeNs, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
+		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, common.SidetreeNs, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
 		return nil
 	}
 
-	logger.Debugf("[%s] Handling w to anchor [%s] in block [%d] and TxNum [%d]", m.channelID, w.Write.Value, w.BlockNum, w.TxNum)
+	logger.Debugf("[%s] Handling write to anchor [%s] in block [%d] and TxNum [%d]", m.channelID, w.Write.Value, w.BlockNum, w.TxNum)
 	sidetreeTxn := observer.SidetreeTxn{
 		TransactionTime:   w.BlockNum,
 		TransactionNumber: w.TxNum,
@@ -234,7 +177,7 @@ func (m *channelMonitor) handleWrite(w *blockvisitor.Write) error {
 	return nil
 }
 
-func (m *channelMonitor) getBlockchainInfo() (*cb.BlockchainInfo, error) {
+func (m *Monitor) getBlockchainInfo() (*cb.BlockchainInfo, error) {
 	bcClient, err := m.blockchainClient()
 	if err != nil {
 		return nil, err
@@ -246,7 +189,7 @@ func (m *channelMonitor) getBlockchainInfo() (*cb.BlockchainInfo, error) {
 	return block, nil
 }
 
-func (m *channelMonitor) getBlockByNumber(bNum uint64) (*cb.Block, error) {
+func (m *Monitor) getBlockByNumber(bNum uint64) (*cb.Block, error) {
 	bcClient, err := m.blockchainClient()
 	if err != nil {
 		return nil, err
@@ -258,15 +201,15 @@ func (m *channelMonitor) getBlockByNumber(bNum uint64) (*cb.Block, error) {
 	return block, nil
 }
 
-func (m *channelMonitor) blockchainClient() (client.Blockchain, error) {
+func (m *Monitor) blockchainClient() (client.Blockchain, error) {
 	return m.Blockchain.ForChannel(m.channelID)
 }
 
-func (m *channelMonitor) offLedgerClient() (olclient.OffLedger, error) {
+func (m *Monitor) offLedgerClient() (olclient.OffLedger, error) {
 	return m.OffLedger.ForChannel(m.channelID)
 }
 
-func (m *channelMonitor) lastBlockProcessed() (uint64, error) {
+func (m *Monitor) lastBlockProcessed() (uint64, error) {
 	olClient, err := m.offLedgerClient()
 	if err != nil {
 		return 0, err
@@ -290,7 +233,7 @@ func (m *channelMonitor) lastBlockProcessed() (uint64, error) {
 	return metaData.LastBlockProcessed, nil
 }
 
-func (m *channelMonitor) setLastBlockProcessed(bNum uint64) error {
+func (m *Monitor) setLastBlockProcessed(bNum uint64) error {
 	metaData := &MetaData{LastBlockProcessed: bNum}
 	logger.Debugf("[%s] Updating meta-data: %+v", m.channelID, metaData)
 
