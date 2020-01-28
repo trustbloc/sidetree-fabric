@@ -11,10 +11,11 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 )
 
 const (
@@ -23,7 +24,7 @@ const (
 	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","hashAlgorithmInMultiHashCode","operationIndex","operationNumber","patch","previousOperationHash","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
 )
 
-var logger = logrus.New()
+var logger = flogging.MustGetLogger("sidetree_context")
 
 type dcasClientProvider interface {
 	ForChannel(channelID string) (client.DCAS, error)
@@ -47,7 +48,7 @@ func New(channelID, namespace string, storeProvider dcasClientProvider) *Client 
 
 // Get retrieves all document operations for specified document ID
 func (c *Client) Get(uniqueSuffix string) ([]batch.Operation, error) {
-	id := c.namespace + uniqueSuffix
+	id := c.namespace + docutil.NamespaceDelimiter + uniqueSuffix
 	logger.Debugf("get operations for doc[%s]", id)
 
 	sp, err := c.storeProvider.ForChannel(c.channelID)
@@ -71,6 +72,10 @@ func (c *Client) Get(uniqueSuffix string) ([]batch.Operation, error) {
 		}
 		kv := next.(*queryresult.KV)
 		ops = append(ops, kv.Value)
+	}
+
+	if len(ops) == 0 {
+		return nil, errors.New("uniqueSuffix not found in the store")
 	}
 
 	return getOperations(ops)

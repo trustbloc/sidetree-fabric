@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
@@ -22,7 +23,7 @@ const (
 	chID = "mychannel"
 	id   = "id"
 
-	namespace = "did:sidetree:"
+	namespace = "did:sidetree"
 )
 
 func TestNew(t *testing.T) {
@@ -52,7 +53,7 @@ func TestWriteContent(t *testing.T) {
 	dcasClient := obmocks.NewMockDCASClient()
 	dcasProvider.ForChannelReturns(dcasClient, nil)
 
-	didID := namespace + id
+	didID := namespace + docutil.NamespaceDelimiter + id
 
 	vk1 := &queryresult.KV{
 		Namespace: documentCC + "~" + collection,

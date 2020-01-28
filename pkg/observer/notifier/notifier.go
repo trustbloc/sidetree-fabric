@@ -16,7 +16,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
-var logger = flogging.MustGetLogger("notifier")
+var logger = flogging.MustGetLogger("sidetree_observer")
 
 // blockPublisher allows clients to add handlers for various block events
 type blockPublisher interface {
