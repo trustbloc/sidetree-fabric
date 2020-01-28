@@ -10,9 +10,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/hyperledger/fabric/common/util/retry"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
@@ -50,7 +53,7 @@ func (s *Server) Start() error {
 	go func() {
 		logger.Infof("Listening for requests on [%s]", s.httpServer.Addr)
 
-		err := s.httpServer.ListenAndServe()
+		err := s.startWithRetry()
 		if err != nil && err != http.ErrServerClosed {
 			panic(fmt.Sprintf("Failed to start server on [%s]: %s", s.httpServer.Addr, err))
 		}
@@ -66,4 +69,23 @@ func (s *Server) Stop(ctx context.Context) error {
 		return errors.New("Cannot stop HTTP server since it hasn't been started")
 	}
 	return s.httpServer.Shutdown(ctx)
+}
+
+// startWithRetry will retry to start the HTTP server if a 'address in use' error is experienced. This is
+// common during a restart of the HTTP server since it takes a while for the OS to release the port.
+func (s *Server) startWithRetry() error {
+	_, err := retry.Invoke(
+		func() (interface{}, error) {
+			return nil, s.httpServer.ListenAndServe()
+		},
+		retry.WithMaxAttempts(10),
+		retry.WithBeforeRetry(func(err error, attempt int, backoff time.Duration) bool {
+			if strings.Contains(err.Error(), "address already in use") {
+				logger.Infof("Got error starting HTTP server on attempt %d. Will retry in %s: %s", attempt, backoff, err)
+				return true
+			}
+			return false
+		}),
+	)
+	return err
 }

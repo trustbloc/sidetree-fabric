@@ -29,14 +29,15 @@ Feature:
 
   @create_did_doc
   Scenario: create valid did doc
-    When client sends request to "http://localhost:48426/document" to create DID document "fixtures/testdata/didDocument.json" as "queryParameter"
+    When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" as "JSON"
+    When client sends request to "http://localhost:48426/document" to resolve DID document with initial value
     Then check success response contains "#didDocumentHash"
+
     And we wait 10 seconds
 
-    When client sends request to "http://localhost:48626/document" to resolve DID document
+    When client sends request to "http://localhost:48426/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
   @did-sidetree-batch-writer-recovery
@@ -45,7 +46,7 @@ Feature:
     And container "peer1.org2.example.com" is stopped
     And we wait 2 seconds
 
-    When client sends request to "http://localhost:48326/document" to create DID document "fixtures/testdata/didDocument2.json" as "JSON"
+    When client sends request to "http://localhost:48326/document" to create DID document "fixtures/testdata/didDocument2.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
     Then we wait 10 seconds

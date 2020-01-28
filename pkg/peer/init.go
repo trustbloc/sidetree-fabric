@@ -22,7 +22,7 @@ import (
 var logger = flogging.MustGetLogger("sidetree_peer")
 
 const (
-	didDocNamespace   = "did:sidetree:"
+	didDocNamespace   = "did:sidetree"
 	keyConfigFile     = "sidetree.config.file"
 	defaultConfigFile = "config.yaml"
 )

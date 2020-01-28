@@ -26,7 +26,7 @@ func IsObserver() bool {
 	return roles.HasRole(Observer)
 }
 
-// IsMonitor returns true if this node has the Observer and the Committer roles
+// IsMonitor returns true if this node has the Resolver and the Committer roles
 func IsMonitor() bool {
 	return IsResolver() && roles.IsCommitter()
 }

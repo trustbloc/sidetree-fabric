@@ -18,6 +18,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
@@ -29,12 +30,13 @@ const (
 	url       = "localhost:8080"
 	clientURL = "http://" + url
 
-	didDocNamespace = "did:sidetree:"
-	didID           = didDocNamespace + "EiDOQXC2GnoVyHwIRbjhLx_cNc6vmZaS04SZjZdlLLAPRg=="
+	didDocNamespace = "did:sidetree"
+	didID           = didDocNamespace + docutil.NamespaceDelimiter + "EiDOQXC2GnoVyHwIRbjhLx_cNc6vmZaS04SZjZdlLLAPRg=="
+	didDocPath      = "/document"
 
-	sampleNamespace = "sample:sidetree:"
+	sampleNamespace = "sample:sidetree"
 	samplePath      = "/sample"
-	sampleID        = sampleNamespace + "EiDOQXC2GnoVyHwIRbjhLx_cNc6vmZaS04SZjZdlLLAPRg=="
+	sampleID        = sampleNamespace + docutil.NamespaceDelimiter + "EiDOQXC2GnoVyHwIRbjhLx_cNc6vmZaS04SZjZdlLLAPRg=="
 
 	createRequest = `{
   "header": {
@@ -53,8 +55,8 @@ func TestServer_Start(t *testing.T) {
 	sampleDocHandler := mocks.NewMockDocumentHandler().WithNamespace(sampleNamespace)
 
 	s := New(url,
-		diddochandler.NewUpdateHandler(didDocHandler),
-		diddochandler.NewResolveHandler(didDocHandler),
+		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
+		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
 	)
@@ -69,7 +71,7 @@ func TestServer_Start(t *testing.T) {
 		err := json.Unmarshal([]byte(createRequest), request)
 		require.NoError(t, err)
 
-		resp, err := httpPut(t, clientURL+diddochandler.Path, request)
+		resp, err := httpPut(t, clientURL+didDocPath, request)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
@@ -77,7 +79,7 @@ func TestServer_Start(t *testing.T) {
 		require.NoError(t, json.Unmarshal(resp, &createdDoc))
 		require.Equal(t, didID, createdDoc["id"])
 
-		resp, err = httpGet(t, clientURL+diddochandler.Path+"/"+didID)
+		resp, err = httpGet(t, clientURL+didDocPath+"/"+didID)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
@@ -110,6 +112,46 @@ func TestServer_Start(t *testing.T) {
 		require.NoError(t, s.Stop(context.Background()))
 		require.Error(t, s.Stop(context.Background()))
 	})
+}
+
+func TestServer_RetryOnStartup(t *testing.T) {
+	didDocHandler := mocks.NewMockDocumentHandler().WithNamespace(didDocNamespace)
+	sampleDocHandler := mocks.NewMockDocumentHandler().WithNamespace(sampleNamespace)
+
+	s1 := New(url,
+		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
+		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
+		newSampleUpdateHandler(sampleDocHandler),
+		newSampleResolveHandler(sampleDocHandler),
+	)
+
+	s2 := New(url,
+		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
+		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
+		newSampleUpdateHandler(sampleDocHandler),
+		newSampleResolveHandler(sampleDocHandler),
+	)
+
+	s3 := New(url,
+		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
+		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
+		newSampleUpdateHandler(sampleDocHandler),
+		newSampleResolveHandler(sampleDocHandler),
+	)
+
+	// Start three HTTP servers (all listening on the same port) to test the retry logic
+	require.NoError(t, s1.Start())
+	require.NoError(t, s2.Start())
+	require.NoError(t, s3.Start())
+	time.Sleep(500 * time.Millisecond)
+
+	require.NoError(t, s1.Stop(context.Background()))
+	require.NoError(t, s2.Stop(context.Background()))
+	require.NoError(t, s3.Stop(context.Background()))
+	time.Sleep(500 * time.Millisecond)
+
+	// Wait for the service to start
+	time.Sleep(time.Second)
 }
 
 // httpPut sends a regular POST request to the sidetree-node

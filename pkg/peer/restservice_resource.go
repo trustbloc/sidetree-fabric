@@ -19,6 +19,10 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
+const (
+	didDocBasePath = "/document"
+)
+
 type restServiceConfig interface {
 	GetListenURL() string
 }
@@ -51,11 +55,11 @@ func newRESTService(
 	var handlers []common.HTTPHandler
 	if role.IsResolver() {
 		logger.Info("Adding a Sidetree document resolver REST endpoint.")
-		handlers = append(handlers, diddochandler.NewResolveHandler(didDocHandler))
+		handlers = append(handlers, diddochandler.NewResolveHandler(didDocBasePath, didDocHandler))
 	}
 	if role.IsBatchWriter() {
 		logger.Info("Adding a Sidetree document update REST endpoint.")
-		handlers = append(handlers, diddochandler.NewUpdateHandler(didDocHandler))
+		handlers = append(handlers, diddochandler.NewUpdateHandler(didDocBasePath, didDocHandler))
 	}
 
 	restSvc := httpserver.New(config.GetListenURL(), handlers...)

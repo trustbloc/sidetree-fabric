@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package context
 
 import (
-	"github.com/sirupsen/logrus"
+	"github.com/hyperledger/fabric/common/flogging"
 	viper "github.com/spf13/viper2015"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
@@ -23,7 +23,7 @@ const (
 	defaultProtocolFile = "protocol.json"
 )
 
-var logger = logrus.New()
+var logger = flogging.MustGetLogger("sidetree_context")
 
 // SidetreeContext implements 'Fabric' version of Sidetree node context
 type SidetreeContext struct {
