@@ -44,6 +44,8 @@ FABRIC_PEER_EXT_IMAGE   ?= trustbloc/fabric-peer
 FABRIC_PEER_EXT_VERSION ?= 0.1.1-snapshot-49fc047
 FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
 
+FABRIC_CLI_EXT_VERSION ?= 44d0bb90048766c382779ef2348271346777e7a8
+
 # Namespace for the blocnode image
 DOCKER_OUTPUT_NS     ?= trustbloc
 SIDETREE_FABRIC_IMAGE_NAME ?= sidetree-fabric
@@ -84,7 +86,7 @@ populate-fixtures:
 	@scripts/populate-fixtures.sh -f
 
 
-bddtests: populate-fixtures docker-thirdparty bddtests-fabric-peer-docker build-cc
+bddtests: populate-fixtures docker-thirdparty bddtests-fabric-peer-docker build-cc fabric-cli
 	@scripts/integration.sh
 
 
@@ -110,6 +112,9 @@ build-cc:
 	@echo "Building cc"
 	@mkdir -p ./.build
 	@scripts/copycc.sh
+
+fabric-cli:
+	@scripts/build_fabric_cli.sh
 
 clean-images:
 	@echo "Stopping all containers, pruning containers and images, deleting dev images"

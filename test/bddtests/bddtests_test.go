@@ -108,7 +108,7 @@ func FeatureContext(s *godog.Suite) {
 	NewOffLedgerSteps(context).RegisterSteps(s)
 	NewSidetreeSteps(context).RegisterSteps(s)
 	NewDIDSideSteps(context).RegisterSteps(s)
-	NewConfigSteps(context).RegisterSteps(s)
+	NewFabricCLISteps(context).RegisterSteps(s)
 }
 
 func initBDDConfig() {

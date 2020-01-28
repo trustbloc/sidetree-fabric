@@ -32,3 +32,4 @@ docker-compose.log
 .build
 
 vendor
+/test/bddtests/.fabriccli/

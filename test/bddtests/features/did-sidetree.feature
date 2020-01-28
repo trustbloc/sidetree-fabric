@@ -18,13 +18,16 @@ Feature:
     And "system" chaincode "sidetreetxn_cc" is instantiated from path "in-process" on the "mychannel" channel with args "" with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" with collection policy "dcas-mychannel"
     And "system" chaincode "document_cc" is instantiated from path "in-process" on the "mychannel" channel with args "" with endorsement policy "OR('Org1MSP.member','Org2MSP.member')" with collection policy "docs-mychannel,meta_data_coll"
 
+    And fabric-cli network is initialized
+    And fabric-cli plugin "../../.build/ledgerconfig" is installed
+    And fabric-cli context "mychannel" is defined on channel "mychannel" with org "peerorg1", peers "peer0.org1.example.com,peer1.org1.example.com" and user "User1"
+
     And we wait 10 seconds
 
-    Given variable "org1Config" is assigned config from file "./fixtures/config/fabric/org1-config.json"
-    And variable "org2Config" is assigned config from file "./fixtures/config/fabric/org2-config.json"
+    Then fabric-cli context "mychannel" is used
+    And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/org1-config.json --noprompt"
+    And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/org2-config.json --noprompt"
 
-    When client invokes chaincode "configscc" with args "save,${org1Config}" on the "mychannel" channel
-    And client invokes chaincode "configscc" with args "save,${org2Config}" on the "mychannel" channel
     And we wait 3 seconds
 
   @create_did_doc
