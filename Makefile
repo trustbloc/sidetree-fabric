@@ -41,10 +41,10 @@ FABRIC_TOOLS_TAG     ?= $(ARCH)-$(FABRIC_TOOLS_VERSION)
 
 # Fabric peer ext docker image (overridable)
 FABRIC_PEER_EXT_IMAGE   ?= trustbloc/fabric-peer
-FABRIC_PEER_EXT_VERSION ?= 0.1.1-snapshot-49fc047
+FABRIC_PEER_EXT_VERSION ?= 0.1.1
 FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
 
-FABRIC_CLI_EXT_VERSION ?= 44d0bb90048766c382779ef2348271346777e7a8
+FABRIC_CLI_EXT_VERSION ?= 0.1.1
 
 # Namespace for the blocnode image
 DOCKER_OUTPUT_NS     ?= trustbloc
