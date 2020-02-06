@@ -47,10 +47,10 @@ jobs:
           }
           trap logout EXIT
           source ci/version_var.sh
-          echo $DOCKER_PASSWORD | docker login --username $DOCKER_USER --password-stdin
+          echo $DOCKER_PASSWORD | docker login docker.pkg.github.com --username $DOCKER_USER --password-stdin
           make sidetree-docker
-          docker tag trustbloc/sidetree-fabric:latest  trustbloc/sidetree-fabric:$SIDETREE_FABRIC_IMAGE_TAG
-          docker push trustbloc/sidetree-fabric:$SIDETREE_FABRIC_IMAGE_TAG
+          docker tag trustbloc/sidetree-fabric:latest  docker.pkg.github.com/trustbloc/sidetree-fabric/sidetree:$SIDETREE_FABRIC_IMAGE_TAG
+          docker push docker.pkg.github.com/trustbloc/sidetree-fabric/sidetree:$SIDETREE_FABRIC_IMAGE_TAG
         env:
           DOCKER_USER: $(DOCKER_USER)
           DOCKER_PASSWORD: $(DOCKER_PASSWORD)
