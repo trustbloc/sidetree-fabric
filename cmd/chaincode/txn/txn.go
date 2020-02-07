@@ -19,6 +19,8 @@ import (
 var logger = NewLogger("sidetreetxncc")
 
 const (
+	ccVersion = "v1"
+
 	// Available function names
 	writeContent = "writeContent"
 	readContent  = "readContent"
@@ -58,6 +60,9 @@ func New(name string) *SidetreeTxnCC {
 
 // Name returns the name of this chaincode
 func (cc *SidetreeTxnCC) Name() string { return cc.name }
+
+// Version returns the version of this chaincode
+func (cc *SidetreeTxnCC) Version() string { return ccVersion }
 
 // Chaincode returns the SidetreeTxn chaincode
 func (cc *SidetreeTxnCC) Chaincode() shim.Chaincode { return cc }
