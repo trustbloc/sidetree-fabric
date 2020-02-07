@@ -30,6 +30,7 @@ func TestNew(t *testing.T) {
 
 	req.Nil(cc.GetDBArtifacts())
 	req.Equal(ccName, cc.Name())
+	req.Equal(ccVersion, cc.Version())
 	req.Equal(cc, cc.Chaincode())
 }
 

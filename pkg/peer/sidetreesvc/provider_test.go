@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+	"github.com/trustbloc/fabric-peer-ext/pkg/gossip/blockpublisher"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
@@ -64,7 +64,7 @@ func TestProvider(t *testing.T) {
 	configProvider.ForChannelReturns(configSvc)
 
 	observerProviders := &observer.Providers{
-		BlockPublisher: extmocks.NewBlockPublisherProvider(),
+		BlockPublisher: blockpublisher.NewProvider(),
 	}
 
 	restConfig := &mocks.RestConfig{}

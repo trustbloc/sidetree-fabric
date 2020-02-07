@@ -20,6 +20,8 @@ import (
 var logger = NewLogger("doc")
 
 const (
+	ccVersion = "v1"
+
 	// Available function names
 	write     = "write"
 	read      = "read"
@@ -60,6 +62,9 @@ func New(name string) *DocumentCC {
 
 // Name returns the name of this chaincode
 func (cc *DocumentCC) Name() string { return cc.name }
+
+// Version returns the version of this chaincode
+func (cc *DocumentCC) Version() string { return ccVersion }
 
 // Chaincode returns the DocumentCC chaincode
 func (cc *DocumentCC) Chaincode() shim.Chaincode { return cc }
