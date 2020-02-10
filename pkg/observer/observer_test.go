@@ -165,7 +165,7 @@ func getSidetreeTxnPrerequisites(uniqueSuffix string) (batchBytes, anchorBytes [
 	operations := getDefaultOperations(uniqueSuffix)
 	batchAddr, batchBytes := getBatchFileBytes(operations)
 
-	anchorBytes = getAnchorFileBytes(batchAddr, "")
+	anchorBytes = getAnchorFileBytes(batchAddr, []string{uniqueSuffix})
 	return batchBytes, anchorBytes
 }
 
@@ -204,10 +204,10 @@ func getBatchFileBytes(operations []string) (string, []byte) {
 	return key, bytes
 }
 
-func getAnchorFileBytes(batchFileHash string, merkleRoot string) []byte {
+func getAnchorFileBytes(batchFileHash string, uniqueSuffixes []string) []byte {
 	af := sidetreeobserver.AnchorFile{
-		BatchFileHash: batchFileHash,
-		MerkleRoot:    merkleRoot,
+		BatchFileHash:  batchFileHash,
+		UniqueSuffixes: uniqueSuffixes,
 	}
 	_, bytes, err := common.MarshalDCAS(af)
 	if err != nil {

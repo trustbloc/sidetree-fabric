@@ -21,7 +21,7 @@ import (
 const (
 	documentCC        = "document_cc"
 	collection        = "docs"
-	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","hashAlgorithmInMultiHashCode","operationIndex","operationNumber","patch","previousOperationHash","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
+	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","hashAlgorithmInMultiHashCode","operationIndex","patch","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
 )
 
 var logger = flogging.MustGetLogger("sidetree_context")

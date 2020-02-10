@@ -74,7 +74,7 @@ func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, channelID string) error {
 		return fmt.Errorf("write batch file to DCAS return error: %s", err)
 	}
 
-	anchor := getAnchorFileBytes(t.address, "root")
+	anchor := getAnchorFileBytes(t.address, []string{"uniqueSuffix1", "uniqueSuffix2"})
 	logger.Infof("... writing anchor file on channel [%s]", channelID)
 	err = t.writeContent(anchor, ccID, channelID)
 	if err != nil {
@@ -179,9 +179,9 @@ type AnchorFile struct {
 	// BatchFileHash is encoded hash of the batch file
 	BatchFileHash string `json:"batchFileHash"`
 
-	// MerkleRoot is encoded root hash of the Merkle tree constructed from
-	// the operations included in the batch file
-	MerkleRoot string `json:"merkleRoot"`
+	// UniqueSuffixes is an array of suffixes (the unique portion of the ID string that differentiates
+	// one document from another) for all documents that are declared to have operations within the associated batch file.
+	UniqueSuffixes []string `json:"uniqueSuffixes"`
 }
 
 // BatchFile defines the schema of a Batch File and its related operations.
@@ -218,10 +218,10 @@ func getBatchFileBytes(operations []string) string {
 	return string(bytes)
 }
 
-func getAnchorFileBytes(batchFileHash string, merkleRoot string) string {
+func getAnchorFileBytes(batchFileHash string, uniqueSuffixes []string) string {
 	af := AnchorFile{
 		BatchFileHash: batchFileHash,
-		MerkleRoot:    merkleRoot,
+		UniqueSuffixes:    uniqueSuffixes,
 	}
 	s, err := json.Marshal(af)
 	if err != nil {

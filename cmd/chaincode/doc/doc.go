@@ -33,7 +33,7 @@ const (
 
 	couchDB           = "couchdb"
 	docsCollIndex     = `{"index": {"fields": ["id"]}, "ddoc": "indexIDDoc", "name": "indexID", "type": "json"}`
-	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","hashAlgorithmInMultiHashCode","operationIndex","operationNumber","patch","previousOperationHash","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
+	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","hashAlgorithmInMultiHashCode","operationIndex","patch","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
 )
 
 // funcMap is a map of functions by function name

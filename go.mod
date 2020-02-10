@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper2015 v1.3.2
 	github.com/stretchr/testify v1.4.0
 	github.com/trustbloc/fabric-peer-ext v0.0.0
-	github.com/trustbloc/sidetree-core-go v0.1.1
+	github.com/trustbloc/sidetree-core-go v0.1.2-0.20200207213740-40ada19e1403
 )
 
 replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.2-0.20200207155557-d251d8204028
