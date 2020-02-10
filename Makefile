@@ -84,27 +84,27 @@ channel-config-gen:
 		$(FABRIC_TOOLS_IMAGE):$(FABRIC_TOOLS_TAG) \
 		//bin/bash -c "FABRIC_VERSION_DIR=fabric/ /opt/workspace/${PROJECT_NAME}/scripts/generate_channeltx.sh"
 
-populate-fixtures:
+populate-fixtures: clean
 	@scripts/populate-fixtures.sh -f
 
 
-bddtests: populate-fixtures docker-thirdparty bddtests-fabric-peer-docker build-cc fabric-cli
+bddtests: populate-fixtures docker-thirdparty fabric-peer-docker build-cc fabric-cli
 	@scripts/integration.sh
 
 
-bddtests-fabric-peer-cli:
-	@echo "Building fabric-peer cli"
+fabric-peer: clean
+	@echo "Building fabric-peer"
 	@mkdir -p ./.build/bin
-	@cd test/bddtests/fixtures/fabric/peer/cmd && go build -o ../../../../../../.build/bin/fabric-peer github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/peer/cmd
+	@cd cmd/peer && go build -o ../../.build/bin/fabric-peer main.go
 
-bddtests-fabric-peer-docker:
-	@docker build -f ./test/bddtests/fixtures/images/fabric-peer/Dockerfile --no-cache -t fabric-peer:latest \
+fabric-peer-docker: clean
+	@echo "Building fabric-peer image"
+	@docker build -f ./images/fabric-peer/Dockerfile --no-cache -t docker.pkg.github.com/trustbloc/sidetree-fabric/peer:latest \
 	--build-arg FABRIC_PEER_EXT_IMAGE=$(FABRIC_PEER_EXT_IMAGE) \
 	--build-arg FABRIC_PEER_EXT_TAG=$(FABRIC_PEER_EXT_TAG) \
 	--build-arg GO_VER=$(GO_VER) \
 	--build-arg ALPINE_VER=$(ALPINE_VER) \
-	--build-arg GO_TAGS=$(GO_TAGS) \
-	--build-arg GOPROXY=$(GOPROXY) .
+	--build-arg GO_TAGS=$(GO_TAGS) .
 
 docker-thirdparty:
 	docker pull couchdb:2.3
@@ -133,3 +133,4 @@ clean:
 	rm -Rf ./test/bddtests/fixtures/fabric/channel
 	rm -Rf ./test/bddtests/fixtures/fabric/crypto-config
 	rm -Rf ./.build
+	rm -Rf ./test/bddtests/.fabriccli

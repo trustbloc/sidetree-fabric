@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-module github.com/trustbloc/sidetree-fabric/test/bddtests/fixtures/fabric/peer/cmd
+module github.com/trustbloc/sidetree-fabric/cmd/peer
 
 require (
 	github.com/hyperledger/fabric v2.0.0+incompatible
@@ -17,7 +17,7 @@ replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-
 
 replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.2-0.20200207200257-9011e4aa1577
 
-replace github.com/trustbloc/sidetree-fabric => ../../../../../..
+replace github.com/trustbloc/sidetree-fabric => ../..
 
 replace github.com/spf13/viper2015 => github.com/spf13/viper v0.0.0-20150908122457-1967d93db724
 

@@ -21,7 +21,7 @@ ADD . $GOPATH/src/trustbloc/sidetree-fabric
 WORKDIR $GOPATH/src/trustbloc/sidetree-fabric
 ARG GO_TAGS
 ARG GOPROXY
-RUN make GO_TAGS=${GO_TAGS} GOPROXY=${GOPROXY} bddtests-fabric-peer-cli
+RUN make GO_TAGS=${GO_TAGS} fabric-peer
 
 
 
