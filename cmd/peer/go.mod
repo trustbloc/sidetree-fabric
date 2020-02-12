@@ -11,11 +11,11 @@ require (
 	github.com/trustbloc/sidetree-fabric v0.0.0
 )
 
-replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.2-0.20200207155557-d251d8204028
+replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.2-0.20200211211900-62c249e072e2
 
-replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200207200257-9011e4aa1577
+replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200211231405-e21ab2bc259f
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.2-0.20200207200257-9011e4aa1577
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.2-0.20200211231405-e21ab2bc259f
 
 replace github.com/trustbloc/sidetree-fabric => ../..
 

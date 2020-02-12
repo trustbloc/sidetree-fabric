@@ -76,7 +76,8 @@ services:
       - CORE_LEDGER_TRANSIENTDATA_CLEANUPEXPIRED_INTERVAL=5s
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer0-org1.couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
+      - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -134,7 +135,8 @@ services:
       - CORE_LEDGER_TRANSIENTDATA_CLEANUPEXPIRED_INTERVAL=5s
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer1-org1.couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
+      - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -191,7 +193,8 @@ services:
       - CORE_LEDGER_TRANSIENTDATA_CLEANUPEXPIRED_INTERVAL=5s
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer0-org2.couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
+      - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -248,7 +251,8 @@ services:
       - CORE_LEDGER_TRANSIENTDATA_CLEANUPEXPIRED_INTERVAL=5s
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer1-org2.couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
+      - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -266,47 +270,11 @@ services:
       - builder
       - orderer.example.com
 
-  peer0-org1.couchdb:
-    container_name: peer0-org1.couchdb
+  shared.couchdb:
+    container_name: shared.couchdb
     image: ${COUCHDB_FIXTURE_IMAGE}:${COUCHDB_FIXTURE_TAG}
     ports:
       - 5984:5984
-    environment:
-      - DB_URL=http://localhost:5984/member_db
-      - COUCHDB_USER=cdbadmin
-      - COUCHDB_PASSWORD=secret
-    volumes:
-      - ${COMPOSE_DIR}/config/couchDB/config.ini:/opt/couchdb/etc/local.d/config.ini
-
-  peer1-org1.couchdb:
-    container_name: peer1-org1.couchdb
-    image: ${COUCHDB_FIXTURE_IMAGE}:${COUCHDB_FIXTURE_TAG}
-    ports:
-      - 5985:5984
-    environment:
-      - DB_URL=http://localhost:5984/member_db
-      - COUCHDB_USER=cdbadmin
-      - COUCHDB_PASSWORD=secret
-    volumes:
-      - ${COMPOSE_DIR}/config/couchDB/config.ini:/opt/couchdb/etc/local.d/config.ini
-
-  peer0-org2.couchdb:
-    container_name: peer0-org2.couchdb
-    image: ${COUCHDB_FIXTURE_IMAGE}:${COUCHDB_FIXTURE_TAG}
-    ports:
-      - 5986:5984
-    environment:
-      - DB_URL=http://localhost:5984/member_db
-      - COUCHDB_USER=cdbadmin
-      - COUCHDB_PASSWORD=secret
-    volumes:
-      - ${COMPOSE_DIR}/config/couchDB/config.ini:/opt/couchdb/etc/local.d/config.ini
-
-  peer1-org2.couchdb:
-    container_name: peer1-org2.couchdb
-    image: ${COUCHDB_FIXTURE_IMAGE}:${COUCHDB_FIXTURE_TAG}
-    ports:
-      - 5987:5984
     environment:
       - DB_URL=http://localhost:5984/member_db
       - COUCHDB_USER=cdbadmin
