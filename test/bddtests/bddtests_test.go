@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/godog"
+	"github.com/cucumber/godog"
 	"github.com/spf13/viper"
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
 )
