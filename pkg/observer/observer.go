@@ -40,7 +40,7 @@ func (d *dcas) Read(key string) ([]byte, error) {
 	return dcasClient.Get(common.SidetreeNs, common.SidetreeColl, key)
 }
 
-func (d *dcas) Put(ops []batch.Operation) error {
+func (d *dcas) Put(ops []*batch.Operation) error {
 	for _, op := range ops {
 		bytes, err := json.Marshal(op)
 		if err != nil {

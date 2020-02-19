@@ -9,6 +9,7 @@ package store
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	"github.com/hyperledger/fabric/common/flogging"
@@ -47,7 +48,7 @@ func New(channelID, namespace string, storeProvider dcasClientProvider) *Client 
 }
 
 // Get retrieves all document operations for specified document ID
-func (c *Client) Get(uniqueSuffix string) ([]batch.Operation, error) {
+func (c *Client) Get(uniqueSuffix string) ([]*batch.Operation, error) {
 	id := c.namespace + docutil.NamespaceDelimiter + uniqueSuffix
 	logger.Debugf("get operations for doc[%s]", id)
 
@@ -82,20 +83,35 @@ func (c *Client) Get(uniqueSuffix string) ([]batch.Operation, error) {
 }
 
 // Put stores an operation
-func (c *Client) Put(op batch.Operation) error {
+func (c *Client) Put(op *batch.Operation) error {
 	// TODO: Not sure where/if this is useds
 	panic("not implemented")
 }
 
-func getOperations(ops [][]byte) ([]batch.Operation, error) {
-	var operations []batch.Operation
+func getOperations(ops [][]byte) ([]*batch.Operation, error) {
+	var operations []*batch.Operation
 	for _, opBytes := range ops {
 		var op batch.Operation
 		if err := json.Unmarshal(opBytes, &op); err != nil {
 			return nil, errors.Wrapf(err, "failed to unmarshal operation")
 		}
-		operations = append(operations, op)
+		operations = append(operations, &op)
 	}
 
-	return operations, nil
+	return sortChronologically(operations), nil
+}
+
+func sortChronologically(operations []*batch.Operation) []*batch.Operation {
+	if len(operations) <= 1 {
+		return operations
+	}
+
+	sort.Slice(operations, func(i, j int) bool {
+		if operations[i].TransactionTime == operations[j].TransactionTime {
+			return operations[i].TransactionNumber < operations[j].TransactionNumber
+		}
+		return operations[i].TransactionTime < operations[j].TransactionTime
+	})
+
+	return operations
 }

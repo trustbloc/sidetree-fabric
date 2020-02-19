@@ -80,7 +80,7 @@ func TestDCASPut(t *testing.T) {
 	dcasClientProvider := &mockDCASClientProvider{
 		client: c,
 	}
-	err := (newDCAS(channel, dcasClientProvider)).Put([]batch.Operation{{Type: "1"}})
+	err := (newDCAS(channel, dcasClientProvider)).Put([]*batch.Operation{{Type: "1"}})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "dcas put failed")
 }

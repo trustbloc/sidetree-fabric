@@ -27,16 +27,21 @@ import (
 
 var logger = logrus.New()
 
-const sha2256 = 18
-const initialValuesParam = ";initial-values="
+const (
+	sha2_256           = 18
+	initialValuesParam = ";initial-values="
+
+	updateOTP   = "updateOTP"
+	recoveryOTP = "recoveryOTP"
+)
 
 // DIDSideSteps
 type DIDSideSteps struct {
 	encodedCreatePayload string
 	encodedDoc           string
-	reqNamespace     string
-	resp             *restclient.HttpResponse
-	bddContext       *bddtests.BDDContext
+	reqNamespace         string
+	resp                 *restclient.HttpResponse
+	bddContext           *bddtests.BDDContext
 }
 
 // NewDIDSideSteps
@@ -64,7 +69,7 @@ func (d *DIDSideSteps) sendDIDDocument(url, didDocumentPath, namespace string) e
 }
 
 func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
-	did, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2256)
+	did, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2_256)
 	if err != nil {
 		return err
 	}
@@ -84,7 +89,7 @@ func (d *DIDSideSteps) checkErrorResp(errorMsg string) error {
 }
 
 func (d *DIDSideSteps) checkSuccessResp(msg string) error {
-	documentHash, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2256)
+	documentHash, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2_256)
 	if err != nil {
 		return err
 	}
@@ -104,7 +109,7 @@ func (d *DIDSideSteps) checkSuccessResp(msg string) error {
 }
 
 func (d *DIDSideSteps) resolveDIDDocument(url string) error {
-	documentHash, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2256)
+	documentHash, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2_256)
 	if err != nil {
 		return err
 	}
@@ -129,25 +134,63 @@ func (d *DIDSideSteps) resolveDIDDocument(url string) error {
 	}
 }
 
+func (d *DIDSideSteps) deleteDIDDocument(url string) error {
+	uniqueSuffix, err := docutil.CalculateUniqueSuffix(d.encodedCreatePayload, sha2_256)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("delete did document [%s]from %s", uniqueSuffix, url)
+
+	payload, err := getDeletePayload(uniqueSuffix)
+	if err != nil {
+		return err
+	}
+
+	req := request("ES256K", "#key1", payload, "")
+
+	d.resp, err = restclient.SendRequest(url, req)
+
+	logger.Infof("delete status %d, error '%s:'", d.resp.StatusCode, d.resp.ErrorMsg)
+
+	return err
+}
 
 func request(alg, kid, payload, signature string) *model.Request {
 	header := &model.Header{
-		Alg:       alg,
-		Kid:       kid,
+		Alg: alg,
+		Kid: kid,
 	}
 	req := &model.Request{
-		Protected:    header,
+		Protected: header,
 		Payload:   payload,
 		Signature: signature}
 	return req
 }
 
 func getCreatePayload(encodedDoc string) (string, error) {
+	nextRecoveryOTPHash, err := docutil.ComputeMultihash(sha2_256, []byte(recoveryOTP))
+	if err != nil {
+		return "", nil
+	}
+
+	nextUpdateOTPHash, err := docutil.ComputeMultihash(sha2_256, []byte(updateOTP))
+	if err != nil {
+		return "", nil
+	}
+
 	payload, err := json.Marshal(
 		struct {
-			Operation   model.OperationType `json:"type"`
-			DIDDocument string              `json:"didDocument"`
-		}{model.OperationTypeCreate, encodedDoc})
+			Operation           model.OperationType `json:"type"`
+			DIDDocument         string              `json:"didDocument"`
+			NextUpdateOTPHash   string              `json:"nextUpdateOtpHash"`
+			NextRecoveryOTPHash string              `json:"nextRecoveryOtpHash"`
+		}{
+			Operation:           model.OperationTypeCreate,
+			DIDDocument:         encodedDoc,
+			NextUpdateOTPHash:   base64.URLEncoding.EncodeToString(nextUpdateOTPHash),
+			NextRecoveryOTPHash: base64.URLEncoding.EncodeToString(nextRecoveryOTPHash),
+		})
 
 	if err != nil {
 		return "", err
@@ -156,6 +199,24 @@ func getCreatePayload(encodedDoc string) (string, error) {
 	return docutil.EncodeToString(payload), nil
 }
 
+func getDeletePayload(did string) (string, error) {
+	payload, err := json.Marshal(
+		struct {
+			Operation       model.OperationType `json:"type"`
+			DidUniqueSuffix string              `json:"didUniqueSuffix"`
+			RecoveryOTP     string              `json:"recoveryOtp"`
+		}{
+			Operation:       model.OperationTypeDelete,
+			DidUniqueSuffix: did,
+			RecoveryOTP:     base64.URLEncoding.EncodeToString([]byte(recoveryOTP)),
+		})
+
+	if err != nil {
+		return "", err
+	}
+
+	return docutil.EncodeToString(payload), nil
+}
 
 func encodeDidDocument(didDocumentPath, didID string) string {
 	r, _ := os.Open(didDocumentPath)
@@ -174,6 +235,7 @@ func encodeDidDocument(didDocumentPath, didID string) string {
 func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^check error response contains "([^"]*)"$`, d.checkErrorResp)
 	s.Step(`^client sends request to "([^"]*)" to create DID document "([^"]*)" in namespace "([^"]*)"$`, d.sendDIDDocument)
+	s.Step(`^client sends request to "([^"]*)" to delete DID document$`, d.deleteDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial value$`, d.resolveDIDDocumentWithInitialValue)
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessResp)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document$`, d.resolveDIDDocument)

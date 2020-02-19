@@ -12,11 +12,12 @@ import (
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/common/flogging"
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
 )
 
-var logger = NewLogger("sidetreetxncc")
+var logger = flogging.MustGetLogger("sidetreetxncc")
 
 const (
 	ccVersion = "v1"
