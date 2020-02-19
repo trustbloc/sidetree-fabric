@@ -22,6 +22,10 @@ type configServiceProvider interface {
 	ForChannel(channelID string) ledgerconfig.Service
 }
 
+type validatorRegistry interface {
+	Register(v ledgerconfig.Validator)
+}
+
 // SidetreeProvider manages Sidetree configuration for the various channels
 type SidetreeProvider struct {
 	configProvider configServiceProvider
@@ -35,9 +39,15 @@ type SidetreeService interface {
 }
 
 // NewSidetreeProvider returns a new SidetreeProvider instance
-func NewSidetreeProvider(configProvider configServiceProvider) *SidetreeProvider {
+func NewSidetreeProvider(configProvider configServiceProvider, registry validatorRegistry) *SidetreeProvider {
 	logger.Info("Creating Sidetree config provider")
-	return &SidetreeProvider{configProvider: configProvider}
+
+	registry.Register(&sidetreeValidator{})
+	registry.Register(&sidetreePeerValidator{})
+
+	return &SidetreeProvider{
+		configProvider: configProvider,
+	}
 }
 
 // ForChannel returns the service for the given channel
@@ -51,7 +61,7 @@ type sidetreeService struct {
 
 // LoadSidetree loads the Sidetree configuration for the given namespace
 func (c *sidetreeService) LoadSidetree(namespace string) (Sidetree, error) {
-	key := ledgerconfig.NewAppKey(GlobalMSPID, namespace, "1")
+	key := ledgerconfig.NewAppKey(GlobalMSPID, namespace, SidetreeAppVersion)
 
 	var sidetreeConfig Sidetree
 	if err := c.load(key, &sidetreeConfig); err != nil {
@@ -67,7 +77,7 @@ func (c *sidetreeService) LoadSidetree(namespace string) (Sidetree, error) {
 
 // LoadSidetreePeer loads the peer-specific Sidetree configuration
 func (c *sidetreeService) LoadSidetreePeer(mspID, peerID string) (SidetreePeer, error) {
-	key := ledgerconfig.NewPeerKey(mspID, peerID, SidetreeAppName, SidetreeAppVersion)
+	key := ledgerconfig.NewPeerKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion)
 
 	var sidetreeConfig SidetreePeer
 	if err := c.load(key, &sidetreeConfig); err != nil {
@@ -111,10 +121,14 @@ func (c *sidetreeService) load(key *ledgerconfig.Key, v interface{}) error {
 		return errors.WithMessagef(err, "error getting Sidetree config for key %s", key)
 	}
 
-	vp := viper.New()
-	vp.SetConfigType(string(cfg.Format))
+	return unmarshal(cfg, v)
+}
 
-	if err := vp.ReadConfig(bytes.NewBufferString(cfg.Config)); err != nil {
+func unmarshal(value *ledgerconfig.Value, v interface{}) error {
+	vp := viper.New()
+	vp.SetConfigType(string(value.Format))
+
+	if err := vp.ReadConfig(bytes.NewBufferString(value.Config)); err != nil {
 		return errors.WithMessage(err, "error reading config")
 	}
 
@@ -126,16 +140,9 @@ func (c *sidetreeService) load(key *ledgerconfig.Key, v interface{}) error {
 }
 
 func unmarshalProtocol(cfg *ledgerconfig.Value) (*protocolApi.Protocol, error) {
-	v := viper.New()
-	v.SetConfigType(string(cfg.Format))
-
-	err := v.ReadConfig(bytes.NewBufferString(cfg.Config))
-	if err != nil {
-		return nil, errors.WithMessage(err, "error reading Sidetree protocol config")
-	}
-
 	protocol := &protocolApi.Protocol{}
-	if err := v.Unmarshal(protocol); err != nil {
+
+	if err := unmarshal(cfg, protocol); err != nil {
 		return nil, errors.WithMessage(err, "error unmarshalling Sidetree protocol config")
 	}
 

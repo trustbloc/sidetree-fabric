@@ -105,3 +105,10 @@ Feature:
 
     When client sends request to "http://localhost:48626/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
+
+  @invalid_config_update
+  Scenario: Invalid configuration
+    Given fabric-cli context "mychannel" is used
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-protocol-config.json --noprompt" then the error response should contain "algorithm not supported"
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-config.json --noprompt" then the error response should contain "field 'BatchWriterTimeout' must contain a value greater than 0"
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-peer-config.json --noprompt" then the error response should contain "field 'BasePath' must begin with '/'"

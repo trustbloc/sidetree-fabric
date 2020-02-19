@@ -241,7 +241,7 @@ func (c *channelController) isMonitoringNamespace(namespace string) bool {
 }
 
 func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
-	if kv.MspID == c.PeerConfig.MSPID() && kv.PeerID == c.PeerConfig.PeerID() && kv.AppName == config.SidetreeAppName {
+	if kv.MspID == c.PeerConfig.MSPID() && kv.PeerID == c.PeerConfig.PeerID() && kv.AppName == config.SidetreePeerAppName {
 		return true
 	}
 

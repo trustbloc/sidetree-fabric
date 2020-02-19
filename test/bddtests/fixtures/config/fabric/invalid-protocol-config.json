@@ -1,0 +1,18 @@
+{
+  "MspID": "general",
+  "Apps": [
+    {
+      "AppName": "did:sidetree",
+      "Version": "1",
+      "Components": [
+        {
+          "Name": "protocol",
+          "Version": "0.4",
+          "Config": "file://./invalid-hash-algorithm.json",
+          "Format": "json",
+          "Tags": ["sidetree"]
+        }
+      ]
+    }
+  ]
+}

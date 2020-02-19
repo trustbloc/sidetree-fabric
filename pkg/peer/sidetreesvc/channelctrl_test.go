@@ -100,7 +100,7 @@ func TestChannelManager(t *testing.T) {
 	t.Run("Update peer sidetreeCfgService -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewPeerKey(msp1, peer1, config.SidetreeAppName, config.SidetreeAppVersion),
+			Key: ledgerconfig.NewPeerKey(msp1, peer1, config.SidetreePeerAppName, config.SidetreePeerAppVersion),
 		})
 
 		time.Sleep(20 * time.Millisecond)

@@ -1,0 +1,12 @@
+{
+  "MspID": "general",
+  "Apps": [
+    {
+      "AppName": "did:sidetree",
+      "Version": "1",
+      "Config": "file://./invalid-batch-timeout.yaml",
+      "Format": "yaml",
+      "Tags": ["sidetree"]
+    }
+  ]
+}
