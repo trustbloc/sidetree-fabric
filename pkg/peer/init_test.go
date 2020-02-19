@@ -99,7 +99,7 @@ var (
 	didSidetreeProtocol_v0_5_CfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewComponentKey(config.GlobalMSPID, didSidetreeNamespace, v1, config.ProtocolComponentName, v0_5))
 	didSidetreeProtocol_v0_5_CfgValueBytes = marshalConfigValue(tx1, didSidetreeProtocol_V0_5_CfgJSON, "json")
 
-	peerCfgKeyBytes            = ledgercfgmgr.MarshalKey(ledgercfg.NewPeerKey(mspID, peerID, config.SidetreeAppName, config.SidetreeAppVersion))
+	peerCfgKeyBytes            = ledgercfgmgr.MarshalKey(ledgercfg.NewPeerKey(mspID, peerID, config.SidetreePeerAppName, config.SidetreePeerAppVersion))
 	peerSidetreeCfgValueBytes  = marshalConfigValue(tx1, peerSidetreeCfgJson, "json")
 	peerTrustblocCfgValueBytes = marshalConfigValue(tx5, peerTrustblocCfgJson, "json")
 	peerBothCfgValueBytes      = marshalConfigValue(tx2, peerBothCfgJson, "json")

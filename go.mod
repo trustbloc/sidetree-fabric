@@ -28,9 +28,9 @@ require (
 
 replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.2-0.20200211211900-62c249e072e2
 
-replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200211231405-e21ab2bc259f
+replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200218213141-fc25d209285c
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.2-0.20200211231405-e21ab2bc259f
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.2-0.20200218213141-fc25d209285c
 
 replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.2-0.20200205170340-c69bba6d7b81
 

@@ -22,4 +22,7 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
     And(/^fabric-cli is executed with args "([^"]*)"$/, function (arg1, callback) {
         callback.pending();
     });
+    When(/^fabric-cli is executed with args "([^"]*)" then the error response should contain "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
 });

@@ -1,0 +1,16 @@
+{
+  "MspID": "Org1MSP",
+  "Peers": [
+    {
+      "PeerID": "peer0.org1.example.com",
+      "Apps": [
+        {
+          "AppName": "sidetree",
+          "Version": "1",
+          "Config": "file://./invalid-basepath.json",
+          "Format": "json"
+        }
+      ]
+    }
+  ]
+}

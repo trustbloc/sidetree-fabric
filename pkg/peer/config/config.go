@@ -14,14 +14,17 @@ const (
 	// GlobalMSPID is used as the consortium-wide MSP ID (i.e. non org-specific)
 	GlobalMSPID = "general"
 
+	// SidetreeAppVersion is the version of the Sidetree config application
+	SidetreeAppVersion = "1"
+
 	// ProtocolComponentName is the name of the Sidetree protocol config component
 	ProtocolComponentName = "protocol"
 
-	// SidetreeAppName is the '=name of the Sidetree config application
-	SidetreeAppName = "sidetree"
+	// SidetreePeerAppName is the '=name of the Sidetree config application
+	SidetreePeerAppName = "sidetree"
 
-	// SidetreeAppVersion is the version of the Sidetree config application
-	SidetreeAppVersion = "1"
+	// SidetreePeerAppVersion is the version of the Sidetree config application
+	SidetreePeerAppVersion = "1"
 )
 
 // Namespace holds Sidetree namespace config

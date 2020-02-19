@@ -96,6 +96,21 @@ func (d *FabricCLISteps) execute(strArgs string) error {
 	return nil
 }
 
+func (d *FabricCLISteps) executeWithError(strArgs, expectedError string) error {
+	logger.Infof("Executing fabric-cli command with args [%s] and expecting error [%s]", strArgs, expectedError)
+
+	err := d.execute(strArgs)
+	if err == nil {
+		return errors.Errorf("expecting error [%s] but got no error", expectedError)
+	}
+
+	if !strings.Contains(err.Error(), expectedError) {
+		return errors.Errorf("expecting error [%s] but got [%s]", expectedError, err)
+	}
+
+	return nil
+}
+
 // RegisterSteps registers transient data steps
 func (d *FabricCLISteps) RegisterSteps(s *godog.Suite) {
 	s.BeforeScenario(d.BDDContext.BeforeScenario)
@@ -106,4 +121,5 @@ func (d *FabricCLISteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^fabric-cli context "([^"]*)" is defined on channel "([^"]*)" with org "([^"]*)", peers "([^"]*)" and user "([^"]*)"$`, d.defineContext)
 	s.Step(`^fabric-cli context "([^"]*)" is used$`, d.useContext)
 	s.Step(`^fabric-cli is executed with args "([^"]*)"$`, d.execute)
+	s.Step(`^fabric-cli is executed with args "([^"]*)" then the error response should contain "([^"]*)"$`, d.executeWithError)
 }

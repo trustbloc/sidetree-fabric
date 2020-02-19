@@ -18,6 +18,7 @@ import (
 
 //go:generate counterfeiter -o ./mocks/configserviceprovider.gen.go --fake-name ConfigServiceProvider . configServiceProvider
 //go:generate counterfeiter -o ./mocks/configservice.gen.go --fake-name ConfigService github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config.Service
+//go:generate counterfeiter -o ./mocks/validatorregistry.gen.go --fake-name ValidatorRegistry . validatorRegistry
 
 const (
 	channelID = "mychannel"
@@ -40,7 +41,9 @@ func TestNewSidetreeProvider(t *testing.T) {
 	configProvider := &mocks.ConfigServiceProvider{}
 	configProvider.ForChannelReturns(configService)
 
-	p := NewSidetreeProvider(configProvider)
+	validatorRegistry := &mocks.ValidatorRegistry{}
+
+	p := NewSidetreeProvider(configProvider, validatorRegistry)
 	require.NotNil(t, p)
 
 	s := p.ForChannel(channelID)
@@ -154,7 +157,7 @@ func TestNewSidetreeProvider(t *testing.T) {
 		cfgValue := &ledgercfg.Value{}
 		configService.GetReturns(cfgValue, nil)
 
-		err := s.(*sidetreeService).load(ledgercfg.NewAppKey(GlobalMSPID, SidetreeAppName, SidetreeAppVersion), func() {})
+		err := s.(*sidetreeService).load(ledgercfg.NewAppKey(GlobalMSPID, SidetreePeerAppName, SidetreePeerAppVersion), func() {})
 		require.Error(t, err)
 	})
 }
