@@ -83,7 +83,25 @@ func TestClient_Put(t *testing.T) {
 	c := New(chID, namespace, &stmocks.DCASClientProvider{})
 
 	require.PanicsWithValue(t, "not implemented", func() {
-		err := c.Put(batch.Operation{})
+		err := c.Put(&batch.Operation{})
 		require.NoError(t, err)
 	})
+}
+
+func TestSort(t *testing.T) {
+	var operations []*batch.Operation
+
+	const testID = "id"
+	delete := &batch.Operation{ID: testID, Type: "delete", TransactionTime: 2, TransactionNumber: 1}
+	update := &batch.Operation{ID: testID, Type: "update", TransactionTime: 1, TransactionNumber: 7}
+	create := &batch.Operation{ID: testID, Type: "create", TransactionTime: 1, TransactionNumber: 1}
+
+	operations = append(operations, delete)
+	operations = append(operations, update)
+	operations = append(operations, create)
+
+	result := sortChronologically(operations)
+	require.Equal(t, create.Type, result[0].Type)
+	require.Equal(t, update.Type, result[1].Type)
+	require.Equal(t, delete.Type, result[2].Type)
 }

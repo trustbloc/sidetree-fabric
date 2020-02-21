@@ -56,11 +56,11 @@ func TestServer_Start(t *testing.T) {
 
 	t.Run("DID doc", func(t *testing.T) {
 		payload, err := getEncodedPayload([]byte(validDoc))
-		require.NoError(t,err)
+		require.NoError(t, err)
 		createReq, err := getCreateRequest(payload)
 		require.NoError(t, err)
 
-		didID, err := docutil.CalculateID(didDocNamespace,payload, sha2_256)
+		didID, err := docutil.CalculateID(didDocNamespace, payload, sha2_256)
 		require.NoError(t, err)
 
 		request := &model.Request{}
@@ -85,7 +85,7 @@ func TestServer_Start(t *testing.T) {
 	})
 	t.Run("Sample doc", func(t *testing.T) {
 		payload, err := getEncodedPayload([]byte(validDoc))
-		require.NoError(t,err)
+		require.NoError(t, err)
 		createReq, err := getCreateRequest(payload)
 		require.NoError(t, err)
 

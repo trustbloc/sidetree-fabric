@@ -9,6 +9,7 @@ package doc
 import (
 	"crypto"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -183,6 +184,66 @@ func TestQueryError(t *testing.T) {
 	assert.Contains(t, err.Error(), testErr.Error())
 }
 
+func TestQuery_SortError(t *testing.T) {
+	stub := prepareStub()
+
+	testPayload := getOperationBytes(getCreateOperation())
+
+	address, err := invoke(stub, [][]byte{[]byte(write), testPayload})
+	assert.Nil(t, err)
+	assert.NotNil(t, address)
+
+	address, err = invoke(stub, [][]byte{[]byte(write), []byte("invalid json")})
+	assert.Nil(t, err)
+	assert.NotNil(t, address)
+
+	payload, err := invoke(stub, [][]byte{[]byte(queryByID), []byte(testID)})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "unexpected end of JSON input")
+	assert.Nil(t, payload)
+}
+
+func TestSort(t *testing.T) {
+	var operations [][]byte
+
+	delete := &testOperation{ID: testID, Type: "delete", TransactionTime: 2, TransactionNumber: 1}
+	update := &testOperation{ID: testID, Type: "update", TransactionTime: 1, TransactionNumber: 7}
+	create := &testOperation{ID: testID, Type: "create", TransactionTime: 1, TransactionNumber: 1}
+
+	operations = append(operations, getOperationBytes(delete))
+	operations = append(operations, getOperationBytes(update))
+	operations = append(operations, getOperationBytes(create))
+
+	result, err := sortChronologically(operations)
+	require.NoError(t, err)
+
+	var first testOperation
+	err = json.Unmarshal(result[0], &first)
+	require.NoError(t, err)
+	require.Equal(t, create.Type, first.Type)
+
+	var second testOperation
+	err = json.Unmarshal(result[1], &second)
+	require.NoError(t, err)
+	require.Equal(t, update.Type, second.Type)
+
+	var third testOperation
+	err = json.Unmarshal(result[2], &third)
+	require.NoError(t, err)
+	require.Equal(t, delete.Type, third.Type)
+}
+
+func TestSortError(t *testing.T) {
+	var operations [][]byte
+	operations = append(operations, []byte("invalid json"))
+	operations = append(operations, []byte("invalid json"))
+
+	result, err := sortChronologically(operations)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid character")
+	require.Nil(t, result)
+}
+
 func TestWarmup(t *testing.T) {
 
 	stub := prepareStub()
@@ -254,7 +315,7 @@ func invoke(stub *mocks.MockStub, args [][]byte) ([]byte, error) {
 	return res.Payload, nil
 }
 
-func getOperationBytes(op *Operation) []byte {
+func getOperationBytes(op *testOperation) []byte {
 
 	bytes, err := docutil.MarshalCanonical(op)
 	if err != nil {
@@ -264,12 +325,14 @@ func getOperationBytes(op *Operation) []byte {
 	return bytes
 }
 
-func getCreateOperation() *Operation {
-	return &Operation{ID: testID, Type: "create"}
+func getCreateOperation() *testOperation {
+	return &testOperation{ID: testID, Type: "create", TransactionTime: 1, TransactionNumber: 1}
 }
 
-// Operation defines sample operation
-type Operation struct {
-	Type string `json:"type"`
-	ID   string `json:"id"`
+// testOperation  defines sample operation with smaallest subset of information
+type testOperation struct {
+	Type              string `json:"type"`
+	ID                string `json:"id"`
+	TransactionTime   uint64 `json:"transactionTime"`
+	TransactionNumber uint64 `json:"transactionNumber"`
 }

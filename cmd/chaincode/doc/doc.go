@@ -10,14 +10,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
+	"sort"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/common/flogging"
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
 )
 
-var logger = NewLogger("doc")
+var logger = flogging.MustGetLogger("doc")
 
 const (
 	ccVersion = "v1"
@@ -191,9 +193,15 @@ func (cc *DocumentCC) queryByID(stub shim.ChaincodeStubInterface, args [][]byte)
 		}
 	}
 
-	// TODO: sort documents by blockchain time (block number, tx number within block, operation index within batch)
+	// sort documents by blockchain time (block number, tx number within block)
+	sorted, err := sortChronologically(operations)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to sort operations chronologically for id[%s]: %s", ID, err.Error())
+		logger.Errorf("[txID %s] %s", txID, errMsg)
+		return shim.Error(errMsg)
+	}
 
-	payload, err := json.Marshal(operations)
+	payload, err := json.Marshal(sorted)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to marshal documents: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)
@@ -201,6 +209,47 @@ func (cc *DocumentCC) queryByID(stub shim.ChaincodeStubInterface, args [][]byte)
 	}
 
 	return shim.Success(payload)
+}
+
+func sortChronologically(operations [][]byte) ([][]byte, error) {
+	if len(operations) <= 1 {
+		return operations, nil
+	}
+
+	ops := make([]*operation, len(operations))
+	for index, bytes := range operations {
+		op := &operation{}
+		err := json.Unmarshal(bytes, op)
+		if err != nil {
+			return nil, err
+		}
+		op.Index = index
+		ops[index] = op
+	}
+
+	sort.Slice(ops, func(i, j int) bool {
+		if ops[i].TransactionTime == ops[j].TransactionTime {
+			return ops[i].TransactionNumber < ops[j].TransactionNumber
+		}
+		return ops[i].TransactionTime < ops[j].TransactionTime
+	})
+
+	sorted := make([][]byte, len(operations))
+	for i, o := range ops {
+		sorted[i] = operations[o.Index]
+	}
+
+	return sorted, nil
+}
+
+type operation struct {
+	Index int
+
+	// The logical blockchain time that this operation was anchored on the blockchain  - corresponds to block number
+	TransactionTime uint64 `json:"transactionTime"`
+
+	// The transaction number of the transaction this operation was batched within - corresponds to tx number within block
+	TransactionNumber uint64 `json:"transactionNumber"`
 }
 
 func (m funcMap) String() string {

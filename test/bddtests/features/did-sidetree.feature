@@ -112,3 +112,17 @@ Feature:
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-protocol-config.json --noprompt" then the error response should contain "algorithm not supported"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-config.json --noprompt" then the error response should contain "field 'BatchWriterTimeout' must contain a value greater than 0"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-peer-config.json --noprompt" then the error response should contain "field 'BasePath' must begin with '/'"
+
+  @create_delete_did_doc
+  Scenario: create  and delete valid did doc
+    When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    Then check success response contains "#didDocumentHash"
+    And we wait 10 seconds
+
+    When client sends request to "http://localhost:48526/document" to resolve DID document
+    Then check success response contains "#didDocumentHash"
+    When client sends request to "http://localhost:48526/document" to delete DID document
+    And we wait 10 seconds
+
+    When client sends request to "http://localhost:48526/document" to resolve DID document
+    Then check error response contains "document is no longer available"

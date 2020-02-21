@@ -28,7 +28,7 @@ func NewOperationStore(channelID string, dcasClientProvider common.DCASClientPro
 }
 
 // Put first checks if the given operations have already been persisted; if not, then they will be persisted.
-func (s *OperationStore) Put(ops []batch.Operation) error {
+func (s *OperationStore) Put(ops []*batch.Operation) error {
 	for _, op := range ops {
 		if err := s.checkOperation(op); err != nil {
 			return err
@@ -37,7 +37,7 @@ func (s *OperationStore) Put(ops []batch.Operation) error {
 	return nil
 }
 
-func (s *OperationStore) checkOperation(op batch.Operation) error {
+func (s *OperationStore) checkOperation(op *batch.Operation) error {
 	key, opBytes, err := common.MarshalDCAS(op)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get DCAS key and value for operation [%s]", op.ID)
