@@ -40,27 +40,3 @@ Feature:
     # sidetree content test
     When client writes content "Hello World" using "sidetreetxn_cc" on the "mychannel" channel
     Then client verifies that written content at the returned address from "sidetreetxn_cc" matches original content on the "mychannel" channel
-
-    # document content test
-    When client creates document with ID "did:sidetree:abc" using "document_cc" on the "mychannel" channel
-    And we wait 5 seconds
-    Then client verifies that query by index ID "did:sidetree:abc" from "document_cc" will return "1" versions of the document on the "mychannel" channel
-
-    # Bring down peer1.org1 so that it doesn't get the documents via Gossip broadcast
-    Given container "peer1.org1.example.com" is stopped
-    # Wait a while so that Discovery will give up on this peer and remove it from the list of 'alive' peers
-    And we wait 60 seconds
-
-    # write sidetree transaction
-    When client writes operations batch file and anchor file for ID "did:sidetree:123abc" using "sidetreetxn_cc" on the "mychannel" channel
-    # Wait a while before starting peer1.org1 so that Gossip gives up trying to push the documents to the peer
-    And we wait 65 seconds
-    Then container "peer1.org1.example.com" is started
-    # Wait a while to give peer1.org1 a chance to commit all blocks and get back in Discovery's list of 'alive' peers
-    And we wait 15 seconds
-
-    # Make sure that all peers have the document, including peer1.org1 which just came up
-    Then client verifies that query by index ID "did:sidetree:123abc" from "document_cc" will return "2" versions of the document on the "mychannel" channel on peers "peer0.org1.example.com"
-    And client verifies that query by index ID "did:sidetree:123abc" from "document_cc" will return "2" versions of the document on the "mychannel" channel on peers "peer0.org2.example.com"
-    And client verifies that query by index ID "did:sidetree:123abc" from "document_cc" will return "2" versions of the document on the "mychannel" channel on peers "peer1.org2.example.com"
-    And client verifies that query by index ID "did:sidetree:123abc" from "document_cc" will return "2" versions of the document on the "mychannel" channel on peers "peer1.org1.example.com"
