@@ -7,58 +7,30 @@ SPDX-License-Identifier: Apache-2.0
 package doc
 
 import (
-	"encoding/json"
-	"fmt"
-	"runtime/debug"
-	"sort"
-
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/hyperledger/fabric/common/flogging"
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
-	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
 )
-
-var logger = flogging.MustGetLogger("doc")
 
 const (
 	ccVersion = "v1"
 
-	// Available function names
-	write     = "write"
-	read      = "read"
-	queryByID = "queryByID"
-	warmup    = "warmup"
-
-	// this chaincode can be 'generic' if we pass in collection name to each function
 	collection = "docs"
 
-	couchDB           = "couchdb"
-	docsCollIndex     = `{"index": {"fields": ["id"]}, "ddoc": "indexIDDoc", "name": "indexID", "type": "json"}`
-	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","encodedPayload","encodedProtectedHeader","document","updateOTP","recoveryOTP","nextUpdateOTPHash","nextRecoveryOTPHash","hashAlgorithmInMultiHashCode","operationIndex","patch","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
+	couchDB       = "couchdb"
+	docsCollIndex = `{"index": {"fields": ["id"]}, "ddoc": "indexIDDoc", "name": "indexID", "type": "json"}`
 )
 
-// funcMap is a map of functions by function name
-type funcMap map[string]func(shim.ChaincodeStubInterface, [][]byte) pb.Response
-
-// DocumentCC ...
+// DocumentCC is used to setup database, collection and indexes for documents
 type DocumentCC struct {
-	name      string
-	functions funcMap
+	name string
 }
 
 // New returns chaincode
 func New(name string) *DocumentCC {
 	cc := &DocumentCC{
-		name:      name,
-		functions: make(funcMap),
+		name: name,
 	}
-
-	cc.functions[write] = cc.write
-	cc.functions[read] = cc.read
-	cc.functions[queryByID] = cc.queryByID
-	cc.functions[warmup] = cc.warmup
-
 	return cc
 }
 
@@ -89,195 +61,5 @@ func (cc *DocumentCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 // Invoke manages document lifecycle operations (write, read)
 func (cc *DocumentCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Response) {
-
-	txID := stub.GetTxID()
-
-	defer handlePanic(&resp)
-
-	args := stub.GetArgs()
-	if len(args) > 0 {
-		// only display first arg (function), remaining args may contain client data, do not log them
-		logger.Debugf("[txID %s] DocumentCC Arg[0]=%s", txID, args[0])
-	}
-
-	// Get function name (first argument)
-	if len(args) < 1 {
-		errMsg := "function name is required"
-		logger.Debugf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	functionName := string(args[0])
-	function, valid := cc.functions[functionName]
-	if !valid {
-		errMsg := fmt.Sprintf("invalid invoke function [%s] - expecting one of: %s", functionName, cc.functions.String())
-		logger.Debugf("[txID %s] %s", errMsg)
-		return shim.Error(errMsg)
-	}
-	return function(stub, args[1:])
-}
-
-// write will write content using cas client
-func (cc *DocumentCC) write(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
-	txID := stub.GetTxID()
-	if len(args) < 1 || len(args[0]) == 0 {
-		err := "missing content"
-		logger.Debugf("[txID %s] %s", txID, err)
-		return shim.Error(err)
-	}
-
-	casClient := cas.New(stub, collection)
-	address, err := casClient.Write(args[0])
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to write content: %s", err.Error())
-		logger.Errorf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	return shim.Success([]byte(address))
-}
-
-// read will read content using cas client
-func (cc *DocumentCC) read(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
-	txID := stub.GetTxID()
-	if len(args) < 1 || len(args[0]) == 0 {
-		errMsg := "missing content address"
-		logger.Debugf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	client := cas.New(stub, collection)
-
-	address := string(args[0])
-	payload, err := client.Read(address)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to read content: %s", err.Error())
-		logger.Errorf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	if payload == nil {
-		return pb.Response{
-			Status:  404,
-			Message: "content not found",
-		}
-	}
-
-	return shim.Success(payload)
-}
-
-// queryByID wiil query all operations for document with specified ID
-func (cc *DocumentCC) queryByID(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
-
-	txID := stub.GetTxID()
-	if len(args) < 1 {
-		err := "id is required"
-		logger.Debugf("[txID %s] %s", txID, err)
-		return shim.Error(err)
-	}
-
-	ID := string(args[0])
-
-	client := cas.New(stub, collection)
-	operations, err := client.Query(fmt.Sprintf(queryByIDTemplate, ID))
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to query operations by id[%s]: %s", ID, err.Error())
-		logger.Errorf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	if len(operations) == 0 {
-		return pb.Response{
-			Status:  404,
-			Message: "document not found",
-		}
-	}
-
-	// sort documents by blockchain time (block number, tx number within block)
-	sorted, err := sortChronologically(operations)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to sort operations chronologically for id[%s]: %s", ID, err.Error())
-		logger.Errorf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	payload, err := json.Marshal(sorted)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to marshal documents: %s", err.Error())
-		logger.Errorf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	return shim.Success(payload)
-}
-
-func sortChronologically(operations [][]byte) ([][]byte, error) {
-	if len(operations) <= 1 {
-		return operations, nil
-	}
-
-	ops := make([]*operation, len(operations))
-	for index, bytes := range operations {
-		op := &operation{}
-		err := json.Unmarshal(bytes, op)
-		if err != nil {
-			return nil, err
-		}
-		op.Index = index
-		ops[index] = op
-	}
-
-	sort.Slice(ops, func(i, j int) bool {
-		if ops[i].TransactionTime == ops[j].TransactionTime {
-			return ops[i].TransactionNumber < ops[j].TransactionNumber
-		}
-		return ops[i].TransactionTime < ops[j].TransactionTime
-	})
-
-	sorted := make([][]byte, len(operations))
-	for i, o := range ops {
-		sorted[i] = operations[o.Index]
-	}
-
-	return sorted, nil
-}
-
-type operation struct {
-	Index int
-
-	// The logical blockchain time that this operation was anchored on the blockchain  - corresponds to block number
-	TransactionTime uint64 `json:"transactionTime"`
-
-	// The transaction number of the transaction this operation was batched within - corresponds to tx number within block
-	TransactionNumber uint64 `json:"transactionNumber"`
-}
-
-func (m funcMap) String() string {
-	str := ""
-	i := 0
-	for key := range m {
-		if i > 0 {
-			str += ", "
-		}
-		i++
-		str += fmt.Sprintf("\"%s\"", key)
-	}
-	return str
-}
-
-//nolint -- unused stub variable
-func (cc *DocumentCC) warmup(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
-	return shim.Success(nil)
-}
-
-// handlePanic handles a panic (if any) by populating error response
-func handlePanic(resp *pb.Response) {
-	if r := recover(); r != nil {
-		logger.Errorf("Recovering from panic: %s", string(debug.Stack()))
-
-		errResp := shim.Error("panic: check server logs")
-		resp.Reset()
-		resp.Status = errResp.Status
-		resp.Message = errResp.Message
-	}
+	return shim.Error("invoke is not supported")
 }
