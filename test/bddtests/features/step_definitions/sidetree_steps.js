@@ -4,6 +4,7 @@
     SPDX-License-Identifier: Apache-2.0
 */
 
+var {When} = require('cucumber');
 var myStepDefinitionsWrapper = function () {
     this.When(/^client sends request to "([^"]*)" to create DID document "([^"]*)" in namespace "([^"]*)"$/, function (arg1, arg2, arg3, callback) {
         callback.pending();
@@ -12,6 +13,9 @@ var myStepDefinitionsWrapper = function () {
         callback.pending();
     });
     this.Then(/^check success response contains "([^"]*)"$/, function (arg1, callback) {
+        callback.pending();
+    });
+    this.Then(/^check error response contains "([^"]*)"$/, function (arg1, callback) {
         callback.pending();
     });
     this.When(/^client sends request to "([^"]*)" to resolve DID document$/, function (callback) {
@@ -33,6 +37,9 @@ var myStepDefinitionsWrapper = function () {
         callback.pending();
     });
     this.When(/^client writes operations batch file and anchor file for ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, callback) {
+        callback.pending();
+    });
+    this.When(/^client sends request to "([^"]*)" to delete DID document$/, function (arg1, callback) {
         callback.pending();
     });
 };

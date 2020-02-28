@@ -179,7 +179,7 @@ func (c *channelController) loadNewContexts(namespaces []config.Namespace) ([]*c
 	var contexts []*context
 
 	for _, nsCfg := range namespaces {
-		ctx, err := newContext(c.channelID, nsCfg, c.sidetreeCfgService, c.TxnProvider, c.DcasProvider)
+		ctx, err := newContext(c.channelID, nsCfg, c.sidetreeCfgService, c.TxnProvider, c.DcasProvider, c.OperationQueueProvider)
 		if err != nil {
 			return nil, err
 		}

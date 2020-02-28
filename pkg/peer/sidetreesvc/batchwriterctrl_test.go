@@ -13,6 +13,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
+
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
@@ -21,6 +23,7 @@ import (
 )
 
 //go:generate counterfeiter -o ../mocks/batchcontext.gen.go --fake-name BatchContext github.com/trustbloc/sidetree-core-go/pkg/batch.Context
+//go:generate counterfeiter -o ../mocks/protocolclient.gen.go --fake-name ProtocolClient github.com/trustbloc/sidetree-core-go/pkg/api/protocol.Client
 //go:generate counterfeiter -o ../mocks/sidetreeconfigservice.gen.go --fake-name SidetreeConfigService ../config SidetreeService
 
 const (
@@ -39,6 +42,10 @@ func TestBatchWriter(t *testing.T) {
 	}()
 
 	ctx := &mocks.BatchContext{}
+	ctx.OperationQueueReturns(&opqueue.MemQueue{})
+
+	pc := &mocks.ProtocolClient{}
+	ctx.ProtocolReturns(pc)
 
 	t.Run("Success", func(t *testing.T) {
 		cfgService := &mocks.SidetreeConfigService{}
@@ -49,7 +56,7 @@ func TestBatchWriter(t *testing.T) {
 		require.NotNil(t, bw)
 
 		require.NoError(t, bw.Start())
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		bw.Stop()
 	})
 

@@ -9,6 +9,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	viper "github.com/spf13/viper2015"
 )
@@ -16,19 +17,24 @@ import (
 const (
 	sidetreeHostKey = "sidetree.host"
 	sidetreePortKey = "sidetree.port"
+
+	confPeerFileSystemPath = "peer.fileSystemPath"
+	sidetreeOperationsDir  = "sidetree_ops"
 )
 
 // Peer holds the Sidetree peer config
 type Peer struct {
-	sidetreeHost string
-	sidetreePort int
+	sidetreeHost           string
+	sidetreePort           int
+	levelDBOpQueueBasePath string
 }
 
 // NewPeer returns a new peer config
 func NewPeer() *Peer {
 	return &Peer{
-		sidetreeHost: viper.GetString(sidetreeHostKey),
-		sidetreePort: viper.GetInt(sidetreePortKey),
+		sidetreeHost:           viper.GetString(sidetreeHostKey),
+		sidetreePort:           viper.GetInt(sidetreePortKey),
+		levelDBOpQueueBasePath: filepath.Join(filepath.Clean(viper.GetString(confPeerFileSystemPath)), sidetreeOperationsDir),
 	}
 }
 
@@ -44,4 +50,9 @@ func (c *Peer) SidetreeListenURL() (string, error) {
 	}
 
 	return fmt.Sprintf("%s:%d", host, c.sidetreePort), nil
+}
+
+// LevelDBOpQueueBasePath returns the base path of the directory to store LevelDB operation queues
+func (c *Peer) LevelDBOpQueueBasePath() string {
+	return c.levelDBOpQueueBasePath
 }

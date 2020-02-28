@@ -11,14 +11,19 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -61,28 +66,33 @@ func TestChannelManager(t *testing.T) {
 		},
 	}
 
-	peerConfig := &mocks.PeerConfig{}
+	peerConfig := &peermocks.PeerConfig{}
 	peerConfig.MSPIDReturns(msp1)
 	peerConfig.PeerIDReturns(peer1)
 
-	configSvc := &mocks.ConfigService{}
-	configProvider := &mocks.ConfigServiceProvider{}
+	configSvc := &peermocks.ConfigService{}
+	configProvider := &peermocks.ConfigServiceProvider{}
 	configProvider.ForChannelReturns(configSvc)
 
 	observerProviders := &observer.Providers{
 		BlockPublisher: extmocks.NewBlockPublisherProvider(),
 	}
 
+	opQueue := &opqueue.MemQueue{}
+	opQueueProvider := &mocks.OperationQueueProvider{}
+	opQueueProvider.CreateReturns(opQueue, nil)
+
 	providers := &providers{
-		PeerConfig:        peerConfig,
-		ConfigProvider:    configProvider,
-		ObserverProviders: observerProviders,
+		PeerConfig:             peerConfig,
+		ConfigProvider:         configProvider,
+		ObserverProviders:      observerProviders,
+		OperationQueueProvider: opQueueProvider,
 	}
 
-	stConfigService := &mocks.SidetreeConfigService{}
+	stConfigService := &peermocks.SidetreeConfigService{}
 	stConfigService.LoadProtocolsReturns(protocolVersions, nil)
 
-	ctrl := &mocks.RESTServerController{}
+	ctrl := &peermocks.RESTServerController{}
 
 	m := newChannelController(channel1, providers, stConfigService, ctrl)
 	require.NotNil(t, m)

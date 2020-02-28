@@ -30,7 +30,7 @@ func newBatchWriter(channelID, namespace string, ctx batch.Context, configServic
 			return nil, err
 		}
 
-		bw, err = batch.New(ctx, batch.WithBatchTimeout(sidetreeCfg.BatchWriterTimeout))
+		bw, err = batch.New(channelID+"_"+namespace, ctx, batch.WithBatchTimeout(sidetreeCfg.BatchWriterTimeout))
 		if err != nil {
 			return nil, err
 		}

@@ -9,8 +9,11 @@ package context
 import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
+
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/context/blockchain"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/cas"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/protocol"
@@ -23,6 +26,7 @@ type SidetreeContext struct {
 	protocolClient   protocolApi.Client
 	casClient        batch.CASClient
 	blockchainClient batch.BlockchainClient
+	opQueue          cutter.OperationQueue
 }
 
 type txnServiceProvider interface {
@@ -33,15 +37,30 @@ type dcasClientProvider interface {
 	ForChannel(channelID string) (client.DCAS, error)
 }
 
+type operationQueueProvider interface {
+	Create(channelID string, namespace string) (cutter.OperationQueue, error)
+}
+
 // New creates new Sidetree context
-func New(channelID, namespace string, protocolVersions map[string]protocolApi.Protocol, txnProvider txnServiceProvider, dcasProvider dcasClientProvider) *SidetreeContext {
+func New(
+	channelID, namespace string,
+	protocolVersions map[string]protocolApi.Protocol,
+	txnProvider txnServiceProvider,
+	dcasProvider dcasClientProvider,
+	opQueueProvider operationQueueProvider) (*SidetreeContext, error) {
+	opQueue, err := opQueueProvider.Create(channelID, namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SidetreeContext{
 		channelID:        channelID,
 		namespace:        namespace,
 		protocolClient:   protocol.New(protocolVersions),
 		casClient:        cas.New(channelID, dcasProvider),
 		blockchainClient: blockchain.New(channelID, txnProvider),
-	}
+		opQueue:          opQueue,
+	}, nil
 }
 
 // Namespace returns the namespace
@@ -62,4 +81,9 @@ func (m *SidetreeContext) Blockchain() batch.BlockchainClient {
 // CAS returns content addressable storage client
 func (m *SidetreeContext) CAS() batch.CASClient {
 	return m.casClient
+}
+
+// OperationQueue returns the queue containing the pending operations
+func (m *SidetreeContext) OperationQueue() cutter.OperationQueue {
+	return m.opQueue
 }

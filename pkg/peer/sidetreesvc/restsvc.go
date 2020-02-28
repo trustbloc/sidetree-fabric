@@ -100,7 +100,7 @@ func newRESTHandlers(
 		protocolProvider.Protocol(),
 		didvalidator.New(opStore),
 		batchWriter,
-		processor.New(opStore),
+		processor.New(channelID+"_"+cfg.Namespace, opStore),
 	)
 
 	var handlers []common.HTTPHandler

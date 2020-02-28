@@ -86,16 +86,24 @@ Feature:
     When client sends request to "http://localhost:48426/yourdomain.com" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-  @did-sidetree-batch-writer-recovery
+  @batch_writer_recovery
   Scenario: Batch writer recovers from peers down
+    # Stop all of the peers in org2 so that processing of the batch fails (since we need two orgs for endorsement).
     Given container "peer0.org2.example.com" is stopped
     And container "peer1.org2.example.com" is stopped
     And we wait 2 seconds
 
+    # Send the operation to peer0.org1.
     When client sends request to "http://localhost:48326/document" to create DID document "fixtures/testdata/didDocument2.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
-    Then we wait 10 seconds
+    # Stop peer0.org1 after sending it an operation. The operation should have
+    # been saved to a persistent queue so that when it comes up it will be able to process it.
+    Then container "peer0.org1.example.com" is stopped
+    Then container "peer0.org1.example.com" is started
+
+    # Upon starting up, peer0.org1 will try to process the operation but will fail since all peers in org2 are down.
+    Then we wait 30 seconds
 
     Given container "peer0.org2.example.com" is started
     And container "peer1.org2.example.com" is started
@@ -103,6 +111,8 @@ Feature:
     # Wait for the peers to come up and the batch writer to cut the batch
     And we wait 30 seconds
 
+    # Retrieve the document from another peer since, by this time, the operation should have
+    # been processed and distributed to all peers.
     When client sends request to "http://localhost:48626/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
@@ -114,7 +124,7 @@ Feature:
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-peer-config.json --noprompt" then the error response should contain "field 'BasePath' must begin with '/'"
 
   @create_delete_did_doc
-  Scenario: create  and delete valid did doc
+  Scenario: create and delete valid did doc
     When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds

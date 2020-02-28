@@ -84,7 +84,7 @@ channel-config-gen:
 		$(FABRIC_TOOLS_IMAGE):$(FABRIC_TOOLS_TAG) \
 		//bin/bash -c "FABRIC_VERSION_DIR=fabric/ /opt/workspace/${PROJECT_NAME}/scripts/generate_channeltx.sh"
 
-populate-fixtures: clean
+populate-fixtures:
 	@scripts/populate-fixtures.sh -f
 
 
@@ -92,12 +92,12 @@ bddtests: populate-fixtures docker-thirdparty fabric-peer-docker build-cc fabric
 	@scripts/integration.sh
 
 
-fabric-peer: clean
+fabric-peer:
 	@echo "Building fabric-peer"
 	@mkdir -p ./.build/bin
 	@cd cmd/peer && go build -o ../../.build/bin/fabric-peer main.go
 
-fabric-peer-docker: clean
+fabric-peer-docker:
 	@echo "Building fabric-peer image"
 	@docker build -f ./images/fabric-peer/Dockerfile --no-cache -t docker.pkg.github.com/trustbloc/sidetree-fabric/peer:latest \
 	--build-arg FABRIC_PEER_EXT_IMAGE=$(FABRIC_PEER_EXT_IMAGE) \
