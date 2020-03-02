@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -109,7 +110,15 @@ var (
 func TestInitialize(t *testing.T) {
 	defer removeDBPath(t)
 
+	peerFileSystemPath := filepath.Join(os.TempDir(), "peer_init_test")
+	defer func() {
+		if err := os.RemoveAll(peerFileSystemPath); err != nil {
+			t.Errorf("Error removing temp dir [%s]: %s", peerFileSystemPath, err)
+		}
+	}()
+
 	viper.Set("sidetree.port", listenPort)
+	viper.Set("peer.fileSystemPath", peerFileSystemPath)
 
 	restore := setRoles(role.Observer, role.BatchWriter, role.Resolver)
 	defer restore()

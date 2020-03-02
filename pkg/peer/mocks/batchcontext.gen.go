@@ -6,6 +6,7 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
 )
 
 type BatchContext struct {
@@ -35,6 +36,15 @@ type BatchContext struct {
 	}
 	blockchainReturnsOnCall map[int]struct {
 		result1 batch.BlockchainClient
+	}
+	OperationQueueStub        func() cutter.OperationQueue
+	operationQueueMutex       sync.RWMutex
+	operationQueueArgsForCall []struct{}
+	operationQueueReturns     struct {
+		result1 cutter.OperationQueue
+	}
+	operationQueueReturnsOnCall map[int]struct {
+		result1 cutter.OperationQueue
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -160,6 +170,46 @@ func (fake *BatchContext) BlockchainReturnsOnCall(i int, result1 batch.Blockchai
 	}{result1}
 }
 
+func (fake *BatchContext) OperationQueue() cutter.OperationQueue {
+	fake.operationQueueMutex.Lock()
+	ret, specificReturn := fake.operationQueueReturnsOnCall[len(fake.operationQueueArgsForCall)]
+	fake.operationQueueArgsForCall = append(fake.operationQueueArgsForCall, struct{}{})
+	fake.recordInvocation("OperationQueue", []interface{}{})
+	fake.operationQueueMutex.Unlock()
+	if fake.OperationQueueStub != nil {
+		return fake.OperationQueueStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.operationQueueReturns.result1
+}
+
+func (fake *BatchContext) OperationQueueCallCount() int {
+	fake.operationQueueMutex.RLock()
+	defer fake.operationQueueMutex.RUnlock()
+	return len(fake.operationQueueArgsForCall)
+}
+
+func (fake *BatchContext) OperationQueueReturns(result1 cutter.OperationQueue) {
+	fake.OperationQueueStub = nil
+	fake.operationQueueReturns = struct {
+		result1 cutter.OperationQueue
+	}{result1}
+}
+
+func (fake *BatchContext) OperationQueueReturnsOnCall(i int, result1 cutter.OperationQueue) {
+	fake.OperationQueueStub = nil
+	if fake.operationQueueReturnsOnCall == nil {
+		fake.operationQueueReturnsOnCall = make(map[int]struct {
+			result1 cutter.OperationQueue
+		})
+	}
+	fake.operationQueueReturnsOnCall[i] = struct {
+		result1 cutter.OperationQueue
+	}{result1}
+}
+
 func (fake *BatchContext) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -169,6 +219,8 @@ func (fake *BatchContext) Invocations() map[string][][]interface{} {
 	defer fake.cASMutex.RUnlock()
 	fake.blockchainMutex.RLock()
 	defer fake.blockchainMutex.RUnlock()
+	fake.operationQueueMutex.RLock()
+	defer fake.operationQueueMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

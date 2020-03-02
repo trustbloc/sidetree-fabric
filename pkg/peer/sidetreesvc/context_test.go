@@ -12,9 +12,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
 
 //go:generate counterfeiter -o ../mocks/txnserviceprovider.gen.go --fake-name TxnServiceProvider . txnServiceProvider
@@ -26,8 +29,9 @@ func TestContext(t *testing.T) {
 		BasePath:  didTrustblocBasePath,
 	}
 
-	txnProvider := &mocks.TxnServiceProvider{}
-	dcasProvider := &mocks.DCASClientProvider{}
+	txnProvider := &peermocks.TxnServiceProvider{}
+	dcasProvider := &peermocks.DCASClientProvider{}
+	opQueueProvider := &mocks.OperationQueueProvider{}
 
 	t.Run("Success", func(t *testing.T) {
 		protocolVersions := map[string]protocolApi.Protocol{
@@ -39,10 +43,10 @@ func TestContext(t *testing.T) {
 			},
 		}
 
-		stConfigService := &mocks.SidetreeConfigService{}
+		stConfigService := &peermocks.SidetreeConfigService{}
 		stConfigService.LoadProtocolsReturns(protocolVersions, nil)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider, opQueueProvider)
 		require.NoError(t, err)
 		require.NotNil(t, ctx)
 
@@ -56,20 +60,20 @@ func TestContext(t *testing.T) {
 	})
 
 	t.Run("No protocols -> error", func(t *testing.T) {
-		stConfigService := &mocks.SidetreeConfigService{}
+		stConfigService := &peermocks.SidetreeConfigService{}
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider, opQueueProvider)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "no protocols defined")
 		require.Nil(t, ctx)
 	})
 
-	t.Run("Load protocols -> error", func(t *testing.T) {
+	t.Run("Initialize protocols -> error", func(t *testing.T) {
 		errExpected := errors.New("injected sidetreeCfgService error")
-		stConfigService := &mocks.SidetreeConfigService{}
+		stConfigService := &peermocks.SidetreeConfigService{}
 		stConfigService.LoadProtocolsReturns(nil, errExpected)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider, opQueueProvider)
 		require.EqualError(t, err, errExpected.Error())
 		require.Nil(t, ctx)
 	})

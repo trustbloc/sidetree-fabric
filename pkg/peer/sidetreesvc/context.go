@@ -49,10 +49,10 @@ func (c *context) Stop() {
 	c.batchWriter.Stop()
 }
 
-func newContext(channelID string, nsCfg config.Namespace, cfg config.SidetreeService, txnProvider txnServiceProvider, dcasProvider dcasClientProvider) (*context, error) {
+func newContext(channelID string, nsCfg config.Namespace, cfg config.SidetreeService, txnProvider txnServiceProvider, dcasProvider dcasClientProvider, opQueueProvider operationQueueProvider) (*context, error) {
 	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, nsCfg.Namespace)
 
-	ctx, err := newSidetreeContext(channelID, nsCfg.Namespace, cfg, txnProvider, dcasProvider)
+	ctx, err := newSidetreeContext(channelID, nsCfg.Namespace, cfg, txnProvider, dcasProvider, opQueueProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func newContext(channelID string, nsCfg config.Namespace, cfg config.SidetreeSer
 	}, nil
 }
 
-func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService, txnProvider txnServiceProvider, dcasProvider dcasClientProvider) (*sidetreectx.SidetreeContext, error) {
+func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService, txnProvider txnServiceProvider, dcasProvider dcasClientProvider, opQueueProvider operationQueueProvider) (*sidetreectx.SidetreeContext, error) {
 	protocolVersions, err := cfg.LoadProtocols(namespace)
 	if err != nil {
 		return nil, err
@@ -86,5 +86,5 @@ func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService,
 		return nil, errors.Errorf("no protocols defined for [%s]", namespace)
 	}
 
-	return sidetreectx.New(channelID, namespace, protocolVersions, txnProvider, dcasProvider), nil
+	return sidetreectx.New(channelID, namespace, protocolVersions, txnProvider, dcasProvider, opQueueProvider)
 }

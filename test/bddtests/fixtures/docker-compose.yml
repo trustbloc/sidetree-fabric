@@ -78,6 +78,7 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
+      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -137,6 +138,7 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
+      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -195,6 +197,7 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
+      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
@@ -253,6 +256,7 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
+      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
       - CORE_SIDETREE_PORT=48326
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true

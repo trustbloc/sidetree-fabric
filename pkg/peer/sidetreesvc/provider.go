@@ -10,16 +10,17 @@ import (
 	"sync"
 
 	"github.com/hyperledger/fabric/common/flogging"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 
 	dcas "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
 
+	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
+	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")
@@ -49,14 +50,19 @@ type sidetreeConfigProvider interface {
 	ForChannel(channelID string) config.SidetreeService
 }
 
+type operationQueueProvider interface {
+	Create(channelID string, namespace string) (cutter.OperationQueue, error)
+}
+
 type providers struct {
-	PeerConfig        peerConfig
-	RESTConfig        restConfig
-	ConfigProvider    configServiceProvider
-	TxnProvider       txnServiceProvider
-	DcasProvider      dcasClientProvider
-	ObserverProviders *observer.Providers
-	MonitorProviders  *monitor.ClientProviders
+	PeerConfig             peerConfig
+	RESTConfig             restConfig
+	ConfigProvider         configServiceProvider
+	TxnProvider            txnServiceProvider
+	DcasProvider           dcasClientProvider
+	ObserverProviders      *observer.Providers
+	MonitorProviders       *monitor.ClientProviders
+	OperationQueueProvider operationQueueProvider
 }
 
 // Provider implements a Sidetree services provider which is responsible for managing Sidetree

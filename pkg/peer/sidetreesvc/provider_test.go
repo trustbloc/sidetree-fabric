@@ -11,12 +11,17 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/trustbloc/fabric-peer-ext/pkg/gossip/blockpublisher"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -38,7 +43,7 @@ func TestProvider(t *testing.T) {
 		extroles.SetRoles(nil)
 	}()
 
-	peerConfig := &mocks.PeerConfig{}
+	peerConfig := &peermocks.PeerConfig{}
 	peerConfig.MSPIDReturns(msp1)
 	peerConfig.PeerIDReturns(peer1)
 
@@ -59,31 +64,35 @@ func TestProvider(t *testing.T) {
 		},
 	}
 
-	configSvc := &mocks.ConfigService{}
-	configProvider := &mocks.ConfigServiceProvider{}
+	configSvc := &peermocks.ConfigService{}
+	configProvider := &peermocks.ConfigServiceProvider{}
 	configProvider.ForChannelReturns(configSvc)
 
 	observerProviders := &observer.Providers{
 		BlockPublisher: blockpublisher.NewProvider(),
 	}
 
-	restConfig := &mocks.RestConfig{}
+	opQueueProvider := &mocks.OperationQueueProvider{}
+	opQueueProvider.CreateReturns(&opqueue.MemQueue{}, nil)
+
+	restConfig := &peermocks.RestConfig{}
 	restConfig.SidetreeListenURLReturns("localhost:7721", nil)
 
 	providers := &providers{
-		PeerConfig:        peerConfig,
-		ConfigProvider:    configProvider,
-		ObserverProviders: observerProviders,
-		RESTConfig:        restConfig,
+		PeerConfig:             peerConfig,
+		ConfigProvider:         configProvider,
+		ObserverProviders:      observerProviders,
+		RESTConfig:             restConfig,
+		OperationQueueProvider: opQueueProvider,
 	}
 
-	sidetreeCfgService2 := &mocks.SidetreeConfigService{}
+	sidetreeCfgService2 := &peermocks.SidetreeConfigService{}
 	sidetreeCfgService2.LoadSidetreePeerReturns(sidetreePeerCfg, nil)
 	sidetreeCfgService2.LoadProtocolsReturns(protocolVersions, nil)
 
-	sidetreeCfgService1 := &mocks.SidetreeConfigService{}
+	sidetreeCfgService1 := &peermocks.SidetreeConfigService{}
 
-	sidetreeCfgProvider := &mocks.SidetreeConfigProvider{}
+	sidetreeCfgProvider := &peermocks.SidetreeConfigProvider{}
 	sidetreeCfgProvider.ForChannelReturnsOnCall(0, sidetreeCfgService1)
 	sidetreeCfgProvider.ForChannelReturnsOnCall(1, sidetreeCfgService2)
 	sidetreeCfgProvider.ForChannelReturnsOnCall(2, sidetreeCfgService2)
