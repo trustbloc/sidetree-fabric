@@ -67,7 +67,10 @@ func New(channelID, localPeerID string, period time.Duration, clientProviders *C
 		done: make(chan struct{}, 1),
 	}
 
-	m.blockVisitor = blockvisitor.New(channelID, blockvisitor.WithWriteHandler(m.handleWrite))
+	m.blockVisitor = blockvisitor.New(channelID,
+		blockvisitor.WithWriteHandler(m.handleWrite),
+		blockvisitor.WithErrorHandler(m.handleError),
+	)
 
 	return m
 }
@@ -175,6 +178,22 @@ func (m *Monitor) handleWrite(w *blockvisitor.Write) error {
 		return errors.WithMessagef(err, "error processing Txn for anchor [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
 	}
 	return nil
+}
+
+func (m *Monitor) handleError(err error, ctx *blockvisitor.Context) error {
+	if ctx.Category == blockvisitor.UnmarshalErr {
+		logger.Errorf("[%s] Ignoring persistent error: %s. Context: %s", m.channelID, err, ctx)
+		return nil
+	}
+
+	merr, ok := errors.Cause(err).(monitorError)
+	if !ok || !merr.Transient() {
+		logger.Errorf("[%s] Ignoring persistent error: %s. Context: %s", m.channelID, err, ctx)
+		return nil
+	}
+
+	logger.Warnf("[%s] Will retry on transient error [%s] in %s. Context: %s", m.channelID, err, m.period, ctx)
+	return err
 }
 
 func (m *Monitor) getBlockchainInfo() (*cb.BlockchainInfo, error) {

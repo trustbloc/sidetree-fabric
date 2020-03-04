@@ -60,12 +60,24 @@ func TestOperationStore_PutError(t *testing.T) {
 	t.Run("DCAS get error", func(t *testing.T) {
 		dcasClient.WithGetError(errors.New("injected DCAS error"))
 		defer dcasClient.WithGetError(nil)
-		require.Error(t, s.Put([]*batch.Operation{op1}))
+
+		err := s.Put([]*batch.Operation{op1})
+		require.Error(t, err)
+
+		merr, ok := err.(monitorError)
+		require.True(t, ok)
+		require.True(t, merr.Transient())
 	})
 
 	t.Run("DCAS put error", func(t *testing.T) {
 		dcasClient.WithPutError(errors.New("injected DCAS error"))
 		defer dcasClient.WithPutError(nil)
-		require.Error(t, s.Put([]*batch.Operation{op1}))
+
+		err := s.Put([]*batch.Operation{op1})
+		require.Error(t, err)
+
+		merr, ok := err.(monitorError)
+		require.True(t, ok)
+		require.True(t, merr.Transient())
 	})
 }
