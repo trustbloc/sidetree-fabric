@@ -26,7 +26,6 @@ import (
 
 const (
 	channel1      = "channel1"
-	channel2      = "channel2"
 	peer1         = "peer1.org1.com"
 	txID1         = "tx1"
 	anchor1       = "anchor1"
@@ -132,6 +131,29 @@ func TestMonitor_Error(t *testing.T) {
 	t.Run("Blockchain.GetBlockchainInfo error", func(t *testing.T) {
 		clients := newMockClients()
 		clients.blockchain.GetBlockchainInfoReturns(nil, errors.New("blockchain.GetBlockchainInfo error"))
+
+		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients)
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("DCAS client error", func(t *testing.T) {
+		meta := &MetaData{
+			LastBlockProcessed: 1000,
+		}
+		metaBytes, err := json.Marshal(meta)
+		require.NoError(t, err)
+
+		bcInfo := &cb.BlockchainInfo{
+			Height: 1002,
+		}
+
+		clients := newMockClients()
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+		require.NoError(t, clients.offLedger.Put(common.DocNs, docsMetaDataColName, peer1, metaBytes))
+		clients.dcas.GetReturns(nil, errors.New("injected DCAS error"))
 
 		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients)
 		require.NoError(t, m.Start())
@@ -288,6 +310,32 @@ func TestMonitor_Error(t *testing.T) {
 		require.NoError(t, err)
 
 		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
+
+		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("block unmarshal error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(&cb.Block{
+			Header: &cb.BlockHeader{
+				Number: 1002,
+			},
+			Data: &cb.BlockData{
+				Data: [][]byte{[]byte("invalid block data")},
+			},
+		}, nil)
+
+		anchorFile := &observer.AnchorFile{}
+		anchorFileBytes, err := json.Marshal(anchorFile)
+		require.NoError(t, err)
+		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
+		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
 
 		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients)
 

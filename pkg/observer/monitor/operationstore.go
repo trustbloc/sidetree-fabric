@@ -40,26 +40,28 @@ func (s *OperationStore) Put(ops []*batch.Operation) error {
 func (s *OperationStore) checkOperation(op *batch.Operation) error {
 	key, opBytes, err := common.MarshalDCAS(op)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get DCAS key and value for operation [%s]", op.ID)
+		return newMonitorError(errors.Wrapf(err, "failed to get DCAS key and value for operation [%s]", op.ID), false)
 	}
 
 	dcasClient, err := s.dcasClient()
 	if err != nil {
-		return err
+		return newMonitorError(err, true)
 	}
 
 	retrievedBytes, err := dcasClient.Get(common.DocNs, common.DocColl, key)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve operation [%s] by key [%s]", op.ID, key)
+		return newMonitorError(errors.Wrapf(err, "failed to retrieve operation [%s] by key [%s]", op.ID, key), true)
 	}
+
 	if len(retrievedBytes) == 0 {
 		logger.Infof("[%s] Operation [%s] was not found in DCAS using key [%s]. Persisting...", s.channelID, op.ID, key)
 		if _, err = dcasClient.Put(common.DocNs, common.DocColl, opBytes); err != nil {
-			return errors.Wrapf(err, "failed to persist operation [%s]", op.ID)
+			return newMonitorError(errors.Wrapf(err, "failed to persist operation [%s]", op.ID), true)
 		}
 	} else {
 		logger.Debugf("[%s] Operation [%s] was found in DCAS using key [%s]", s.channelID, op.ID, key)
 	}
+
 	return nil
 }
 

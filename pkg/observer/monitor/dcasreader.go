@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package monitor
 
 import (
+	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
@@ -29,9 +30,19 @@ func NewSidetreeDCASReader(channelID string, dcasClientProvider common.DCASClien
 func (r *SidetreeDCASReader) Read(key string) ([]byte, error) {
 	dcasClient, err := r.dcasClient()
 	if err != nil {
-		return nil, err
+		return nil, newMonitorError(err, true)
 	}
-	return dcasClient.Get(common.SidetreeNs, common.SidetreeColl, key)
+
+	content, err := dcasClient.Get(common.SidetreeNs, common.SidetreeColl, key)
+	if err != nil {
+		return nil, newMonitorError(err, true)
+	}
+
+	if len(content) == 0 {
+		return nil, newMonitorError(errors.Errorf("content not found for key [%s]", key), false)
+	}
+
+	return content, nil
 }
 
 func (r *SidetreeDCASReader) dcasClient() (client.DCAS, error) {
