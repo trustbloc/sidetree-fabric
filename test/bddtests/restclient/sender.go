@@ -7,12 +7,9 @@ package restclient
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 )
 
 type HttpResponse struct {
@@ -23,7 +20,7 @@ type HttpResponse struct {
 
 // SendRequest sends a regular POST request to the sidetree-node
 // - If post request has operation "create" then return sidetree document else no response
-func SendRequest(url string, req *model.Request) (*HttpResponse, error) {
+func SendRequest(url string, req []byte) (*HttpResponse, error) {
 	resp, err := sendHTTPRequest(url, req)
 	if err != nil {
 		return nil, err
@@ -55,14 +52,10 @@ func handleHttpResp(resp *http.Response) (*HttpResponse, error) {
 	return &HttpResponse{StatusCode: http.StatusOK, Payload: gotBody}, nil
 }
 
-func sendHTTPRequest(url string, req *model.Request) (*http.Response, error) {
+func sendHTTPRequest(url string, req []byte) (*http.Response, error) {
 	client := &http.Client{}
-	b, err := json.Marshal(req)
-	if err != nil {
-		return nil, err
-	}
 
-	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(b))
+	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(req))
 	if err != nil {
 		return nil, err
 	}

@@ -23,7 +23,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
+	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 )
 
 const (
@@ -51,22 +51,23 @@ func TestServer_Start(t *testing.T) {
 	require.NoError(t, s.Start())
 	require.Error(t, s.Start())
 
+	payload, err := getCreatePayload()
+	require.NoError(t, err)
+
+	request, err := getCreateRequest()
+	require.NoError(t, err)
+
+	encodedPayload := docutil.EncodeToString(payload)
+	didID, err := docutil.CalculateID(didDocNamespace, encodedPayload, sha2_256)
+	require.NoError(t, err)
+
+	sampleID, err := docutil.CalculateID(sampleNamespace, encodedPayload, sha2_256)
+	require.NoError(t, err)
+
 	// Wait for the service to start
 	time.Sleep(time.Second)
 
 	t.Run("DID doc", func(t *testing.T) {
-		payload, err := getEncodedPayload([]byte(validDoc))
-		require.NoError(t, err)
-		createReq, err := getCreateRequest(payload)
-		require.NoError(t, err)
-
-		didID, err := docutil.CalculateID(didDocNamespace, payload, sha2_256)
-		require.NoError(t, err)
-
-		request := &model.Request{}
-		err = json.Unmarshal(createReq, request)
-		require.NoError(t, err)
-
 		resp, err := httpPut(t, clientURL+didDocPath, request)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
@@ -84,18 +85,6 @@ func TestServer_Start(t *testing.T) {
 		require.Equal(t, didID, resolvedDoc["id"])
 	})
 	t.Run("Sample doc", func(t *testing.T) {
-		payload, err := getEncodedPayload([]byte(validDoc))
-		require.NoError(t, err)
-		createReq, err := getCreateRequest(payload)
-		require.NoError(t, err)
-
-		sampleID, err := docutil.CalculateID(sampleNamespace, payload, sha2_256)
-		require.NoError(t, err)
-
-		request := &model.Request{}
-		err = json.Unmarshal(createReq, request)
-		require.NoError(t, err)
-
 		resp, err := httpPut(t, clientURL+samplePath, request)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
@@ -160,12 +149,10 @@ func TestServer_RetryOnStartup(t *testing.T) {
 
 // httpPut sends a regular POST request to the sidetree-node
 // - If post request has operation "create" then return sidetree document else no response
-func httpPut(t *testing.T, url string, req *model.Request) ([]byte, error) {
+func httpPut(t *testing.T, url string, request []byte) ([]byte, error) {
 	client := &http.Client{}
-	b, err := json.Marshal(req)
-	require.NoError(t, err)
 
-	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(b))
+	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(request))
 	require.NoError(t, err)
 
 	httpReq.Header.Set("Content-Type", "application/did+ld+json")
@@ -283,40 +270,35 @@ func getID(code uint, content []byte) (string, error) {
 	return docutil.EncodeToString(mh), nil
 }
 
-func getCreateRequest(payload string) ([]byte, error) {
-
-	req := model.Request{
-		Protected: &model.Header{
-			Alg: "ES256K",
-			Kid: "#key1",
-		},
-		Payload:   payload,
-		Signature: "",
+func getCreatePayload() ([]byte, error) {
+	info := &helper.CreateRequestInfo{
+		OpaqueDocument: validDoc,
+		RecoveryKey:    "recoveryKey",
+		MultihashCode:  sha2_256,
 	}
-
-	return json.Marshal(req)
+	return helper.NewCreateRequest(info)
 }
 
-func getEncodedPayload(doc []byte) (string, error) {
-	payload, err := json.Marshal(
-		struct {
-			Operation   model.OperationType `json:"type"`
-			DIDDocument string              `json:"didDocument"`
-		}{model.OperationTypeCreate, docutil.EncodeToString(doc)})
+func getCreateRequest() ([]byte, error) {
+	payload, err := getCreatePayload()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return docutil.EncodeToString(payload), nil
+	encodedPayload := docutil.EncodeToString(payload)
+	return helper.NewSignedRequest(&helper.SignedRequestInfo{
+		Payload:   encodedPayload,
+		Algorithm: "alg",
+		KID:       "kid",
+		Signature: "signature",
+	})
 }
 
 const validDoc = `{
-	"@context": ["https://w3id.org/did/v1"],
-	"created": "2019-09-23T14:16:59.261024-04:00",
 	"publicKey": [{
+		"controller": "controller",
 		"id": "#key-1",
 		"publicKeyBase58": "GY4GunSXBPBfhLCzDL7iGmP5dR3sBDCJZkkaGK8VgYQf",
 		"type": "Ed25519VerificationKey2018"
-	}],
-	"updated": "2019-09-23T14:16:59.261024-04:00"
+	}]
 }`
