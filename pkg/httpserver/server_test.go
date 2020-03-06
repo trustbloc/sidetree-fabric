@@ -51,13 +51,10 @@ func TestServer_Start(t *testing.T) {
 	require.NoError(t, s.Start())
 	require.Error(t, s.Start())
 
-	payload, err := getCreatePayload()
-	require.NoError(t, err)
-
 	request, err := getCreateRequest()
 	require.NoError(t, err)
 
-	encodedPayload := docutil.EncodeToString(payload)
+	encodedPayload := docutil.EncodeToString(request)
 	didID, err := docutil.CalculateID(didDocNamespace, encodedPayload, sha2_256)
 	require.NoError(t, err)
 
@@ -270,28 +267,13 @@ func getID(code uint, content []byte) (string, error) {
 	return docutil.EncodeToString(mh), nil
 }
 
-func getCreatePayload() ([]byte, error) {
+func getCreateRequest() ([]byte, error) {
 	info := &helper.CreateRequestInfo{
 		OpaqueDocument: validDoc,
 		RecoveryKey:    "recoveryKey",
 		MultihashCode:  sha2_256,
 	}
 	return helper.NewCreateRequest(info)
-}
-
-func getCreateRequest() ([]byte, error) {
-	payload, err := getCreatePayload()
-	if err != nil {
-		return nil, err
-	}
-
-	encodedPayload := docutil.EncodeToString(payload)
-	return helper.NewSignedRequest(&helper.SignedRequestInfo{
-		Payload:   encodedPayload,
-		Algorithm: "alg",
-		KID:       "kid",
-		Signature: "signature",
-	})
 }
 
 const validDoc = `{
