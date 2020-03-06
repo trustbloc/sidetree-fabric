@@ -52,17 +52,12 @@ func (d *DIDSideSteps) sendDIDDocument(url, didDocumentPath, namespace string) e
 	logger.Infof("Creating DID document at %s", url)
 
 	opaqueDoc := getOpaqueDocument(didDocumentPath)
-	payload, err := getCreatePayload(opaqueDoc)
+	req, err := getCreateRequest(opaqueDoc)
 	if err != nil {
 		return err
 	}
 
-	d.encodedCreatePayload = docutil.EncodeToString(payload)
-	req, err := getRequest(d.encodedCreatePayload)
-	if err != nil {
-		return err
-	}
-
+	d.encodedCreatePayload = docutil.EncodeToString(req)
 	d.reqNamespace = namespace
 
 	d.resp, err = restclient.SendRequest(url, req)
@@ -160,7 +155,7 @@ func (d *DIDSideSteps) deleteDIDDocument(url string) error {
 	return err
 }
 
-func getCreatePayload(doc string) ([]byte, error) {
+func getCreateRequest(doc string) ([]byte, error) {
 	return helper.NewCreateRequest(&helper.CreateRequestInfo{
 		OpaqueDocument:  doc,
 		RecoveryKey:     "recoveryKey",
