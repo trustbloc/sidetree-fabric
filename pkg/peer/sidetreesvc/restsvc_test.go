@@ -78,7 +78,8 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh := newRESTHandlers(channel1, nsCfg, dcasProvider, bw, pp)
+		rh, err := newRESTHandlers(channel1, nsCfg, dcasProvider, bw, pp)
+		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Len(t, rh.HTTPHandlers(), 2)
 	})
@@ -91,7 +92,8 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh := newRESTHandlers(channel1, nsCfg, dcasProvider, bw, pp)
+		rh, err := newRESTHandlers(channel1, nsCfg, dcasProvider, bw, pp)
+		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Empty(t, rh.HTTPHandlers())
 	})
