@@ -12,8 +12,12 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
+
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")
@@ -36,6 +40,7 @@ type SidetreeService interface {
 	LoadProtocols(namespace string) (map[string]protocolApi.Protocol, error)
 	LoadSidetree(namespace string) (Sidetree, error)
 	LoadSidetreePeer(mspID, peerID string) (SidetreePeer, error)
+	LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error)
 }
 
 // NewSidetreeProvider returns a new SidetreeProvider instance
@@ -44,6 +49,7 @@ func NewSidetreeProvider(configProvider configServiceProvider, registry validato
 
 	registry.Register(&sidetreeValidator{})
 	registry.Register(&sidetreePeerValidator{})
+	registry.Register(&fileHandlerValidator{})
 
 	return &SidetreeProvider{
 		configProvider: configProvider,
@@ -115,10 +121,22 @@ func (c *sidetreeService) LoadProtocols(namespace string) (map[string]protocolAp
 	return protocolVersions, nil
 }
 
+// LoadFileHandlers loads the file handler configuration
+func (c *sidetreeService) LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error) {
+	key := ledgerconfig.NewPeerKey(mspID, peerID, FileHandlerAppName, FileHandlerAppVersion)
+
+	var cfg FileHandlers
+	if err := c.load(key, &cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg.Handlers, nil
+}
+
 func (c *sidetreeService) load(key *ledgerconfig.Key, v interface{}) error {
 	cfg, err := c.service.Get(key)
 	if err != nil {
-		return errors.WithMessagef(err, "error getting Sidetree config for key %s", key)
+		return err
 	}
 
 	return unmarshal(cfg, v)

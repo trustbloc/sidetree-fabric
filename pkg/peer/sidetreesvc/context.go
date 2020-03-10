@@ -66,7 +66,10 @@ func newContext(channelID string, nsCfg config.Namespace, cfg config.SidetreeSer
 
 	logger.Debugf("[%s] Creating Sidetree REST handlers [%s]", channelID, nsCfg.Namespace)
 
-	restHandlers := newRESTHandlers(channelID, nsCfg, dcasProvider, bw, ctx)
+	restHandlers, err := newRESTHandlers(channelID, nsCfg, dcasProvider, bw, ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return &context{
 		SidetreeContext: ctx,

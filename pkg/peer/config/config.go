@@ -8,6 +8,8 @@ package config
 
 import (
 	"time"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 )
 
 const (
@@ -20,15 +22,32 @@ const (
 	// ProtocolComponentName is the name of the Sidetree protocol config component
 	ProtocolComponentName = "protocol"
 
-	// SidetreePeerAppName is the '=name of the Sidetree config application
+	// SidetreePeerAppName is the name of the Sidetree config application
 	SidetreePeerAppName = "sidetree"
 
 	// SidetreePeerAppVersion is the version of the Sidetree config application
 	SidetreePeerAppVersion = "1"
+
+	// FileHandlerAppName is the name of the file handler config application
+	FileHandlerAppName = "file-handler"
+
+	// FileHandlerAppVersion is the version of the file handler config application
+	FileHandlerAppVersion = "1"
+)
+
+// DocumentType specifies the type of the Sidetree document
+type DocumentType = string
+
+const (
+	// DIDDocType indicates that the document is a DID document (this is the default)
+	DIDDocType DocumentType = ""
+	// FileIndexType indicates that the document contains a file index
+	FileIndexType DocumentType = "FILE_INDEX"
 )
 
 // Namespace holds Sidetree namespace config
 type Namespace struct {
+	DocType   DocumentType
 	Namespace string
 	BasePath  string
 }
@@ -47,4 +66,9 @@ type SidetreePeer struct {
 // Sidetree holds general Sidetree configuration
 type Sidetree struct {
 	BatchWriterTimeout time.Duration
+}
+
+// FileHandlers contains a set of file handlers
+type FileHandlers struct {
+	Handlers []filehandler.Config
 }

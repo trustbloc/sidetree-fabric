@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
@@ -35,6 +36,9 @@ const (
 	didTrustblocNamespace = "did:bloc:trustbloc.dev"
 	didTrustblocBasePath  = "/trustbloc.dev"
 
+	fileIndexNamespace = "file:idx"
+	fileIndexBasePath  = "/file"
+
 	eventMethod = "RestartRESTService"
 )
 
@@ -55,6 +59,11 @@ func TestChannelManager(t *testing.T) {
 			Namespace: didTrustblocNamespace,
 			BasePath:  didTrustblocBasePath,
 		},
+		{
+			Namespace: fileIndexNamespace,
+			BasePath:  fileIndexBasePath,
+			DocType:   config.FileIndexType,
+		},
 	}
 
 	protocolVersions := map[string]protocolApi.Protocol{
@@ -63,6 +72,16 @@ func TestChannelManager(t *testing.T) {
 			HashAlgorithmInMultiHashCode: 18,
 			MaxOperationsPerBatch:        100,
 			MaxOperationByteSize:         1000,
+		},
+	}
+
+	fileHandlers := []filehandler.Config{
+		{
+			BasePath:       "/schema",
+			ChaincodeName:  "files",
+			Collection:     "schemas",
+			IndexNamespace: "file:idx",
+			IndexDocID:     "file:idx:1234",
 		},
 	}
 
@@ -91,6 +110,7 @@ func TestChannelManager(t *testing.T) {
 
 	stConfigService := &peermocks.SidetreeConfigService{}
 	stConfigService.LoadProtocolsReturns(protocolVersions, nil)
+	stConfigService.LoadFileHandlersReturns(fileHandlers, nil)
 
 	ctrl := &peermocks.RESTServerController{}
 
@@ -105,7 +125,7 @@ func TestChannelManager(t *testing.T) {
 
 	time.Sleep(20 * time.Millisecond)
 	require.Len(t, ctrl.Invocations()[eventMethod], count+1)
-	require.Len(t, m.RESTHandlers(), 2)
+	require.Len(t, m.RESTHandlers(), 6)
 
 	t.Run("Update peer sidetreeCfgService -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])

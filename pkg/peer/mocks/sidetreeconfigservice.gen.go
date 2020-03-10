@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 )
 
@@ -47,6 +48,20 @@ type SidetreeConfigService struct {
 	}
 	loadSidetreePeerReturnsOnCall map[int]struct {
 		result1 config.SidetreePeer
+		result2 error
+	}
+	LoadFileHandlersStub        func(mspID, peerID string) ([]filehandler.Config, error)
+	loadFileHandlersMutex       sync.RWMutex
+	loadFileHandlersArgsForCall []struct {
+		mspID  string
+		peerID string
+	}
+	loadFileHandlersReturns struct {
+		result1 []filehandler.Config
+		result2 error
+	}
+	loadFileHandlersReturnsOnCall map[int]struct {
+		result1 []filehandler.Config
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -207,6 +222,58 @@ func (fake *SidetreeConfigService) LoadSidetreePeerReturnsOnCall(i int, result1 
 	}{result1, result2}
 }
 
+func (fake *SidetreeConfigService) LoadFileHandlers(mspID string, peerID string) ([]filehandler.Config, error) {
+	fake.loadFileHandlersMutex.Lock()
+	ret, specificReturn := fake.loadFileHandlersReturnsOnCall[len(fake.loadFileHandlersArgsForCall)]
+	fake.loadFileHandlersArgsForCall = append(fake.loadFileHandlersArgsForCall, struct {
+		mspID  string
+		peerID string
+	}{mspID, peerID})
+	fake.recordInvocation("LoadFileHandlers", []interface{}{mspID, peerID})
+	fake.loadFileHandlersMutex.Unlock()
+	if fake.LoadFileHandlersStub != nil {
+		return fake.LoadFileHandlersStub(mspID, peerID)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.loadFileHandlersReturns.result1, fake.loadFileHandlersReturns.result2
+}
+
+func (fake *SidetreeConfigService) LoadFileHandlersCallCount() int {
+	fake.loadFileHandlersMutex.RLock()
+	defer fake.loadFileHandlersMutex.RUnlock()
+	return len(fake.loadFileHandlersArgsForCall)
+}
+
+func (fake *SidetreeConfigService) LoadFileHandlersArgsForCall(i int) (string, string) {
+	fake.loadFileHandlersMutex.RLock()
+	defer fake.loadFileHandlersMutex.RUnlock()
+	return fake.loadFileHandlersArgsForCall[i].mspID, fake.loadFileHandlersArgsForCall[i].peerID
+}
+
+func (fake *SidetreeConfigService) LoadFileHandlersReturns(result1 []filehandler.Config, result2 error) {
+	fake.LoadFileHandlersStub = nil
+	fake.loadFileHandlersReturns = struct {
+		result1 []filehandler.Config
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *SidetreeConfigService) LoadFileHandlersReturnsOnCall(i int, result1 []filehandler.Config, result2 error) {
+	fake.LoadFileHandlersStub = nil
+	if fake.loadFileHandlersReturnsOnCall == nil {
+		fake.loadFileHandlersReturnsOnCall = make(map[int]struct {
+			result1 []filehandler.Config
+			result2 error
+		})
+	}
+	fake.loadFileHandlersReturnsOnCall[i] = struct {
+		result1 []filehandler.Config
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *SidetreeConfigService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -216,6 +283,8 @@ func (fake *SidetreeConfigService) Invocations() map[string][][]interface{} {
 	defer fake.loadSidetreeMutex.RUnlock()
 	fake.loadSidetreePeerMutex.RLock()
 	defer fake.loadSidetreePeerMutex.RUnlock()
+	fake.loadFileHandlersMutex.RLock()
+	defer fake.loadFileHandlersMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

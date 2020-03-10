@@ -9,16 +9,40 @@ package sidetreesvc
 import (
 	"sync"
 
+	"github.com/pkg/errors"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 
+	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
 type restServiceController interface {
 	RestartRESTService()
+}
+
+type fileHandlers struct {
+	readHandler  common.HTTPHandler
+	writeHandler common.HTTPHandler
+}
+
+// HTTPHandlers returns the HTTP handlers
+func (h *fileHandlers) HTTPHandlers() []common.HTTPHandler {
+	var handlers []common.HTTPHandler
+
+	if h.readHandler != nil {
+		handlers = append(handlers, h.readHandler)
+	}
+
+	if h.writeHandler != nil {
+		handlers = append(handlers, h.writeHandler)
+	}
+
+	return handlers
 }
 
 type channelController struct {
@@ -26,11 +50,12 @@ type channelController struct {
 	restServiceController
 	sidetreeCfgService config.SidetreeService
 
-	mutex     sync.RWMutex
-	channelID string
-	observer  *observerController
-	monitor   *monitorController
-	contexts  map[string]*context
+	mutex        sync.RWMutex
+	channelID    string
+	observer     *observerController
+	monitor      *monitorController
+	contexts     map[string]*context
+	fileHandlers map[string]*fileHandlers
 }
 
 func newChannelController(channelID string, providers *providers, configService config.SidetreeService, listener restServiceController) *channelController {
@@ -40,6 +65,7 @@ func newChannelController(channelID string, providers *providers, configService 
 		channelID:             channelID,
 		contexts:              make(map[string]*context),
 		sidetreeCfgService:    configService,
+		fileHandlers:          make(map[string]*fileHandlers),
 	}
 
 	providers.ConfigProvider.ForChannel(channelID).AddUpdateHandler(ctrl.handleUpdate)
@@ -83,15 +109,19 @@ func (c *channelController) RESTHandlers() []common.HTTPHandler {
 		}
 	}
 
+	for _, h := range c.fileHandlers {
+		restHandlers = append(restHandlers, h.HTTPHandlers()...)
+	}
+
 	return restHandlers
 }
 
 func (c *channelController) load() error {
-	logger.Debugf("[%s] Loading peer sidetreeCfgService for Sidetree", c.channelID)
+	logger.Debugf("[%s] Loading peer config for Sidetree", c.channelID)
 
 	cfg, err := c.sidetreeCfgService.LoadSidetreePeer(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
 	if err != nil {
-		if err == service.ErrConfigNotFound {
+		if errors.Cause(err) == service.ErrConfigNotFound {
 			// No Sidetree components defined for this peer. Stop all running channelController.
 			logger.Info("No Sidetree configuration found for this peer.")
 			c.Close()
@@ -101,31 +131,35 @@ func (c *channelController) load() error {
 		return err
 	}
 
+	fileHandlerCfg, err := c.loadFileHandlerConfig()
+	if err != nil {
+		return err
+	}
+
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
 	logger.Debugf("[%s] Updating Sidetree service channelController ...", c.channelID)
 
-	modified, err := c.loadContexts(cfg.Namespaces)
+	modifiedCtx, err := c.loadContexts(cfg.Namespaces)
 	if err != nil {
 		return err
 	}
 
-	if c.observer == nil {
-		c.observer = newObserverController(c.channelID, c.ObserverProviders)
-		if err := c.observer.Start(); err != nil {
-			return err
-		}
+	modifiedHandlers, err := c.loadFileHandlers(fileHandlerCfg)
+	if err != nil {
+		return err
 	}
 
-	if c.monitor == nil {
-		c.monitor = newMonitorController(c.channelID, c.PeerConfig, cfg.Monitor, c.MonitorProviders)
-		if err := c.monitor.Start(); err != nil {
-			return err
-		}
+	if err := c.startObserver(); err != nil {
+		return err
 	}
 
-	if modified {
+	if err := c.startMonitor(cfg.Monitor); err != nil {
+		return err
+	}
+
+	if modifiedCtx || modifiedHandlers {
 		c.restServiceController.RestartRESTService()
 	}
 
@@ -192,6 +226,42 @@ func (c *channelController) loadNewContexts(namespaces []config.Namespace) ([]*c
 	return contexts, nil
 }
 
+func (c *channelController) loadFileHandlerConfig() ([]filehandler.Config, error) {
+	fileHandlerCfg, err := c.sidetreeCfgService.LoadFileHandlers(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
+	if err == nil {
+		return fileHandlerCfg, nil
+	}
+
+	if errors.Cause(err) == service.ErrConfigNotFound {
+		logger.Info("No file handler configuration found for this peer.")
+		return nil, nil
+	}
+
+	return nil, err
+}
+
+func (c *channelController) startObserver() error {
+	if c.observer != nil {
+		// Already started
+		return nil
+	}
+
+	c.observer = newObserverController(c.channelID, c.ObserverProviders)
+
+	return c.observer.Start()
+}
+
+func (c *channelController) startMonitor(cfg config.Monitor) error {
+	if c.monitor != nil {
+		// Already started
+		return nil
+	}
+
+	c.monitor = newMonitorController(c.channelID, c.PeerConfig, cfg, c.MonitorProviders)
+
+	return c.monitor.Start()
+}
+
 func (c *channelController) createContextMap(newContexts []*context) map[string]*contextPair {
 	contextMap := make(map[string]*contextPair)
 	for _, ctx := range newContexts {
@@ -212,15 +282,15 @@ func (c *channelController) createContextMap(newContexts []*context) map[string]
 
 func (c *channelController) handleUpdate(kv *ledgerconfig.KeyValue) {
 	if !c.shouldUpdate(kv) {
-		logger.Debugf("Ignoring sidetreeCfgService update: %s", kv.Key)
+		logger.Debugf("Ignoring config update: %s", kv.Key)
 		return
 	}
 
 	go func() {
-		logger.Debugf("[%s] Got sidetreeCfgService update for Sidetree: %s. Loading ...", c.channelID, kv)
+		logger.Debugf("[%s] Got sidetree config update for Sidetree: %s. Loading ...", c.channelID, kv)
 
 		if err := c.load(); err != nil {
-			logger.Errorf("[%s] Error handling Sidetree sidetreeCfgService update: %s", c.channelID, err)
+			logger.Errorf("[%s] Error handling Sidetree config update: %s", c.channelID, err)
 		} else {
 			logger.Debugf("[%s] ... successfully updated Sidetree.", c.channelID)
 		}
@@ -241,7 +311,8 @@ func (c *channelController) isMonitoringNamespace(namespace string) bool {
 }
 
 func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
-	if kv.MspID == c.PeerConfig.MSPID() && kv.PeerID == c.PeerConfig.PeerID() && kv.AppName == config.SidetreePeerAppName {
+	if kv.MspID == c.PeerConfig.MSPID() && kv.PeerID == c.PeerConfig.PeerID() &&
+		(kv.AppName == config.SidetreePeerAppName || kv.AppName == config.FileHandlerAppName) {
 		return true
 	}
 
@@ -250,4 +321,62 @@ func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
 	}
 
 	return false
+}
+
+func (c *channelController) loadFileHandlers(handlerCfg []filehandler.Config) (modified bool, err error) {
+	numPrevious := len(c.fileHandlers)
+
+	c.fileHandlers = make(map[string]*fileHandlers)
+
+	for _, cfg := range handlerCfg {
+		h, err := c.loadFileHandler(cfg)
+		if err != nil {
+			return false, err
+		}
+
+		if h != nil {
+			c.fileHandlers[cfg.BasePath] = h
+		}
+	}
+
+	return len(c.fileHandlers) > 0 || numPrevious > 0, nil
+}
+
+func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandlers, error) {
+	if !role.IsResolver() && !role.IsBatchWriter() {
+		return nil, nil
+	}
+
+	docHandler, err := c.getDocHandler(cfg.IndexNamespace)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "unable to get document handler for index document [%s]", cfg.IndexDocID)
+	}
+
+	handlers := &fileHandlers{}
+	if role.IsResolver() && cfg.IndexDocID != "" {
+		logger.Debugf("Adding file read handler for base path [%s]", cfg.BasePath)
+
+		handlers.readHandler = filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DcasProvider)
+	}
+
+	if role.IsBatchWriter() {
+		logger.Debugf("Adding file upload handler for base path [%s]", cfg.BasePath)
+
+		handlers.writeHandler = filehandler.NewUploadHandler(c.channelID, cfg, c.DcasProvider)
+	}
+
+	return handlers, nil
+}
+
+func (c *channelController) getDocHandler(ns string) (*dochandler.DocumentHandler, error) {
+	ctx, ok := c.contexts[ns]
+	if !ok {
+		return nil, errors.Errorf("context not found for namespace [%s]", ns)
+	}
+
+	if ctx.rest == nil || ctx.rest.docHandler == nil {
+		return nil, errors.Errorf("no document handler for namespace [%s]", ns)
+	}
+
+	return ctx.rest.docHandler, nil
 }

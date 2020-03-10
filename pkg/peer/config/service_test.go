@@ -33,6 +33,7 @@ const (
 	didSidetreeProtocol_V0_4_CfgJSON = `{"startingBlockchainTime":200000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":2000,"maxOperationsPerBatch":10}`
 	didSidetreeProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":10000,"maxOperationsPerBatch":100}`
 	peerCfgJson                      = `{"Monitor":{"Period":"5s"},"Rest":{"Host":"0.0.0.0","Port":"48326"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"},{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev/document"}]}`
+	fileHandlerCfgJson               = `{"Handlers":[{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"},{"BasePath":"/.well-known/trustbloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:5678"}]}`
 )
 
 func TestNewSidetreeProvider(t *testing.T) {
@@ -159,5 +160,19 @@ func TestNewSidetreeProvider(t *testing.T) {
 
 		err := s.(*sidetreeService).load(ledgercfg.NewAppKey(GlobalMSPID, SidetreePeerAppName, SidetreePeerAppVersion), func() {})
 		require.Error(t, err)
+	})
+
+	t.Run("LoadFileHandlers", func(t *testing.T) {
+		cfgValue := &ledgercfg.Value{
+			TxID:   "tx1",
+			Format: "json",
+			Config: fileHandlerCfgJson,
+		}
+
+		configService.GetReturns(cfgValue, nil)
+		cfg, err := s.LoadFileHandlers(mspID, peerID)
+		require.NoError(t, err)
+		require.Len(t, cfg, 2)
+		require.Equal(t, "/schema", cfg[0].BasePath)
 	})
 }

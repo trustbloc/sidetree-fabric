@@ -9,12 +9,16 @@ package sidetreesvc
 import (
 	reqctx "context"
 
+	"github.com/pkg/errors"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler/didvalidator"
+	"github.com/trustbloc/sidetree-core-go/pkg/dochandler/docvalidator"
 	"github.com/trustbloc/sidetree-core-go/pkg/processor"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
+	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
@@ -70,6 +74,7 @@ type restHandlers struct {
 	channelID    string
 	namespace    string
 	httpHandlers []common.HTTPHandler
+	docHandler   *dochandler.DocumentHandler
 }
 
 type protocolProvider interface {
@@ -81,24 +86,28 @@ func newRESTHandlers(
 	cfg config.Namespace,
 	dcasProvider dcasClientProvider,
 	batchWriter dochandler.BatchWriter,
-	protocolProvider protocolProvider) *restHandlers {
+	protocolProvider protocolProvider) (*restHandlers, error) {
 
 	if !role.IsResolver() && !role.IsBatchWriter() {
 		return &restHandlers{
 			channelID: channelID,
 			namespace: cfg.Namespace,
-		}
+		}, nil
 	}
 
 	logger.Debugf("[%s] Creating document store for namespace [%s]", channelID, cfg.Namespace)
 
 	opStore := store.New(channelID, cfg.Namespace, dcasProvider)
 
-	// did document handler with did document validator for didDocNamespace
-	didDocHandler := dochandler.New(
+	getValidator, getResolveHandler, getUpdateHandler, err := newProviders(cfg.DocType)
+	if err != nil {
+		return nil, err
+	}
+
+	docHandler := dochandler.New(
 		cfg.Namespace,
 		protocolProvider.Protocol(),
-		didvalidator.New(opStore),
+		getValidator(opStore),
 		batchWriter,
 		processor.New(channelID+"_"+cfg.Namespace, opStore),
 	)
@@ -108,23 +117,65 @@ func newRESTHandlers(
 	if role.IsResolver() {
 		logger.Debugf("Adding a Sidetree document resolver REST endpoint for namespace [%s].", cfg.Namespace)
 
-		handlers = append(handlers, diddochandler.NewResolveHandler(cfg.BasePath, didDocHandler))
+		handlers = append(handlers, getResolveHandler(cfg, docHandler))
 	}
 
 	if role.IsBatchWriter() {
 		logger.Debugf("Adding a Sidetree document update REST endpoint for namespace [%s].", cfg.Namespace)
 
-		handlers = append(handlers, diddochandler.NewUpdateHandler(cfg.BasePath, didDocHandler))
+		handlers = append(handlers, getUpdateHandler(cfg, docHandler))
 	}
 
 	return &restHandlers{
 		channelID:    channelID,
 		namespace:    cfg.Namespace,
 		httpHandlers: handlers,
-	}
+		docHandler:   docHandler,
+	}, nil
 }
 
 // HTTPHandlers returns the HTTP handlers
 func (h *restHandlers) HTTPHandlers() []common.HTTPHandler {
 	return h.httpHandlers
+}
+
+type validatorProvider func(opStore *store.Client) dochandler.DocumentValidator
+type resolveHandlerProvider func(config.Namespace, resthandler.Resolver) common.HTTPHandler
+type updateHandlerProvider func(config.Namespace, resthandler.Processor) common.HTTPHandler
+
+var (
+	didDocValidatorProvider = func(opStore *store.Client) dochandler.DocumentValidator {
+		return didvalidator.New(opStore)
+	}
+
+	didDocResolveProvider = func(cfg config.Namespace, resolver resthandler.Resolver) common.HTTPHandler {
+		return diddochandler.NewResolveHandler(cfg.BasePath, resolver)
+	}
+
+	didDocUpdateProvider = func(cfg config.Namespace, processor resthandler.Processor) common.HTTPHandler {
+		return diddochandler.NewUpdateHandler(cfg.BasePath, processor)
+	}
+
+	fileValidatorProvider = func(opStore *store.Client) dochandler.DocumentValidator {
+		return docvalidator.New(opStore)
+	}
+
+	fileResolveProvider = func(cfg config.Namespace, resolver resthandler.Resolver) common.HTTPHandler {
+		return newFileIdxResolveHandler(cfg.BasePath, resolver)
+	}
+
+	fileUpdateProvider = func(cfg config.Namespace, processor resthandler.Processor) common.HTTPHandler {
+		return newFileIdxUpdateHandler(cfg.BasePath, processor)
+	}
+)
+
+func newProviders(docType config.DocumentType) (validatorProvider, resolveHandlerProvider, updateHandlerProvider, error) {
+	switch docType {
+	case config.FileIndexType:
+		return fileValidatorProvider, fileResolveProvider, fileUpdateProvider, nil
+	case config.DIDDocType:
+		return didDocValidatorProvider, didDocResolveProvider, didDocUpdateProvider, nil
+	default:
+		return nil, nil, nil, errors.Errorf("unsupported document type [%s]", docType)
+	}
 }

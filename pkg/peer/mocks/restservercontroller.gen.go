@@ -6,34 +6,34 @@ import (
 )
 
 type RESTServerController struct {
-	RestartRESTServerStub        func()
-	restartRESTServerMutex       sync.RWMutex
-	restartRESTServerArgsForCall []struct{}
-	invocations                  map[string][][]interface{}
-	invocationsMutex             sync.RWMutex
+	RestartRESTServiceStub        func()
+	restartRESTServiceMutex       sync.RWMutex
+	restartRESTServiceArgsForCall []struct{}
+	invocations                   map[string][][]interface{}
+	invocationsMutex              sync.RWMutex
 }
 
 func (fake *RESTServerController) RestartRESTService() {
-	fake.restartRESTServerMutex.Lock()
-	fake.restartRESTServerArgsForCall = append(fake.restartRESTServerArgsForCall, struct{}{})
+	fake.restartRESTServiceMutex.Lock()
+	fake.restartRESTServiceArgsForCall = append(fake.restartRESTServiceArgsForCall, struct{}{})
 	fake.recordInvocation("RestartRESTService", []interface{}{})
-	fake.restartRESTServerMutex.Unlock()
-	if fake.RestartRESTServerStub != nil {
-		fake.RestartRESTServerStub()
+	fake.restartRESTServiceMutex.Unlock()
+	if fake.RestartRESTServiceStub != nil {
+		fake.RestartRESTServiceStub()
 	}
 }
 
-func (fake *RESTServerController) RestartRESTServerCallCount() int {
-	fake.restartRESTServerMutex.RLock()
-	defer fake.restartRESTServerMutex.RUnlock()
-	return len(fake.restartRESTServerArgsForCall)
+func (fake *RESTServerController) RestartRESTServiceCallCount() int {
+	fake.restartRESTServiceMutex.RLock()
+	defer fake.restartRESTServiceMutex.RUnlock()
+	return len(fake.restartRESTServiceArgsForCall)
 }
 
 func (fake *RESTServerController) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.restartRESTServerMutex.RLock()
-	defer fake.restartRESTServerMutex.RUnlock()
+	fake.restartRESTServiceMutex.RLock()
+	defer fake.restartRESTServiceMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
