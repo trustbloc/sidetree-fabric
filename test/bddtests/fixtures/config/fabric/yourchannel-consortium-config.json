@@ -11,7 +11,7 @@
         {
           "Name": "protocol",
           "Version": "0.5",
-          "Config": "file://./did-yourdomain-protocol-v0_5.json",
+          "Config": "file://./sidetree-protocol-v0_5.json",
           "Format": "json",
           "Tags": ["sidetree"]
         }

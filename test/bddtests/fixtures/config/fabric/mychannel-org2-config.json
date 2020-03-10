@@ -27,6 +27,12 @@
           "Version": "1",
           "Config": "file://./mychannel-sidetree-config-org2.json",
           "Format": "json"
+        },
+        {
+          "AppName": "file-handler",
+          "Version": "1",
+          "Config": "file://./mychannel-filehandler-config-org2.json",
+          "Format": "json"
         }
       ]
     },
@@ -55,6 +61,12 @@
           "AppName": "sidetree",
           "Version": "1",
           "Config": "file://./mychannel-sidetree-config-org2.json",
+          "Format": "json"
+        },
+        {
+          "AppName": "file-handler",
+          "Version": "1",
+          "Config": "file://./mychannel-filehandler-config-org2.json",
           "Format": "json"
         }
       ]

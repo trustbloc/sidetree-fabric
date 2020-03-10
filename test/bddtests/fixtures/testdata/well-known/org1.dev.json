@@ -1,0 +1,12 @@
+{
+  "domain": "org1.dev",
+  "did": "did:bloc:zQ1234567890987654321",
+  "conf": {
+    "cache": {"max-age": 123456789}
+  },
+  "endpoints": [
+    "https://org1.dev/webapi/123456",
+    "https://org1.dev/webapi/654321"
+  ],
+  "previous": "testTest12345"
+}
