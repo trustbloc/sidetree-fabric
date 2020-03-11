@@ -10,6 +10,11 @@
     {
       "Namespace": "did:bloc:trustbloc.dev",
       "BasePath": "/trustbloc.dev"
+    },
+    {
+      "DocType": "FILE_INDEX",
+      "Namespace": "file:idx",
+      "BasePath": "/file"
     }
   ]
 }

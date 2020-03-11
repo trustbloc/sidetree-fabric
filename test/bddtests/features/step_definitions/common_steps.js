@@ -40,13 +40,34 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
     When(/^client queries chaincode "([^"]*)" with args "([^"]*)" on a single peer in the "([^"]*)" org on the "([^"]*)" channel$/, function (arg1, arg2, arg3, arg4, callback) {
         callback.pending();
     });
+    When(/^client queries chaincode "([^"]*)" with args "([^"]*)" on peers "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, arg4, callback) {
+        callback.pending();
+    });
     When(/^client invokes chaincode "([^"]*)" with args "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, callback) {
+        callback.pending();
+    });
+    When(/^client invokes chaincode "([^"]*)" with args "([^"]*)" on peers "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, arg4, callback) {
         callback.pending();
     });
     Given(/^"([^"]*)" chaincode "([^"]*)" version "([^"]*)" is installed from path "([^"]*)" to all peers$/, function (arg1, arg2, arg3, arg4, callback) {
         callback.pending();
     });
     Given(/^"([^"]*)" chaincode "([^"]*)" is upgraded with version "([^"]*)" from path "([^"]*)" on the "([^"]*)" channel with args "([^"]*)" with endorsement policy "([^"]*)" with collection policy "([^"]*)"$/, function (arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, callback) {
+        callback.pending();
+    });
+    Given(/^"([^"]*)" chaincode "([^"]*)" is upgraded with version "([^"]*)" from path "([^"]*)" on the "([^"]*)" channel with args "([^"]*)" with endorsement policy "([^"]*)" with collection policy "([^"]*)" then the error response should contain "([^"]*)"$/, function (arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, callback) {
+        callback.pending();
+    });
+    Given(/^variable "([^"]*)" is assigned the JSON value '([^']*)'$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    Then(/^the JSON path "([^"]*)" of the response has (\d+) items$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    Then(/^the JSON path "([^"]*)" of the response equals "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    Then(/^the JSON path "([^"]*)" of the response contains "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
 });

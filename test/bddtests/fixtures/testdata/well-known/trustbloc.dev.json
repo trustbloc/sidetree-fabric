@@ -1,0 +1,17 @@
+{
+  "domain": "trustbloc.dev",
+  "policy": {
+    "cache": {"max-age": 123456789}
+  },
+  "stakeholders": [
+    {
+      "domain": "org1.dev",
+      "did": "did:bloc:zQ1234567890987654321"
+    },
+    {
+      "domain": "org2.dev",
+      "did": "did:bloc:zQ0987654321234567890"
+    }
+  ],
+  "previous": ""
+}

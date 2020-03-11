@@ -109,6 +109,7 @@ func FeatureContext(s *godog.Suite) {
 	NewSidetreeSteps(context).RegisterSteps(s)
 	NewDIDSideSteps(context).RegisterSteps(s)
 	NewFabricCLISteps(context).RegisterSteps(s)
+	NewFileHandlerSteps(context).RegisterSteps(s)
 }
 
 func initBDDConfig() {
