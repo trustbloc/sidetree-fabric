@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package bddtests
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -22,6 +22,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
+	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 	"github.com/trustbloc/sidetree-fabric/test/bddtests/restclient"
 )
 
@@ -31,16 +32,15 @@ const (
 	sha2_256           = 18
 	initialValuesParam = ";initial-values="
 
-	updateOTP   = "updateOTP"
 	recoveryOTP = "recoveryOTP"
 )
 
 // DIDSideSteps
 type DIDSideSteps struct {
-	encodedCreatePayload string
-	reqNamespace         string
-	resp                 *restclient.HttpResponse
-	bddContext           *bddtests.BDDContext
+	createRequest []byte
+	reqNamespace  string
+	resp          *restclient.HttpResponse
+	bddContext    *bddtests.BDDContext
 }
 
 // NewDIDSideSteps
@@ -57,7 +57,7 @@ func (d *DIDSideSteps) sendDIDDocument(url, didDocumentPath, namespace string) e
 		return err
 	}
 
-	d.encodedCreatePayload = docutil.EncodeToString(req)
+	d.createRequest = req
 	d.reqNamespace = namespace
 
 	d.resp, err = restclient.SendRequest(url, req)
@@ -65,12 +65,12 @@ func (d *DIDSideSteps) sendDIDDocument(url, didDocumentPath, namespace string) e
 }
 
 func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
-	did, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2_256)
+	did, err := d.getDID()
 	if err != nil {
 		return err
 	}
 
-	req := url + "/" + did + initialValuesParam + d.encodedCreatePayload
+	req := url + "/" + did + initialValuesParam + docutil.EncodeToString(d.createRequest)
 	logger.Infof("Sending request: %s", req)
 	d.resp, err = restclient.SendResolveRequest(req)
 	logger.Infof("... got response: %s", d.resp.Payload)
@@ -85,7 +85,7 @@ func (d *DIDSideSteps) checkErrorResp(errorMsg string) error {
 }
 
 func (d *DIDSideSteps) checkSuccessResp(msg string) error {
-	documentHash, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2_256)
+	documentHash, err := d.getDID()
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (d *DIDSideSteps) checkSuccessResp(msg string) error {
 }
 
 func (d *DIDSideSteps) resolveDIDDocument(url string) error {
-	documentHash, err := docutil.CalculateID(d.reqNamespace, d.encodedCreatePayload, sha2_256)
+	documentHash, err := d.getDID()
 	if err != nil {
 		return err
 	}
@@ -130,53 +130,59 @@ func (d *DIDSideSteps) resolveDIDDocument(url string) error {
 	}
 }
 
-func (d *DIDSideSteps) deleteDIDDocument(url string) error {
-	uniqueSuffix, err := docutil.CalculateUniqueSuffix(d.encodedCreatePayload, sha2_256)
+func (d *DIDSideSteps) revokeDIDDocument(url string) error {
+	uniqueSuffix, err := d.getUniqueSuffix()
 	if err != nil {
 		return err
 	}
 
-	logger.Infof("delete did document [%s]from %s", uniqueSuffix, url)
+	logger.Infof("revoke did document [%s]from %s", uniqueSuffix, url)
 
-	payload, err := getDeletePayload(uniqueSuffix)
-	if err != nil {
-		return err
-	}
-
-	req, err := getRequest(payload)
+	req, err := getRevokeRequest(uniqueSuffix)
 	if err != nil {
 		return err
 	}
 
 	d.resp, err = restclient.SendRequest(url, req)
 
-	logger.Infof("delete status %d, error '%s:'", d.resp.StatusCode, d.resp.ErrorMsg)
+	logger.Infof("revoke status %d, error '%s:'", d.resp.StatusCode, d.resp.ErrorMsg)
 
 	return err
+}
+
+func (d *DIDSideSteps) getDID() (string, error) {
+	uniqueSuffix, err := d.getUniqueSuffix()
+	if err != nil {
+		return "", err
+	}
+
+	didID := d.reqNamespace + docutil.NamespaceDelimiter + uniqueSuffix
+	return didID, nil
+}
+
+func (d *DIDSideSteps) getUniqueSuffix() (string, error) {
+	var createReq model.CreateRequest
+	err := json.Unmarshal(d.createRequest, &createReq)
+	if err != nil {
+		return "", err
+	}
+
+	return docutil.CalculateUniqueSuffix(createReq.SuffixData, sha2_256)
 }
 
 func getCreateRequest(doc string) ([]byte, error) {
 	return helper.NewCreateRequest(&helper.CreateRequestInfo{
 		OpaqueDocument:  doc,
 		RecoveryKey:     "recoveryKey",
-		NextRecoveryOTP: recoveryOTP,
+		NextRecoveryOTP: docutil.EncodeToString([]byte(recoveryOTP)),
 		MultihashCode:   sha2_256,
 	})
 }
 
-func getRequest(payload string) ([]byte, error) {
-	return helper.NewSignedRequest(&helper.SignedRequestInfo{
-		Payload:   payload,
-		Algorithm: "alg",
-		KID:       "kid",
-		Signature: "signature",
-	})
-}
-
-func getDeletePayload(did string) (string, error) {
-	return helper.NewDeletePayload(&helper.DeletePayloadInfo{
+func getRevokeRequest(did string) ([]byte, error) {
+	return helper.NewRevokeRequest(&helper.RevokeRequestInfo{
 		DidUniqueSuffix: did,
-		RecoveryOTP:     base64.URLEncoding.EncodeToString([]byte(recoveryOTP)),
+		RecoveryOTP:     docutil.EncodeToString([]byte(recoveryOTP)),
 	})
 }
 
@@ -195,7 +201,7 @@ func getOpaqueDocument(didDocumentPath string) string {
 func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^check error response contains "([^"]*)"$`, d.checkErrorResp)
 	s.Step(`^client sends request to "([^"]*)" to create DID document "([^"]*)" in namespace "([^"]*)"$`, d.sendDIDDocument)
-	s.Step(`^client sends request to "([^"]*)" to delete DID document$`, d.deleteDIDDocument)
+	s.Step(`^client sends request to "([^"]*)" to revoke DID document$`, d.revokeDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial value$`, d.resolveDIDDocumentWithInitialValue)
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessResp)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document$`, d.resolveDIDDocument)
