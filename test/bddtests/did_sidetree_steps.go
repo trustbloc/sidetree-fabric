@@ -8,6 +8,7 @@ package bddtests
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -33,6 +35,7 @@ const (
 	initialValuesParam = ";initial-values="
 
 	recoveryOTP = "recoveryOTP"
+	updateOTP   = "updateOTP"
 )
 
 // DIDSideSteps
@@ -102,6 +105,23 @@ func (d *DIDSideSteps) checkSuccessResp(msg string) error {
 		return errors.Errorf("success resp %s doesn't contain %s", d.resp.Payload, msg)
 	}
 	return nil
+}
+
+func (d *DIDSideSteps) updateDIDDocument(url, path, value string) error {
+	uniqueSuffix, err := d.getUniqueSuffix()
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("update did document: %s", uniqueSuffix)
+
+	req, err := getUpdateRequest(uniqueSuffix, path, value)
+	if err != nil {
+		return err
+	}
+
+	d.resp, err = restclient.SendRequest(url, req)
+	return err
 }
 
 func (d *DIDSideSteps) resolveDIDDocument(url string) error {
@@ -175,6 +195,7 @@ func getCreateRequest(doc string) ([]byte, error) {
 		OpaqueDocument:  doc,
 		RecoveryKey:     "recoveryKey",
 		NextRecoveryOTP: docutil.EncodeToString([]byte(recoveryOTP)),
+		NextUpdateOTP:   docutil.EncodeToString([]byte(updateOTP)),
 		MultihashCode:   sha2_256,
 	})
 }
@@ -184,6 +205,27 @@ func getRevokeRequest(did string) ([]byte, error) {
 		DidUniqueSuffix: did,
 		RecoveryOTP:     docutil.EncodeToString([]byte(recoveryOTP)),
 	})
+}
+
+func getUpdateRequest(did, path, value string) ([]byte, error) {
+	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
+		DidUniqueSuffix: did,
+		UpdateOTP:       docutil.EncodeToString([]byte(updateOTP)),
+		Patch:           getUpdatePatch(path, value),
+		MultihashCode:   sha2_256,
+	})
+}
+
+func getUpdatePatch(path, value string) jsonpatch.Patch {
+	patchJSON := []byte(fmt.Sprintf(`[{"op": "replace", "path":  "%s", "value": "%s"}]`, path, value))
+	jsonPatch, err := jsonpatch.DecodePatch(patchJSON)
+	if err != nil {
+		panic(err)
+	}
+
+	logger.Infof("JSON Patch: %s", patchJSON)
+
+	return jsonPatch
 }
 
 func getOpaqueDocument(didDocumentPath string) string {
@@ -201,6 +243,7 @@ func getOpaqueDocument(didDocumentPath string) string {
 func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^check error response contains "([^"]*)"$`, d.checkErrorResp)
 	s.Step(`^client sends request to "([^"]*)" to create DID document "([^"]*)" in namespace "([^"]*)"$`, d.sendDIDDocument)
+	s.Step(`^client sends request to "([^"]*)" to update DID document path "([^"]*)" with value "([^"]*)"$`, d.updateDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to revoke DID document$`, d.revokeDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial value$`, d.resolveDIDDocumentWithInitialValue)
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessResp)
