@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/mocks"
@@ -24,6 +25,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
+	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 )
 
 const (
@@ -54,11 +56,14 @@ func TestServer_Start(t *testing.T) {
 	request, err := getCreateRequest()
 	require.NoError(t, err)
 
-	encodedPayload := docutil.EncodeToString(request)
-	didID, err := docutil.CalculateID(didDocNamespace, encodedPayload, sha2_256)
+	var createReq model.CreateRequest
+	err = json.Unmarshal(request, &createReq)
 	require.NoError(t, err)
 
-	sampleID, err := docutil.CalculateID(sampleNamespace, encodedPayload, sha2_256)
+	didID, err := docutil.CalculateID(didDocNamespace, createReq.SuffixData, sha2_256)
+	require.NoError(t, err)
+
+	sampleID, err := docutil.CalculateID(sampleNamespace, createReq.SuffixData, sha2_256)
 	require.NoError(t, err)
 
 	// Wait for the service to start
