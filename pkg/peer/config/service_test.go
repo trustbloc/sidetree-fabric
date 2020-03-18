@@ -33,7 +33,8 @@ const (
 	didSidetreeProtocol_V0_4_CfgJSON = `{"startingBlockchainTime":200000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":2000,"maxOperationsPerBatch":10}`
 	didSidetreeProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":10000,"maxOperationsPerBatch":100}`
 	peerCfgJson                      = `{"Monitor":{"Period":"5s"},"Rest":{"Host":"0.0.0.0","Port":"48326"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"},{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev/document"}]}`
-	fileHandlerCfgJson               = `{"Handlers":[{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"},{"BasePath":"/.well-known/trustbloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:5678"}]}`
+	fileHandler1CfgJson              = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
+	fileHandler2CfgJson              = `{"BasePath":"/.well-known/trustbloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:5678"}`
 )
 
 func TestNewSidetreeProvider(t *testing.T) {
@@ -162,17 +163,60 @@ func TestNewSidetreeProvider(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("LoadFileHandlers", func(t *testing.T) {
-		cfgValue := &ledgercfg.Value{
-			TxID:   "tx1",
-			Format: "json",
-			Config: fileHandlerCfgJson,
+	t.Run("LoadFileHandlers query error", func(t *testing.T) {
+		errExpected := errors.New("injected query error")
+
+		configService.QueryReturns(nil, errExpected)
+
+		cfg, err := s.LoadFileHandlers(mspID, peerID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+		require.Nil(t, cfg)
+	})
+
+	t.Run("LoadFileHandlers unmarshal error", func(t *testing.T) {
+		queryResults := []*ledgercfg.KeyValue{
+			{
+				Value: &ledgercfg.Value{
+					TxID:   "tx1",
+					Format: "json",
+					Config: `{`,
+				},
+			},
 		}
 
-		configService.GetReturns(cfgValue, nil)
+		configService.QueryReturns(queryResults, nil)
+
+		cfg, err := s.LoadFileHandlers(mspID, peerID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "error reading config")
+		require.Nil(t, cfg)
+	})
+
+	t.Run("LoadFileHandlers -> success", func(t *testing.T) {
+		queryResults := []*ledgercfg.KeyValue{
+			{
+				Value: &ledgercfg.Value{
+					TxID:   "tx1",
+					Format: "json",
+					Config: fileHandler1CfgJson,
+				},
+			},
+			{
+				Value: &ledgercfg.Value{
+					TxID:   "tx2",
+					Format: "json",
+					Config: fileHandler2CfgJson,
+				},
+			},
+		}
+
+		configService.QueryReturns(queryResults, nil)
+
 		cfg, err := s.LoadFileHandlers(mspID, peerID)
 		require.NoError(t, err)
 		require.Len(t, cfg, 2)
 		require.Equal(t, "/schema", cfg[0].BasePath)
+		require.Equal(t, "/.well-known/trustbloc", cfg[1].BasePath)
 	})
 }

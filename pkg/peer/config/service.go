@@ -123,14 +123,29 @@ func (c *sidetreeService) LoadProtocols(namespace string) (map[string]protocolAp
 
 // LoadFileHandlers loads the file handler configuration
 func (c *sidetreeService) LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error) {
-	key := ledgerconfig.NewPeerKey(mspID, peerID, FileHandlerAppName, FileHandlerAppVersion)
-
-	var cfg FileHandlers
-	if err := c.load(key, &cfg); err != nil {
-		return nil, err
+	criteria := &ledgerconfig.Criteria{
+		MspID:      mspID,
+		PeerID:     peerID,
+		AppName:    FileHandlerAppName,
+		AppVersion: FileHandlerAppVersion,
 	}
 
-	return cfg.Handlers, nil
+	results, err := c.service.Query(criteria)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "error loading file handler config for criteria %s", criteria)
+	}
+
+	var handlers []filehandler.Config
+	for _, kv := range results {
+		h := filehandler.Config{}
+		if err := unmarshal(kv.Value, &h); err != nil {
+			return nil, err
+		}
+
+		handlers = append(handlers, h)
+	}
+
+	return handlers, nil
 }
 
 func (c *sidetreeService) load(key *ledgerconfig.Key, v interface{}) error {
