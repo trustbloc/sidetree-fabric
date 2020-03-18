@@ -14,20 +14,20 @@ import (
 )
 
 const (
-	fileHandlerCfg                   = `{"Handlers":[{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"},{"Description":"Consortium .wellknown files","BasePath":"/.well-known/did-bloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:3456"}]}`
-	fileHandlerCfg_NoBasePath        = `{"Handlers":[{"ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}]}`
-	fileHandlerCfg_InvalidBasePath   = `{"Handlers":[{"BasePath":"schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}]}`
-	fileHandlerCfg_NoChaincodeName   = `{"Handlers":[{"BasePath":"/schema","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}]}`
-	fileHandlerCfg_NoCollection      = `{"Handlers":[{"BasePath":"/schema","ChaincodeName":"files","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}]}`
-	fileHandlerCfg_NoIndexNamespace  = `{"Handlers":[{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexDocID":"file:idx:1234"}]}`
-	fileHandlerCfg_NoIndexDocID      = `{"Handlers":[{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx"}]}`
-	fileHandlerCfg_InvalidIndexDocID = `{"Handlers":[{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"did:bloc:1234"}]}`
+	fileHandlerCfg                   = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
+	fileHandlerCfg_NoBasePath        = `{"ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
+	fileHandlerCfg_InvalidBasePath   = `{"BasePath":"schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
+	fileHandlerCfg_NoChaincodeName   = `{"BasePath":"/schema","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
+	fileHandlerCfg_NoCollection      = `{"BasePath":"/schema","ChaincodeName":"files","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
+	fileHandlerCfg_NoIndexNamespace  = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexDocID":"file:idx:1234"}`
+	fileHandlerCfg_NoIndexDocID      = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx"}`
+	fileHandlerCfg_InvalidIndexDocID = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"did:bloc:1234"}`
 )
 
 func TestFileHandlerValidator_Validate(t *testing.T) {
 	v := &fileHandlerValidator{}
 
-	key := config.NewPeerKey(mspID, peerID, FileHandlerAppName, FileHandlerAppVersion)
+	key := config.NewPeerComponentKey(mspID, peerID, FileHandlerAppName, FileHandlerAppVersion, "/schema", "1")
 
 	t.Run("Valid config -> success", func(t *testing.T) {
 		require.NoError(t, v.Validate(config.NewKeyValue(key, config.NewValue(txID, fileHandlerCfg, config.FormatJSON))))
@@ -41,7 +41,7 @@ func TestFileHandlerValidator_Validate(t *testing.T) {
 	t.Run("Empty config -> success", func(t *testing.T) {
 		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, `{}`, config.FormatJSON)))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "expecting at least one file handler")
+		require.Contains(t, err.Error(), "field 'BasePath' is required")
 	})
 
 	t.Run("No peer ID -> error", func(t *testing.T) {
@@ -58,11 +58,18 @@ func TestFileHandlerValidator_Validate(t *testing.T) {
 		require.Contains(t, err.Error(), "unsupported application version")
 	})
 
-	t.Run("Config with component -> error", func(t *testing.T) {
-		k1 := config.NewPeerComponentKey(mspID, peerID, FileHandlerAppName, FileHandlerAppVersion, "comp1", "v1")
+	t.Run("Config with no component -> error", func(t *testing.T) {
+		k1 := config.NewPeerKey(mspID, peerID, FileHandlerAppName, FileHandlerAppVersion)
 		err := v.Validate(config.NewKeyValue(k1, config.NewValue(txID, `{}`, config.FormatJSON)))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "unexpected component")
+		require.Contains(t, err.Error(), "empty component name")
+	})
+
+	t.Run("Invalid component name -> error", func(t *testing.T) {
+		k1 := config.NewPeerComponentKey(mspID, peerID, FileHandlerAppName, FileHandlerAppVersion, "/path", "1")
+		err := v.Validate(config.NewKeyValue(k1, config.NewValue(txID, fileHandlerCfg, config.FormatJSON)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "component name must be set to the base path")
 	})
 
 	t.Run("Invalid config -> error", func(t *testing.T) {

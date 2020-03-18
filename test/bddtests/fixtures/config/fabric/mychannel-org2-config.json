@@ -31,8 +31,20 @@
         {
           "AppName": "file-handler",
           "Version": "1",
-          "Config": "file://./mychannel-filehandler-config-org2.json",
-          "Format": "json"
+          "Components": [
+            {
+              "Name": "/schema",
+              "Version": "1",
+              "Config": "file://./mychannel-filehandler-schema-config.json",
+              "Format": "json"
+            },
+            {
+              "Name": "/.well-known/did-bloc",
+              "Version": "1",
+              "Config": "file://./mychannel-filehandler-wellknown-config.json",
+              "Format": "json"
+            }
+          ]
         }
       ]
     },
@@ -66,8 +78,20 @@
         {
           "AppName": "file-handler",
           "Version": "1",
-          "Config": "file://./mychannel-filehandler-config-org2.json",
-          "Format": "json"
+          "Components": [
+            {
+              "Name": "/schema",
+              "Version": "1",
+              "Config": "file://./mychannel-filehandler-schema-config.json",
+              "Format": "json"
+            },
+            {
+              "Name": "/.well-known/did-bloc",
+              "Version": "1",
+              "Config": "file://./mychannel-filehandler-wellknown-config.json",
+              "Format": "json"
+            }
+          ]
         }
       ]
     }

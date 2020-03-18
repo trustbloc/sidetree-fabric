@@ -8,8 +8,6 @@ package config
 
 import (
 	"time"
-
-	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 )
 
 const (
@@ -66,9 +64,4 @@ type SidetreePeer struct {
 // Sidetree holds general Sidetree configuration
 type Sidetree struct {
 	BatchWriterTimeout time.Duration
-}
-
-// FileHandlers contains a set of file handlers
-type FileHandlers struct {
-	Handlers []filehandler.Config
 }
