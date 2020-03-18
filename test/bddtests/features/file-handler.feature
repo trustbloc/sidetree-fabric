@@ -41,10 +41,8 @@ Feature:
     # Upload schema files
     When client sends request to "http://localhost:48326/schema" to upload file "fixtures/testdata/schemas/arrays.schema.json" with content type "application/json"
     Then the ID of the file is saved to variable "arraysSchemaID"
-    When client sends request to "http://localhost:48326/schema" to upload file "fixtures/testdata/schemas/geographical-location.schema.json" with content type "application/json"
-    Then the ID of the file is saved to variable "locationsSchemaID"
     # Create the schema file index Sidetree document
-    Given variable "schemaIndexFile" is assigned the JSON value '{"arrays.schema.json":"${arraysSchemaID}","geographical-location.schema.json":"${locationsSchemaID}"}'
+    Given variable "schemaIndexFile" is assigned the JSON value '{"arrays.schema.json":"${arraysSchemaID}"}'
     When client sends request to "http://localhost:48526/file" to create document with content "${schemaIndexFile}" in namespace "file:idx"
     Then the ID of the returned document is saved to variable "schemaIndexID"
 
@@ -70,8 +68,9 @@ Feature:
     # Resolve schema files
     When client sends request to "http://localhost:48326/schema/arrays.schema.json" to retrieve file
     Then the retrieved file contains "https://example.com/arrays.schema.json"
+    # geographical-location.schema.json should not be there until we upload it and update the index
     When client sends request to "http://localhost:48326/schema/geographical-location.schema.json" to retrieve file
-    Then the retrieved file contains "https://example.com/geographical-location.schema.json"
+    Then the response has status code 404 and error message "file not found"
 
     # Resolve .well-known files
     When client sends request to "http://localhost:48626/.well-known/did-bloc/trustbloc.dev.json" to retrieve file
@@ -81,6 +80,12 @@ Feature:
     When client sends request to "http://localhost:48626/.well-known/did-bloc/org2.dev.json" to retrieve file
     Then the retrieved file contains "org2.dev"
 
-    # File not found
-    When client sends request to "http://localhost:48326/schema/file-not-there.json" to retrieve file
-    Then the response has status code 404 and error message "file not found"
+    # Upload a new schema and update the schema index document
+    When client sends request to "http://localhost:48326/schema" to upload file "fixtures/testdata/schemas/geographical-location.schema.json" with content type "application/json"
+    Then the ID of the file is saved to variable "locationsSchemaID"
+    # Update the schema file index Sidetree document
+    Given variable "schemaPatch" is assigned the JSON patch '[{"op": "add", "path": "/geographical-location.schema.json", "value": "${locationsSchemaID}"}]'
+    When client sends request to "http://localhost:48326/file" to update document "${schemaIndexID}" with patch "${schemaPatch}"
+
+    And client sends request to "http://localhost:48326/schema/geographical-location.schema.json" to retrieve file
+    Then the retrieved file contains "https://example.com/geographical-location.schema.json"
