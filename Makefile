@@ -46,7 +46,7 @@ FABRIC_PEER_EXT_IMAGE   ?= trustbloc/fabric-peer
 FABRIC_PEER_EXT_VERSION ?= 0.1.2
 FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
 
-export FABRIC_CLI_EXT_VERSION ?= v0.1.2
+export FABRIC_CLI_EXT_VERSION ?= 4ed7815d3158d1b75c252ad59cefc8054e535c55
 
 # Namespace for the blocnode image
 DOCKER_OUTPUT_NS     ?= trustbloc
