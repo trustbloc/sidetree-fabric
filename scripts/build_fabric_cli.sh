@@ -21,6 +21,7 @@ make plugins
 
 cp ./.build/bin/fabric ../bin/
 cp -r ./.build/ledgerconfig/ ../ledgerconfig/
+cp -r ./.build/file/ ../file/
 
 cd ..
 rm -rf ./fabric-cli-ext
