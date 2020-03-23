@@ -55,14 +55,13 @@ type operationQueueProvider interface {
 }
 
 type providers struct {
-	PeerConfig             peerConfig
-	RESTConfig             restConfig
-	ConfigProvider         configServiceProvider
-	TxnProvider            txnServiceProvider
-	DcasProvider           dcasClientProvider
-	ObserverProviders      *observer.Providers
-	MonitorProviders       *monitor.ClientProviders
-	OperationQueueProvider operationQueueProvider
+	*ContextProviders
+
+	PeerConfig        peerConfig
+	RESTConfig        restConfig
+	ConfigProvider    configServiceProvider
+	ObserverProviders *observer.Providers
+	MonitorProviders  *monitor.ClientProviders
 }
 
 // Provider implements a Sidetree services provider which is responsible for managing Sidetree

@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
-	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
+
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -65,9 +67,9 @@ func TestRESTService(t *testing.T) {
 
 func TestRESTHandlers(t *testing.T) {
 	nsCfg := config.Namespace{}
-	dcasProvider := &mocks.DCASClientProvider{}
 	bw := &peermocks.BatchWriter{}
 	pp := &peermocks.ProtocolProvider{}
+	osc := &obmocks.OperationStoreClient{}
 
 	t.Run("Resolver and batch-writer role -> not empty", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})
@@ -78,7 +80,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, dcasProvider, bw, pp)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, osc)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Len(t, rh.HTTPHandlers(), 2)
@@ -92,7 +94,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, dcasProvider, bw, pp)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, osc)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Empty(t, rh.HTTPHandlers())

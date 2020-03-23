@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
@@ -21,8 +20,10 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -102,10 +103,13 @@ func TestChannelManager(t *testing.T) {
 	opQueueProvider.CreateReturns(opQueue, nil)
 
 	providers := &providers{
-		PeerConfig:             peerConfig,
-		ConfigProvider:         configProvider,
-		ObserverProviders:      observerProviders,
-		OperationQueueProvider: opQueueProvider,
+		ContextProviders: &ContextProviders{
+			OperationQueueProvider:       opQueueProvider,
+			OperationStoreClientProvider: &obmocks.OpStoreClientProvider{},
+		},
+		PeerConfig:        peerConfig,
+		ConfigProvider:    configProvider,
+		ObserverProviders: observerProviders,
 	}
 
 	stConfigService := &peermocks.SidetreeConfigService{}

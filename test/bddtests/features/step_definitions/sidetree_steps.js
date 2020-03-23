@@ -42,5 +42,11 @@ var myStepDefinitionsWrapper = function () {
     this.When(/^client sends request to "([^"]*)" to delete DID document$/, function (arg1, callback) {
         callback.pending();
     });
+    this.When(/^client sends request to "([^"]*)" to revoke DID document$/, function (arg1, callback) {
+        callback.pending();
+    });
+    this.When(/^client sends request to "([^"]*)" to update DID document path "([^"]*)" with value "([^"]*)"$/, function (arg1, aeg2, arg3, callback) {
+        callback.pending();
+    });
 };
 module.exports = myStepDefinitionsWrapper;

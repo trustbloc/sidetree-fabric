@@ -20,7 +20,6 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -84,9 +83,9 @@ type protocolProvider interface {
 func newRESTHandlers(
 	channelID string,
 	cfg config.Namespace,
-	dcasProvider dcasClientProvider,
 	batchWriter dochandler.BatchWriter,
-	protocolProvider protocolProvider) (*restHandlers, error) {
+	protocolProvider protocolProvider,
+	opStore processor.OperationStoreClient) (*restHandlers, error) {
 
 	if !role.IsResolver() && !role.IsBatchWriter() {
 		return &restHandlers{
@@ -96,8 +95,6 @@ func newRESTHandlers(
 	}
 
 	logger.Debugf("[%s] Creating document store for namespace [%s]", channelID, cfg.Namespace)
-
-	opStore := store.New(channelID, cfg.Namespace, dcasProvider)
 
 	getValidator, getResolveHandler, getUpdateHandler, err := newProviders(cfg.DocType)
 	if err != nil {
@@ -139,12 +136,12 @@ func (h *restHandlers) HTTPHandlers() []common.HTTPHandler {
 	return h.httpHandlers
 }
 
-type validatorProvider func(opStore *store.Client) dochandler.DocumentValidator
+type validatorProvider func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator
 type resolveHandlerProvider func(config.Namespace, resthandler.Resolver) common.HTTPHandler
 type updateHandlerProvider func(config.Namespace, resthandler.Processor) common.HTTPHandler
 
 var (
-	didDocValidatorProvider = func(opStore *store.Client) dochandler.DocumentValidator {
+	didDocValidatorProvider = func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator {
 		return didvalidator.New(opStore)
 	}
 
@@ -156,7 +153,7 @@ var (
 		return diddochandler.NewUpdateHandler(cfg.BasePath, processor)
 	}
 
-	fileValidatorProvider = func(opStore *store.Client) dochandler.DocumentValidator {
+	fileValidatorProvider = func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator {
 		return docvalidator.New(opStore)
 	}
 
