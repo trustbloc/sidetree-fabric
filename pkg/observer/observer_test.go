@@ -22,6 +22,7 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
@@ -31,6 +32,7 @@ import (
 
 const (
 	channel      = "diddoc"
+	namespace    = "did:sidetree"
 	uniqueSuffix = "abc123"
 
 	sideTreeTxnCCName = "sidetreetxn_cc"
@@ -53,15 +55,19 @@ func TestObserver(t *testing.T) {
 	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(c, nil)
 
+	opStore := &obmocks.OperationStoreClient{}
+	opStoreProvider := &obmocks.OpStoreClientProvider{}
+	opStoreProvider.GetReturns(opStore)
+
 	providers := &Providers{
-		DCAS:           dcasProvider,
-		OffLedger:      &obmocks.OffLedgerClientProvider{},
-		BlockPublisher: mocks.NewBlockPublisherProvider().WithBlockPublisher(p),
+		DCAS:            dcasProvider,
+		OffLedger:       &obmocks.OffLedgerClientProvider{},
+		BlockPublisher:  mocks.NewBlockPublisherProvider().WithBlockPublisher(p),
+		OpStoreProvider: opStoreProvider,
 	}
 	observer := New(channel, providers)
 	require.NotNil(t, observer)
-
-	observer.Start()
+	require.NoError(t, observer.Start())
 
 	anchor := getAnchorAddress(uniqueSuffix)
 	require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(anchor)}))
@@ -70,8 +76,7 @@ func TestObserver(t *testing.T) {
 	// since there was one batch file with two operations we will have two entries in document map
 	m, err := c.GetMap(common.DocNs, common.DocColl)
 	require.Nil(t, err)
-	require.Equal(t, len(m), 2)
-
+	require.Equal(t, 2, len(m))
 }
 
 func TestDCASPut(t *testing.T) {
@@ -175,10 +180,17 @@ type Operation struct {
 	Type string
 	//The unique suffix - encoded hash of the original create document
 	UniqueSuffix string
+	//The full ID of the document (including namespace)
+	ID string
 }
 
 func getDefaultOperations(did string) []string {
-	return []string{encode(Operation{UniqueSuffix: uniqueSuffix, Type: "create"}), encode(Operation{UniqueSuffix: uniqueSuffix, Type: "update"})}
+	id := namespace + docutil.NamespaceDelimiter + uniqueSuffix
+
+	return []string{
+		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "create"}),
+		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "update"}),
+	}
 }
 
 func encode(op Operation) string {

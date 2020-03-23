@@ -28,7 +28,7 @@ Feature:
     And fabric-cli context "mychannel" is defined on channel "mychannel" with org "peerorg1", peers "peer0.org1.example.com,peer1.org1.example.com" and user "User1"
     And fabric-cli context "yourchannel" is defined on channel "yourchannel" with org "peerorg2", peers "peer0.org2.example.com,peer2.org1.example.com" and user "User1"
 
-    And we wait 10 seconds
+    And we wait 15 seconds
 
     # Configure the following Sidetree namespaces on channel 'mychannel'
     # - did:bloc:sidetree       - Path: /document

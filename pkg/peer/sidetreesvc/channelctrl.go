@@ -213,7 +213,7 @@ func (c *channelController) loadNewContexts(namespaces []config.Namespace) ([]*c
 	var contexts []*context
 
 	for _, nsCfg := range namespaces {
-		ctx, err := newContext(c.channelID, nsCfg, c.sidetreeCfgService, c.TxnProvider, c.DcasProvider, c.OperationQueueProvider)
+		ctx, err := newContext(c.channelID, nsCfg, c.sidetreeCfgService, c.ContextProviders)
 		if err != nil {
 			return nil, err
 		}
@@ -356,13 +356,13 @@ func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandle
 	if role.IsResolver() && cfg.IndexDocID != "" {
 		logger.Debugf("Adding file read handler for base path [%s]", cfg.BasePath)
 
-		handlers.readHandler = filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DcasProvider)
+		handlers.readHandler = filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DCASProvider)
 	}
 
 	if role.IsBatchWriter() {
 		logger.Debugf("Adding file upload handler for base path [%s]", cfg.BasePath)
 
-		handlers.writeHandler = filehandler.NewUploadHandler(c.channelID, cfg, c.DcasProvider)
+		handlers.writeHandler = filehandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider)
 	}
 
 	return handlers, nil

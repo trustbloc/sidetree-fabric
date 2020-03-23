@@ -10,6 +10,7 @@ import (
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
+	"github.com/trustbloc/sidetree-core-go/pkg/processor"
 	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
 )
 
@@ -18,6 +19,8 @@ import (
 //go:generate counterfeiter -o ./../mocks/offledgerprovider.gen.go --fake-name OffLedgerClientProvider . OffLedgerClientProvider
 //go:generate counterfeiter -o ./../mocks/bcclientprovider.gen.go --fake-name BlockchainClientProvider . BlockchainClientProvider
 //go:generate counterfeiter -o ./../mocks/bcclient.gen.go --fake-name BlockchainClient ../../client Blockchain
+//go:generate counterfeiter -o ./../mocks/opstoreclient.gen.go --fake-name OperationStoreClient github.com/trustbloc/sidetree-core-go/pkg/processor.OperationStoreClient
+//go:generate counterfeiter -o ./../mocks/opstoreclientprovider.gen.go --fake-name OperationStoreClientProvider . OperationStoreClientProvider
 
 // DCASClientProvider is a DCAS client provider
 type DCASClientProvider interface {
@@ -37,4 +40,9 @@ type BlockPublisherProvider interface {
 // BlockchainClientProvider provides a blockchain client for a given channel
 type BlockchainClientProvider interface {
 	ForChannel(channelID string) (bcclient.Blockchain, error)
+}
+
+// OperationStoreClientProvider returns the operation store client for the given channel/namespace
+type OperationStoreClientProvider interface {
+	Get(channelID, namespace string) processor.OperationStoreClient
 }

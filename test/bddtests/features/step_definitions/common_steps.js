@@ -73,4 +73,7 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
     Then(/^the JSON path "([^"]*)" of the response is saved to variable "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
+    And(/^an HTTP request is sent to "([^"]*)"$/, function (arg1, callback) {
+        callback.pending();
+    });
 });

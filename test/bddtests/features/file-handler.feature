@@ -94,3 +94,22 @@ Feature:
 
     And client sends request to "http://localhost:48326/schema/geographical-location.schema.json" to retrieve file
     Then the JSON path "$id" of the response equals "https://example.com/geographical-location.schema.json"
+
+  @duplicate_create_operation
+  Scenario: Attempt to create the same index file on Sidetree twice. The second create operation should be rejected by the Observer.
+    # Create the /content file index Sidetree document
+    When fabric-cli is executed with args "file createidx --path /content --url http://localhost:48526/file --recoverypwd pwd1 --nextpwd pwd1 --noprompt"
+    And the JSON path "id" of the response is saved to variable "fileIdxID"
+    Then we wait 10 seconds
+
+    When an HTTP request is sent to "http://localhost:48326/file/${fileIdxID}"
+    Then the JSON path "id" of the response equals "${fileIdxID}"
+
+    # Attempt to create the /content file index Sidetree document again
+    When fabric-cli is executed with args "file createidx --path /content --url http://localhost:48526/file --recoverypwd pwd1 --nextpwd pwd1 --noprompt"
+    And the JSON path "id" of the response is saved to variable "fileIdxID"
+    Then we wait 10 seconds
+
+    # The Observer should have rejected the second create and the document resolver will not error out because of an invalid operation in the store
+    When an HTTP request is sent to "http://localhost:48326/file/${fileIdxID}"
+    Then the JSON path "id" of the response equals "${fileIdxID}"

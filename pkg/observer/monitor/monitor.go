@@ -19,6 +19,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
 )
 
 var logger = flogging.MustGetLogger("sidetree_observer")
@@ -34,9 +35,10 @@ type MetaData struct {
 
 // ClientProviders contains the providers for off-ledger, DCAS, and blockchain clients
 type ClientProviders struct {
-	OffLedger  common.OffLedgerClientProvider
-	DCAS       common.DCASClientProvider
-	Blockchain common.BlockchainClientProvider
+	OffLedger       common.OffLedgerClientProvider
+	DCAS            common.DCASClientProvider
+	Blockchain      common.BlockchainClientProvider
+	OpStoreProvider common.OperationStoreClientProvider
 }
 
 // Monitor maintains multiple document monitors - one for each channel. A document monitor ensures that the peer
@@ -61,8 +63,11 @@ func New(channelID, localPeerID string, period time.Duration, clientProviders *C
 		period:          period,
 		ClientProviders: clientProviders,
 		txnProcessor: observer.NewTxnProcessor(
-			NewSidetreeDCASReader(channelID, clientProviders.DCAS),
-			NewOperationStore(channelID, clientProviders.DCAS),
+			&observer.Providers{
+				DCASClient:       NewSidetreeDCASReader(channelID, clientProviders.DCAS),
+				OpStore:          NewOperationStore(channelID, clientProviders.DCAS),
+				OpFilterProvider: operationfilter.NewProvider(channelID, clientProviders.OpStoreProvider),
+			},
 		),
 		done: make(chan struct{}, 1),
 	}

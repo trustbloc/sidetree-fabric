@@ -16,6 +16,7 @@ import (
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
 )
 
 var logger = flogging.MustGetLogger("sidetree_observer")
@@ -64,25 +65,28 @@ func (d *dcas) getDCASClient() (dcasclient.DCAS, error) {
 
 // Observer observes the ledger for new anchor files and updates the document store accordingly
 type Observer struct {
-	channelID    string
-	dcasProvider common.DCASClientProvider
-	bpProvider   common.BlockPublisherProvider
+	channelID       string
+	dcasProvider    common.DCASClientProvider
+	bpProvider      common.BlockPublisherProvider
+	opStoreProvider common.OperationStoreClientProvider
 }
 
 // Providers are the providers required by the observer
 type Providers struct {
-	DCAS           common.DCASClientProvider
-	OffLedger      common.OffLedgerClientProvider
-	BlockPublisher common.BlockPublisherProvider
-	Blockchain     common.BlockchainClientProvider
+	DCAS            common.DCASClientProvider
+	OffLedger       common.OffLedgerClientProvider
+	BlockPublisher  common.BlockPublisherProvider
+	Blockchain      common.BlockchainClientProvider
+	OpStoreProvider common.OperationStoreClientProvider
 }
 
 // New returns a new Observer
 func New(channelID string, providers *Providers) *Observer {
 	return &Observer{
-		channelID:    channelID,
-		dcasProvider: providers.DCAS,
-		bpProvider:   providers.BlockPublisher,
+		channelID:       channelID,
+		dcasProvider:    providers.DCAS,
+		bpProvider:      providers.BlockPublisher,
+		opStoreProvider: providers.OpStoreProvider,
 	}
 }
 
@@ -93,7 +97,13 @@ func (o *Observer) Start() error {
 	// register to receive Sidetree transactions from blocks
 	n := notifier.New(o.bpProvider.ForChannel(o.channelID))
 	dcasVal := newDCAS(o.channelID, o.dcasProvider)
-	sidetreeobserver.Start(n, dcasVal, dcasVal)
+
+	sidetreeobserver.Start(&sidetreeobserver.Providers{
+		Ledger:           n,
+		DCASClient:       dcasVal,
+		OpStore:          dcasVal,
+		OpFilterProvider: operationfilter.NewProvider(o.channelID, o.opStoreProvider),
+	})
 
 	return nil
 }

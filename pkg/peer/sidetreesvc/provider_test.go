@@ -20,6 +20,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -79,11 +80,14 @@ func TestProvider(t *testing.T) {
 	restConfig.SidetreeListenURLReturns("localhost:7721", nil)
 
 	providers := &providers{
-		PeerConfig:             peerConfig,
-		ConfigProvider:         configProvider,
-		ObserverProviders:      observerProviders,
-		RESTConfig:             restConfig,
-		OperationQueueProvider: opQueueProvider,
+		ContextProviders: &ContextProviders{
+			OperationQueueProvider:       opQueueProvider,
+			OperationStoreClientProvider: &obmocks.OpStoreClientProvider{},
+		},
+		PeerConfig:        peerConfig,
+		RESTConfig:        restConfig,
+		ConfigProvider:    configProvider,
+		ObserverProviders: observerProviders,
 	}
 
 	sidetreeCfgService2 := &peermocks.SidetreeConfigService{}

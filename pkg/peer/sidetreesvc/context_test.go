@@ -16,6 +16,7 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
@@ -29,9 +30,12 @@ func TestContext(t *testing.T) {
 		BasePath:  didTrustblocBasePath,
 	}
 
-	txnProvider := &peermocks.TxnServiceProvider{}
-	dcasProvider := &peermocks.DCASClientProvider{}
-	opQueueProvider := &mocks.OperationQueueProvider{}
+	ctxProviders := &ContextProviders{
+		TxnProvider:                  &peermocks.TxnServiceProvider{},
+		DCASProvider:                 &peermocks.DCASClientProvider{},
+		OperationQueueProvider:       &mocks.OperationQueueProvider{},
+		OperationStoreClientProvider: &obmocks.OpStoreClientProvider{},
+	}
 
 	t.Run("Success", func(t *testing.T) {
 		protocolVersions := map[string]protocolApi.Protocol{
@@ -46,7 +50,7 @@ func TestContext(t *testing.T) {
 		stConfigService := &peermocks.SidetreeConfigService{}
 		stConfigService.LoadProtocolsReturns(protocolVersions, nil)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider, opQueueProvider)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders)
 		require.NoError(t, err)
 		require.NotNil(t, ctx)
 
@@ -62,7 +66,7 @@ func TestContext(t *testing.T) {
 	t.Run("No protocols -> error", func(t *testing.T) {
 		stConfigService := &peermocks.SidetreeConfigService{}
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider, opQueueProvider)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "no protocols defined")
 		require.Nil(t, ctx)
@@ -73,7 +77,7 @@ func TestContext(t *testing.T) {
 		stConfigService := &peermocks.SidetreeConfigService{}
 		stConfigService.LoadProtocolsReturns(nil, errExpected)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, txnProvider, dcasProvider, opQueueProvider)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders)
 		require.EqualError(t, err, errExpected.Error())
 		require.Nil(t, ctx)
 	})
