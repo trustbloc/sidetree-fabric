@@ -20,6 +20,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -154,7 +155,7 @@ var (
 	}
 
 	fileValidatorProvider = func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator {
-		return docvalidator.New(opStore)
+		return filehandler.NewValidator(opStore)
 	}
 
 	fileResolveProvider = func(cfg config.Namespace, resolver resthandler.Resolver) common.HTTPHandler {

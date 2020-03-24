@@ -24,7 +24,6 @@ Feature:
 
     And fabric-cli network is initialized
     And fabric-cli plugin "../../.build/ledgerconfig" is installed
-    And fabric-cli plugin "../../.build/file" is installed
     And fabric-cli context "mychannel" is defined on channel "mychannel" with org "peerorg1", peers "peer0.org1.example.com,peer1.org1.example.com" and user "User1"
 
     And we wait 10 seconds
@@ -39,37 +38,33 @@ Feature:
 
   @upload_and_retrieve_files
   Scenario: upload files to DCAS and create index file on Sidetree that references them
-    # Create the /schema file index Sidetree document
-    When fabric-cli is executed with args "file createidx --path /schema --url http://localhost:48526/file --recoverypwd pwd1 --nextpwd pwd1 --noprompt"
-    And the JSON path "id" of the response is saved to variable "schemaIndexID"
-    # Update the file handler configuration for the '/schema' path with the ID of the '/schema' file index document
-    Then fabric-cli is executed with args "ledgerconfig fileidxupdate --msp Org1MSP --peers peer0.org1.example.com;peer1.org1.example.com --path /schema --idxid ${schemaIndexID} --noprompt"
-    And fabric-cli is executed with args "ledgerconfig fileidxupdate --msp Org2MSP --peers peer0.org2.example.com;peer1.org2.example.com --path /schema --idxid ${schemaIndexID} --noprompt"
-
-    # Create the /.well-known/did-bloc file index Sidetree document
-    When fabric-cli is executed with args "file createidx --path /.well-known/did-bloc --url http://localhost:48526/file --recoverypwd pwd1 --nextpwd pwd1 --noprompt"
-    And the JSON path "id" of the response is saved to variable "wellKnownIndexID"
-    # Update the file handler configuration for the '/.well-known/did-bloc' path with the ID of the '/.well-known/did-bloc' file index document
-    Then fabric-cli is executed with args "ledgerconfig fileidxupdate --msp Org1MSP --peers peer0.org1.example.com;peer1.org1.example.com --path /.well-known/did-bloc --idxid ${wellKnownIndexID} --noprompt"
-    And fabric-cli is executed with args "ledgerconfig fileidxupdate --msp Org2MSP --peers peer0.org2.example.com;peer1.org2.example.com --path /.well-known/did-bloc --idxid ${wellKnownIndexID} --noprompt"
-
-    And we wait 10 seconds
-
-    # Upload arrays schema file
-    When fabric-cli is executed with args "file upload --url http://localhost:48326/schema --files ./fixtures/testdata/schemas/arrays.schema.json --idxurl http://localhost:48326/file/${schemaIndexID} --pwd pwd1 --nextpwd pwd2 --noprompt"
-    Then the JSON path "#" of the response has 1 items
-    And the JSON path "0.Name" of the response equals "arrays.schema.json"
-    And the JSON path "0.ContentType" of the response equals "application/json"
+    # Upload schema files
+    When client sends request to "http://localhost:48326/schema" to upload file "fixtures/testdata/schemas/arrays.schema.json" with content type "application/json"
+    Then the ID of the file is saved to variable "arraysSchemaID"
+    # Create the schema file index Sidetree document
+    Given variable "schemaIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":"/schema","mappings":{"arrays.schema.json":"${arraysSchemaID}"}}}'
+    When client sends request to "http://localhost:48526/file" to create document with content "${schemaIndexFile}" in namespace "file:idx"
+    Then the ID of the returned document is saved to variable "schemaIndexID"
 
     # Upload .well-known files
-    When fabric-cli is executed with args "file upload --url http://localhost:48326/.well-known/did-bloc --files ./fixtures/testdata/well-known/trustbloc.dev.json;./fixtures/testdata/well-known/org1.dev.json;fixtures/testdata/well-known/org2.dev.json --idxurl http://localhost:48326/file/${wellKnownIndexID} --pwd pwd1 --nextpwd pwd2 --noprompt"
-    Then the JSON path "#" of the response has 3 items
-    And the JSON path "0.Name" of the response equals "trustbloc.dev.json"
-    And the JSON path "0.ContentType" of the response equals "application/json"
-    And the JSON path "1.Name" of the response equals "org1.dev.json"
-    And the JSON path "1.ContentType" of the response equals "application/json"
-    And the JSON path "2.Name" of the response equals "org2.dev.json"
-    And the JSON path "2.ContentType" of the response equals "application/json"
+    When client sends request to "http://localhost:48326/.well-known/did-bloc" to upload file "fixtures/testdata/well-known/trustbloc.dev.json" with content type "application/json"
+    Then the ID of the file is saved to variable "wellKnownTrustblocID"
+    When client sends request to "http://localhost:48326/.well-known/did-bloc" to upload file "fixtures/testdata/well-known/org1.dev.json" with content type "application/json"
+    Then the ID of the file is saved to variable "wellKnownOrg1ID"
+    When client sends request to "http://localhost:48326/.well-known/did-bloc" to upload file "fixtures/testdata/well-known/org2.dev.json" with content type "application/json"
+    Then the ID of the file is saved to variable "wellKnownOrg2ID"
+    # Create the .well-known file index Sidetree document
+    Given variable "wellKnownIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":"/.well-known/did-bloc","mappings":{"trustbloc.dev.json":"${wellKnownTrustblocID}","org1.dev.json":"${wellKnownOrg1ID}","org2.dev.json":"${wellKnownOrg2ID}"}}}'
+    When client sends request to "http://localhost:48526/file" to create document with content "${wellKnownIndexFile}" in namespace "file:idx"
+    Then the ID of the returned document is saved to variable "wellKnownIndexID"
+
+    # Update the ledger config to point to the index file documents
+    Given variable "schemaHandlerConfig" is assigned the JSON value '{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"${schemaIndexID}"}'
+    And variable "wellKnownHandlerConfig" is assigned the JSON value '{"BasePath":"/.well-known/did-bloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"${wellKnownIndexID}"}'
+    And variable "org1ConfigUpdate" is assigned the JSON value '{"MspID":"Org1MSP","Peers":[{"PeerID":"peer0.org1.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]},{"PeerID":"peer1.org1.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]}]}'
+    And variable "org2ConfigUpdate" is assigned the JSON value '{"MspID":"Org2MSP","Peers":[{"PeerID":"peer0.org2.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]},{"PeerID":"peer1.org2.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]}]}'
+    And fabric-cli is executed with args "ledgerconfig update --config ${org1ConfigUpdate} --noprompt"
+    And fabric-cli is executed with args "ledgerconfig update --config ${org2ConfigUpdate} --noprompt"
 
     # Resolve schema files
     When client sends request to "http://localhost:48326/schema/arrays.schema.json" to retrieve file
@@ -87,29 +82,36 @@ Feature:
     Then the JSON path "domain" of the response equals "org2.dev"
 
     # Upload a new schema and update the schema index document
-    When fabric-cli is executed with args "file upload --url http://localhost:48326/schema --files ./fixtures/testdata/schemas/geographical-location.schema.json --idxurl http://localhost:48326/file/${schemaIndexID} --pwd pwd2 --nextpwd pwd3 --noprompt"
-    Then the JSON path "#" of the response has 1 items
-    And the JSON path "0.Name" of the response equals "geographical-location.schema.json"
-    And the JSON path "0.ContentType" of the response equals "application/json"
+    When client sends request to "http://localhost:48326/schema" to upload file "fixtures/testdata/schemas/geographical-location.schema.json" with content type "application/json"
+    Then the ID of the file is saved to variable "locationsSchemaID"
+    # Update the schema file index Sidetree document
+    Given variable "schemaPatch" is assigned the JSON patch '[{"op": "add", "path": "/fileIndex/mappings/geographical-location.schema.json", "value": "${locationsSchemaID}"}]'
+    When client sends request to "http://localhost:48326/file" to update document "${schemaIndexID}" with patch "${schemaPatch}"
+    Then the response has status code 200 and error message ""
 
     And client sends request to "http://localhost:48326/schema/geographical-location.schema.json" to retrieve file
     Then the JSON path "$id" of the response equals "https://example.com/geographical-location.schema.json"
 
+    # Test invalid file index document (with missing basePath)
+    Given variable "invalidIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":""}}'
+    When client sends request to "http://localhost:48526/file" to create document with content "${invalidIndexFile}" in namespace "file:idx"
+    Then the response has status code 500 and error message "missing base path"
+
   @duplicate_create_operation
   Scenario: Attempt to create the same index file on Sidetree twice. The second create operation should be rejected by the Observer.
     # Create the /content file index Sidetree document
-    When fabric-cli is executed with args "file createidx --path /content --url http://localhost:48526/file --recoverypwd pwd1 --nextpwd pwd1 --noprompt"
-    And the JSON path "id" of the response is saved to variable "fileIdxID"
+    Given variable "contentIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":"/content"}}'
+    When client sends request to "http://localhost:48526/file" to create document with content "${contentIndexFile}" in namespace "file:idx"
+    Then the ID of the returned document is saved to variable "contentIdxID"
     Then we wait 10 seconds
 
-    When an HTTP request is sent to "http://localhost:48326/file/${fileIdxID}"
-    Then the JSON path "id" of the response equals "${fileIdxID}"
+    When an HTTP request is sent to "http://localhost:48326/file/${contentIdxID}"
+    Then the JSON path "id" of the response equals "${contentIdxID}"
 
     # Attempt to create the /content file index Sidetree document again
-    When fabric-cli is executed with args "file createidx --path /content --url http://localhost:48526/file --recoverypwd pwd1 --nextpwd pwd1 --noprompt"
-    And the JSON path "id" of the response is saved to variable "fileIdxID"
+    When client sends request to "http://localhost:48526/file" to create document with content "${contentIndexFile}" in namespace "file:idx"
     Then we wait 10 seconds
 
     # The Observer should have rejected the second create and the document resolver will not error out because of an invalid operation in the store
-    When an HTTP request is sent to "http://localhost:48326/file/${fileIdxID}"
-    Then the JSON path "id" of the response equals "${fileIdxID}"
+    When an HTTP request is sent to "http://localhost:48326/file/${contentIdxID}"
+    Then the JSON path "id" of the response equals "${contentIdxID}"

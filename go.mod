@@ -10,6 +10,7 @@ require (
 	github.com/bluele/gcache v0.0.0-20190301044115-79ae3b2d8680
 	github.com/btcsuite/btcutil v0.0.0-20170419141449-a5ecb5d9547a
 	github.com/docker/distribution v2.7.1+incompatible // indirect
+	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/gorilla/mux v1.7.3
 	github.com/hyperledger/fabric v2.0.0+incompatible
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20200128192331-2d899240a7ed
