@@ -77,8 +77,64 @@ func TestFileRetrieveHandler(t *testing.T) {
 		require.Equal(t, "document is no longer available", rw.Body.String())
 	})
 
-	t.Run("File not found in index", func(t *testing.T) {
+	t.Run("Invalid file index document", func(t *testing.T) {
 		docResolver.ResolveDocumentReturns(make(document.Document), nil)
+
+		getResourceName = func(req *http.Request) string { return schema1 }
+		rw := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/schema/schema1.json", nil)
+		h.Handler()(rw, req)
+		require.Equal(t, http.StatusInternalServerError, rw.Code)
+		require.Equal(t, serverError, rw.Body.String())
+	})
+
+	t.Run("ID not found in index", func(t *testing.T) {
+		fileIndexDoc := &FileIndexDoc{}
+
+		doc, err := getDocument(fileIndexDoc)
+		require.NoError(t, err)
+
+		docResolver.ResolveDocumentReturns(doc, nil)
+
+		getResourceName = func(req *http.Request) string { return schema1 }
+		rw := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/schema/schema1.json", nil)
+		h.Handler()(rw, req)
+		require.Equal(t, http.StatusInternalServerError, rw.Code)
+		require.Equal(t, serverError, rw.Body.String())
+	})
+
+	t.Run("Base path not found in index", func(t *testing.T) {
+		fileIndexDoc := &FileIndexDoc{
+			ID: "file:idx:1234",
+		}
+
+		doc, err := getDocument(fileIndexDoc)
+		require.NoError(t, err)
+
+		docResolver.ResolveDocumentReturns(doc, nil)
+
+		getResourceName = func(req *http.Request) string { return schema1 }
+		rw := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/schema/schema1.json", nil)
+		h.Handler()(rw, req)
+		require.Equal(t, http.StatusInternalServerError, rw.Code)
+		require.Equal(t, serverError, rw.Body.String())
+	})
+
+	t.Run("File not found in index", func(t *testing.T) {
+		fileIndexDoc := &FileIndexDoc{
+			ID: "file:idx:1234",
+			FileIndex: FileIndex{
+				BasePath: "/schema",
+				Mappings: nil,
+			},
+		}
+
+		doc, err := getDocument(fileIndexDoc)
+		require.NoError(t, err)
+
+		docResolver.ResolveDocumentReturns(doc, nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()
@@ -89,8 +145,19 @@ func TestFileRetrieveHandler(t *testing.T) {
 	})
 
 	t.Run("File not found in DCAS", func(t *testing.T) {
-		doc := make(document.Document)
-		doc[schema1] = "1234567890"
+		fileIndexDoc := &FileIndexDoc{
+			ID: "file:idx:1234",
+			FileIndex: FileIndex{
+				BasePath: "/schema",
+				Mappings: map[string]string{
+					"schema1.json": "1234567890",
+				},
+			},
+		}
+
+		doc, err := getDocument(fileIndexDoc)
+		require.NoError(t, err)
+
 		docResolver.ResolveDocumentReturns(doc, nil)
 		dcasClient.GetReturns(nil, nil)
 
@@ -106,8 +173,19 @@ func TestFileRetrieveHandler(t *testing.T) {
 		dcasProvider.ForChannelReturns(nil, errors.New("injected DCAS provider error"))
 		defer func() { dcasProvider.ForChannelReturns(dcasClient, nil) }()
 
-		doc := make(document.Document)
-		doc[schema1] = "1234567890"
+		fileIndexDoc := &FileIndexDoc{
+			ID: "file:idx:1234",
+			FileIndex: FileIndex{
+				BasePath: "/schema",
+				Mappings: map[string]string{
+					"schema1.json": "1234567890",
+				},
+			},
+		}
+
+		doc, err := getDocument(fileIndexDoc)
+		require.NoError(t, err)
+
 		docResolver.ResolveDocumentReturns(doc, nil)
 		dcasClient.GetReturns(nil, errors.New("injected DCAS error"))
 
@@ -120,8 +198,19 @@ func TestFileRetrieveHandler(t *testing.T) {
 	})
 
 	t.Run("DCAS error", func(t *testing.T) {
-		doc := make(document.Document)
-		doc[schema1] = "1234567890"
+		fileIndexDoc := &FileIndexDoc{
+			ID: "file:idx:1234",
+			FileIndex: FileIndex{
+				BasePath: "/schema",
+				Mappings: map[string]string{
+					"schema1.json": "1234567890",
+				},
+			},
+		}
+
+		doc, err := getDocument(fileIndexDoc)
+		require.NoError(t, err)
+
 		docResolver.ResolveDocumentReturns(doc, nil)
 		dcasClient.GetReturns(nil, errors.New("injected DCAS error"))
 
@@ -134,8 +223,19 @@ func TestFileRetrieveHandler(t *testing.T) {
 	})
 
 	t.Run("File retrieved from DCAS", func(t *testing.T) {
-		doc := make(document.Document)
-		doc[schema1] = "1234567890"
+		fileIndexDoc := &FileIndexDoc{
+			ID: "file:idx:1234",
+			FileIndex: FileIndex{
+				BasePath: "/schema",
+				Mappings: map[string]string{
+					"schema1.json": "1234567890",
+				},
+			},
+		}
+
+		doc, err := getDocument(fileIndexDoc)
+		require.NoError(t, err)
+
 		docResolver.ResolveDocumentReturns(doc, nil)
 		getResourceName = func(req *http.Request) string { return schema1 }
 
@@ -190,4 +290,19 @@ func TestFileRetrieveHandler(t *testing.T) {
 			require.Equal(t, fileContents, rw.Body.String())
 		})
 	})
+}
+
+func getDocument(fileIndexDoc *FileIndexDoc) (document.Document, error) {
+	bytes, err := json.Marshal(fileIndexDoc)
+	if err != nil {
+		return nil, err
+	}
+
+	doc := make(document.Document)
+	err = json.Unmarshal(bytes, &doc)
+	if err != nil {
+		return nil, err
+	}
+
+	return doc, nil
 }

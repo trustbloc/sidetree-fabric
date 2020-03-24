@@ -94,14 +94,12 @@ func (h *Retrieve) doRetrieve(resourceName string) ([]byte, string, error) {
 
 	logger.Debugf("Resolving index file [%s]", h.IndexDocID)
 
-	indexDoc, err := h.retrieveIndexDoc()
+	fileIndex, err := h.retrieveIndexDoc()
 	if err != nil {
 		return nil, "", err
 	}
 
-	logger.Debugf("Got index indexDoc: %+v", indexDoc)
-
-	key := indexDoc.GetStringValue(resourceName)
+	key := fileIndex.Mappings[resourceName]
 	if key == "" {
 		logger.Debugf("Resource [%s] not found in index file", resourceName)
 		return nil, "", common.NewHTTPError(http.StatusNotFound, errors.New(fileNotFound))
@@ -122,24 +120,49 @@ func (h *Retrieve) doRetrieve(resourceName string) ([]byte, string, error) {
 	return fileBytes, contentType, nil
 }
 
-func (h *Retrieve) retrieveIndexDoc() (document.Document, error) {
+func (h *Retrieve) retrieveIndexDoc() (*FileIndex, error) {
 	logger.Debugf("Retrieving index document [%s]", h.IndexDocID)
 
 	indexDoc, err := h.resolver.ResolveDocument(h.IndexDocID)
-	if err == nil {
-		return indexDoc, nil
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			logger.Warnf("File index document not found in document store: [%s]", h.IndexDocID)
+			return nil, common.NewHTTPError(http.StatusNotFound, errors.New("file index document not found"))
+		}
+
+		if strings.Contains(err.Error(), "was deleted") {
+			return nil, common.NewHTTPError(http.StatusGone, errors.New("document is no longer available"))
+		}
+
+		return nil, common.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	if strings.Contains(err.Error(), "not found") {
-		logger.Warnf("File index document not found in document store: [%s]", h.IndexDocID)
-		return nil, common.NewHTTPError(http.StatusNotFound, errors.New("file index document not found"))
+	docBytes, err := json.Marshal(indexDoc)
+	if err != nil {
+		logger.Errorf("Error marshalling file index document [%s]: %s", h.IndexDocID, err)
+		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
-	if strings.Contains(err.Error(), "was deleted") {
-		return nil, common.NewHTTPError(http.StatusGone, errors.New("document is no longer available"))
+	logger.Debugf("Got index indexDoc: %s", docBytes)
+
+	fileIndexDoc := &FileIndexDoc{}
+	err = json.Unmarshal(docBytes, fileIndexDoc)
+	if err != nil {
+		logger.Errorf("Error unmarshalling file index document [%s]: %s", h.IndexDocID, err)
+		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
-	return nil, common.NewHTTPError(http.StatusInternalServerError, err)
+	if fileIndexDoc.ID != h.IndexDocID {
+		logger.Errorf("Invalid file index payload: id [%s] in file index doc [%s] does not match [%s]", fileIndexDoc.ID, h.IndexDocID)
+		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
+	}
+
+	if fileIndexDoc.FileIndex.BasePath != h.BasePath {
+		logger.Errorf("Invalid file index payload: basePath [%s] in file index doc [%s] does not match base path of this endpoint [%s]", fileIndexDoc.FileIndex.BasePath, h.IndexDocID, h.BasePath)
+		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
+	}
+
+	return &fileIndexDoc.FileIndex, nil
 }
 
 func (h *Retrieve) retrieveFile(key string) ([]byte, string, error) {
