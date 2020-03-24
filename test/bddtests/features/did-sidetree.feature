@@ -137,6 +137,21 @@ Feature:
     When client sends request to "http://localhost:48526/document" to resolve DID document
     Then check error response contains "document is no longer available"
 
+  @create_recover_did_doc
+  Scenario: create and recover did doc
+    When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    Then check success response contains "#didDocumentHash"
+    And we wait 10 seconds
+
+    When client sends request to "http://localhost:48526/document" to resolve DID document
+    Then check success response contains "#didDocumentHash"
+
+    When client sends request to "http://localhost:48526/document" to recover DID document "fixtures/testdata/recover.json"
+    And we wait 10 seconds
+
+    When client sends request to "http://localhost:48526/document" to resolve DID document
+    Then check success response contains "recoveryKey"
+
   @create_update_did_doc
   Scenario: create and update valid did doc
     When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"

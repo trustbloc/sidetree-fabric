@@ -1,0 +1,9 @@
+{
+  "publicKey": [
+    {
+      "id": "#recoveryKey",
+      "publicKeyHex": "02f49802fb3e09c6dd43f19aa41293d1e0dad044b68cf81cf7079499edfd0aa9f1",
+      "type": "recoveryKeyType"
+    }
+  ]
+}
