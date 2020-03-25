@@ -170,6 +170,24 @@ func (d *DIDSideSteps) revokeDIDDocument(url string) error {
 	return err
 }
 
+func (d *DIDSideSteps) recoverDIDDocument(url, didDocumentPath string) error {
+	uniqueSuffix, err := d.getUniqueSuffix()
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("revoke did document [%s]from %s", uniqueSuffix, didDocumentPath)
+
+	opaqueDoc := getOpaqueDocument(didDocumentPath)
+	req, err := getRecoverRequest(opaqueDoc, uniqueSuffix)
+	if err != nil {
+		return err
+	}
+
+	d.resp, err = restclient.SendRequest(url, req)
+	return err
+}
+
 func (d *DIDSideSteps) getDID() (string, error) {
 	uniqueSuffix, err := d.getUniqueSuffix()
 	if err != nil {
@@ -194,6 +212,18 @@ func getCreateRequest(doc string) ([]byte, error) {
 	return helper.NewCreateRequest(&helper.CreateRequestInfo{
 		OpaqueDocument:  doc,
 		RecoveryKey:     "recoveryKey",
+		NextRecoveryOTP: docutil.EncodeToString([]byte(recoveryOTP)),
+		NextUpdateOTP:   docutil.EncodeToString([]byte(updateOTP)),
+		MultihashCode:   sha2_256,
+	})
+}
+
+func getRecoverRequest(doc, uniqueSuffix string) ([]byte, error) {
+	return helper.NewRecoverRequest(&helper.RecoverRequestInfo{
+		DidUniqueSuffix: uniqueSuffix,
+		OpaqueDocument:  doc,
+		RecoveryKey:     "HEX",
+		RecoveryOTP:     docutil.EncodeToString([]byte(recoveryOTP)),
 		NextRecoveryOTP: docutil.EncodeToString([]byte(recoveryOTP)),
 		NextUpdateOTP:   docutil.EncodeToString([]byte(updateOTP)),
 		MultihashCode:   sha2_256,
@@ -244,6 +274,7 @@ func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^check error response contains "([^"]*)"$`, d.checkErrorResp)
 	s.Step(`^client sends request to "([^"]*)" to create DID document "([^"]*)" in namespace "([^"]*)"$`, d.sendDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to update DID document path "([^"]*)" with value "([^"]*)"$`, d.updateDIDDocument)
+	s.Step(`^client sends request to "([^"]*)" to recover DID document "([^"]*)"$`, d.recoverDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to revoke DID document$`, d.revokeDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial value$`, d.resolveDIDDocumentWithInitialValue)
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessResp)
