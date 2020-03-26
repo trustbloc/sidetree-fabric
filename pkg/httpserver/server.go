@@ -28,10 +28,12 @@ var logger = logrus.New()
 type Server struct {
 	httpServer *http.Server
 	started    uint32
+	certFile   string
+	keyFile    string
 }
 
 // New returns a new HTTP server
-func New(url string, handlers ...common.HTTPHandler) *Server {
+func New(url, certFile, keyFile string, handlers ...common.HTTPHandler) *Server {
 	router := mux.NewRouter()
 	for _, handler := range handlers {
 		logger.Infof("Registering handler for [%s]", handler.Path())
@@ -46,6 +48,8 @@ func New(url string, handlers ...common.HTTPHandler) *Server {
 			Addr:    url,
 			Handler: handler,
 		},
+		certFile: certFile,
+		keyFile:  keyFile,
 	}
 }
 
@@ -81,6 +85,9 @@ func (s *Server) Stop(ctx context.Context) error {
 func (s *Server) startWithRetry() error {
 	_, err := retry.Invoke(
 		func() (interface{}, error) {
+			if s.keyFile != "" && s.certFile != "" {
+				return nil, s.httpServer.ListenAndServeTLS(s.certFile, s.keyFile)
+			}
 			return nil, s.httpServer.ListenAndServe()
 		},
 		retry.WithMaxAttempts(10),

@@ -8,14 +8,35 @@ import (
 type RestConfig struct {
 	SidetreeListenURLStub        func() (string, error)
 	sidetreeListenURLMutex       sync.RWMutex
-	sidetreeListenURLArgsForCall []struct{}
-	sidetreeListenURLReturns     struct {
+	sidetreeListenURLArgsForCall []struct {
+	}
+	sidetreeListenURLReturns struct {
 		result1 string
 		result2 error
 	}
 	sidetreeListenURLReturnsOnCall map[int]struct {
 		result1 string
 		result2 error
+	}
+	SidetreeTLSCertificateStub        func() string
+	sidetreeTLSCertificateMutex       sync.RWMutex
+	sidetreeTLSCertificateArgsForCall []struct {
+	}
+	sidetreeTLSCertificateReturns struct {
+		result1 string
+	}
+	sidetreeTLSCertificateReturnsOnCall map[int]struct {
+		result1 string
+	}
+	SidetreeTLSKeyStub        func() string
+	sidetreeTLSKeyMutex       sync.RWMutex
+	sidetreeTLSKeyArgsForCall []struct {
+	}
+	sidetreeTLSKeyReturns struct {
+		result1 string
+	}
+	sidetreeTLSKeyReturnsOnCall map[int]struct {
+		result1 string
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -24,7 +45,8 @@ type RestConfig struct {
 func (fake *RestConfig) SidetreeListenURL() (string, error) {
 	fake.sidetreeListenURLMutex.Lock()
 	ret, specificReturn := fake.sidetreeListenURLReturnsOnCall[len(fake.sidetreeListenURLArgsForCall)]
-	fake.sidetreeListenURLArgsForCall = append(fake.sidetreeListenURLArgsForCall, struct{}{})
+	fake.sidetreeListenURLArgsForCall = append(fake.sidetreeListenURLArgsForCall, struct {
+	}{})
 	fake.recordInvocation("SidetreeListenURL", []interface{}{})
 	fake.sidetreeListenURLMutex.Unlock()
 	if fake.SidetreeListenURLStub != nil {
@@ -33,7 +55,8 @@ func (fake *RestConfig) SidetreeListenURL() (string, error) {
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.sidetreeListenURLReturns.result1, fake.sidetreeListenURLReturns.result2
+	fakeReturns := fake.sidetreeListenURLReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *RestConfig) SidetreeListenURLCallCount() int {
@@ -42,7 +65,15 @@ func (fake *RestConfig) SidetreeListenURLCallCount() int {
 	return len(fake.sidetreeListenURLArgsForCall)
 }
 
+func (fake *RestConfig) SidetreeListenURLCalls(stub func() (string, error)) {
+	fake.sidetreeListenURLMutex.Lock()
+	defer fake.sidetreeListenURLMutex.Unlock()
+	fake.SidetreeListenURLStub = stub
+}
+
 func (fake *RestConfig) SidetreeListenURLReturns(result1 string, result2 error) {
+	fake.sidetreeListenURLMutex.Lock()
+	defer fake.sidetreeListenURLMutex.Unlock()
 	fake.SidetreeListenURLStub = nil
 	fake.sidetreeListenURLReturns = struct {
 		result1 string
@@ -51,6 +82,8 @@ func (fake *RestConfig) SidetreeListenURLReturns(result1 string, result2 error) 
 }
 
 func (fake *RestConfig) SidetreeListenURLReturnsOnCall(i int, result1 string, result2 error) {
+	fake.sidetreeListenURLMutex.Lock()
+	defer fake.sidetreeListenURLMutex.Unlock()
 	fake.SidetreeListenURLStub = nil
 	if fake.sidetreeListenURLReturnsOnCall == nil {
 		fake.sidetreeListenURLReturnsOnCall = make(map[int]struct {
@@ -64,11 +97,119 @@ func (fake *RestConfig) SidetreeListenURLReturnsOnCall(i int, result1 string, re
 	}{result1, result2}
 }
 
+func (fake *RestConfig) SidetreeTLSCertificate() string {
+	fake.sidetreeTLSCertificateMutex.Lock()
+	ret, specificReturn := fake.sidetreeTLSCertificateReturnsOnCall[len(fake.sidetreeTLSCertificateArgsForCall)]
+	fake.sidetreeTLSCertificateArgsForCall = append(fake.sidetreeTLSCertificateArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SidetreeTLSCertificate", []interface{}{})
+	fake.sidetreeTLSCertificateMutex.Unlock()
+	if fake.SidetreeTLSCertificateStub != nil {
+		return fake.SidetreeTLSCertificateStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.sidetreeTLSCertificateReturns
+	return fakeReturns.result1
+}
+
+func (fake *RestConfig) SidetreeTLSCertificateCallCount() int {
+	fake.sidetreeTLSCertificateMutex.RLock()
+	defer fake.sidetreeTLSCertificateMutex.RUnlock()
+	return len(fake.sidetreeTLSCertificateArgsForCall)
+}
+
+func (fake *RestConfig) SidetreeTLSCertificateCalls(stub func() string) {
+	fake.sidetreeTLSCertificateMutex.Lock()
+	defer fake.sidetreeTLSCertificateMutex.Unlock()
+	fake.SidetreeTLSCertificateStub = stub
+}
+
+func (fake *RestConfig) SidetreeTLSCertificateReturns(result1 string) {
+	fake.sidetreeTLSCertificateMutex.Lock()
+	defer fake.sidetreeTLSCertificateMutex.Unlock()
+	fake.SidetreeTLSCertificateStub = nil
+	fake.sidetreeTLSCertificateReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *RestConfig) SidetreeTLSCertificateReturnsOnCall(i int, result1 string) {
+	fake.sidetreeTLSCertificateMutex.Lock()
+	defer fake.sidetreeTLSCertificateMutex.Unlock()
+	fake.SidetreeTLSCertificateStub = nil
+	if fake.sidetreeTLSCertificateReturnsOnCall == nil {
+		fake.sidetreeTLSCertificateReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.sidetreeTLSCertificateReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *RestConfig) SidetreeTLSKey() string {
+	fake.sidetreeTLSKeyMutex.Lock()
+	ret, specificReturn := fake.sidetreeTLSKeyReturnsOnCall[len(fake.sidetreeTLSKeyArgsForCall)]
+	fake.sidetreeTLSKeyArgsForCall = append(fake.sidetreeTLSKeyArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SidetreeTLSKey", []interface{}{})
+	fake.sidetreeTLSKeyMutex.Unlock()
+	if fake.SidetreeTLSKeyStub != nil {
+		return fake.SidetreeTLSKeyStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.sidetreeTLSKeyReturns
+	return fakeReturns.result1
+}
+
+func (fake *RestConfig) SidetreeTLSKeyCallCount() int {
+	fake.sidetreeTLSKeyMutex.RLock()
+	defer fake.sidetreeTLSKeyMutex.RUnlock()
+	return len(fake.sidetreeTLSKeyArgsForCall)
+}
+
+func (fake *RestConfig) SidetreeTLSKeyCalls(stub func() string) {
+	fake.sidetreeTLSKeyMutex.Lock()
+	defer fake.sidetreeTLSKeyMutex.Unlock()
+	fake.SidetreeTLSKeyStub = stub
+}
+
+func (fake *RestConfig) SidetreeTLSKeyReturns(result1 string) {
+	fake.sidetreeTLSKeyMutex.Lock()
+	defer fake.sidetreeTLSKeyMutex.Unlock()
+	fake.SidetreeTLSKeyStub = nil
+	fake.sidetreeTLSKeyReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *RestConfig) SidetreeTLSKeyReturnsOnCall(i int, result1 string) {
+	fake.sidetreeTLSKeyMutex.Lock()
+	defer fake.sidetreeTLSKeyMutex.Unlock()
+	fake.SidetreeTLSKeyStub = nil
+	if fake.sidetreeTLSKeyReturnsOnCall == nil {
+		fake.sidetreeTLSKeyReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.sidetreeTLSKeyReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
 func (fake *RestConfig) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.sidetreeListenURLMutex.RLock()
 	defer fake.sidetreeListenURLMutex.RUnlock()
+	fake.sidetreeTLSCertificateMutex.RLock()
+	defer fake.sidetreeTLSCertificateMutex.RUnlock()
+	fake.sidetreeTLSKeyMutex.RLock()
+	defer fake.sidetreeTLSKeyMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -45,6 +45,8 @@ func TestServer_Start(t *testing.T) {
 	sampleDocHandler := mocks.NewMockDocumentHandler().WithNamespace(sampleNamespace)
 
 	s := New(url,
+		"",
+		"",
 		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
 		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
@@ -114,6 +116,8 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	sampleDocHandler := mocks.NewMockDocumentHandler().WithNamespace(sampleNamespace)
 
 	s1 := New(url,
+		"",
+		"",
 		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
 		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
@@ -121,6 +125,8 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	)
 
 	s2 := New(url,
+		"",
+		"",
 		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
 		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
@@ -128,6 +134,8 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	)
 
 	s3 := New(url,
+		"",
+		"",
 		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
 		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),

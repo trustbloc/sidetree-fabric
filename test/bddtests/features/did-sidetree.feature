@@ -53,37 +53,37 @@ Feature:
 
   @create_did_doc
   Scenario: create valid did doc
-    When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "http://localhost:48426/document" to resolve DID document with initial value
-    Then check success response contains "#didDocumentHash"
-
-    And we wait 10 seconds
-
-    When client sends request to "http://localhost:48426/document" to resolve DID document
-    Then check success response contains "#didDocumentHash"
-
-    When client sends request to "http://localhost:48526/trustbloc.dev" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:bloc:trustbloc.dev"
-    Then check success response contains "#didDocumentHash"
-
-    When client sends request to "http://localhost:48426/trustbloc.dev" to resolve DID document with initial value
+    When client sends request to "https://localhost:48426/document" to resolve DID document with initial value
     Then check success response contains "#didDocumentHash"
 
     And we wait 10 seconds
 
-    When client sends request to "http://localhost:48426/trustbloc.dev" to resolve DID document
+    When client sends request to "https://localhost:48426/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "http://localhost:48526/yourdomain.com" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:bloc:yourdomain.com"
+    When client sends request to "https://localhost:48526/trustbloc.dev" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:bloc:trustbloc.dev"
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "http://localhost:48426/yourdomain.com" to resolve DID document with initial value
+    When client sends request to "https://localhost:48426/trustbloc.dev" to resolve DID document with initial value
     Then check success response contains "#didDocumentHash"
 
     And we wait 10 seconds
 
-    When client sends request to "http://localhost:48426/yourdomain.com" to resolve DID document
+    When client sends request to "https://localhost:48426/trustbloc.dev" to resolve DID document
+    Then check success response contains "#didDocumentHash"
+
+    When client sends request to "https://localhost:48526/yourdomain.com" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:bloc:yourdomain.com"
+    Then check success response contains "#didDocumentHash"
+
+    When client sends request to "https://localhost:48426/yourdomain.com" to resolve DID document with initial value
+    Then check success response contains "#didDocumentHash"
+
+    And we wait 10 seconds
+
+    When client sends request to "https://localhost:48426/yourdomain.com" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
   @batch_writer_recovery
@@ -94,7 +94,7 @@ Feature:
     And we wait 2 seconds
 
     # Send the operation to peer0.org1.
-    When client sends request to "http://localhost:48326/document" to create DID document "fixtures/testdata/didDocument2.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48326/document" to create DID document "fixtures/testdata/didDocument2.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
     # Stop peer0.org1 after sending it an operation. The operation should have
@@ -113,7 +113,7 @@ Feature:
 
     # Retrieve the document from another peer since, by this time, the operation should have
     # been processed and distributed to all peers.
-    When client sends request to "http://localhost:48626/document" to resolve DID document
+    When client sends request to "https://localhost:48626/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
   @invalid_config_update
@@ -125,43 +125,43 @@ Feature:
 
   @create_revoke_did_doc
   Scenario: create and revoke valid did doc
-    When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
-    When client sends request to "http://localhost:48526/document" to resolve DID document
+    When client sends request to "https://localhost:48526/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
-    When client sends request to "http://localhost:48526/document" to revoke DID document
+    When client sends request to "https://localhost:48526/document" to revoke DID document
     And we wait 10 seconds
 
-    When client sends request to "http://localhost:48526/document" to resolve DID document
+    When client sends request to "https://localhost:48526/document" to resolve DID document
     Then check error response contains "document is no longer available"
 
   @create_recover_did_doc
   Scenario: create and recover did doc
-    When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
-    When client sends request to "http://localhost:48526/document" to resolve DID document
+    When client sends request to "https://localhost:48526/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "http://localhost:48526/document" to recover DID document "fixtures/testdata/recover.json"
+    When client sends request to "https://localhost:48526/document" to recover DID document "fixtures/testdata/recover.json"
     And we wait 10 seconds
 
-    When client sends request to "http://localhost:48526/document" to resolve DID document
+    When client sends request to "https://localhost:48526/document" to resolve DID document
     Then check success response contains "recoveryKey"
 
   @create_update_did_doc
   Scenario: create and update valid did doc
-    When client sends request to "http://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
-    When client sends request to "http://localhost:48526/document" to resolve DID document
+    When client sends request to "https://localhost:48526/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
-    When client sends request to "http://localhost:48526/document" to update DID document path "/publicKey/0/type" with value "updatedValue"
+    When client sends request to "https://localhost:48526/document" to update DID document path "/publicKey/0/type" with value "updatedValue"
     Then we wait 10 seconds
 
-    When client sends request to "http://localhost:48526/document" to resolve DID document
+    When client sends request to "https://localhost:48526/document" to resolve DID document
     Then check success response contains "updatedValue"

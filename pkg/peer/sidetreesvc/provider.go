@@ -44,6 +44,8 @@ type dcasClientProvider interface {
 
 type restConfig interface {
 	SidetreeListenURL() (string, error)
+	SidetreeTLSCertificate() string
+	SidetreeTLSKey() string
 }
 
 type sidetreeConfigProvider interface {

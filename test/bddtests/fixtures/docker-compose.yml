@@ -80,6 +80,8 @@ services:
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
       - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
       - CORE_SIDETREE_PORT=48326
+      - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
     ports:
@@ -140,6 +142,8 @@ services:
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
       - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
       - CORE_SIDETREE_PORT=48326
+      - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
     ports:
@@ -199,6 +203,8 @@ services:
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
       - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
       - CORE_SIDETREE_PORT=48326
+      - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
     ports:
@@ -258,6 +264,8 @@ services:
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
       - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
       - CORE_SIDETREE_PORT=48326
+      - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
     ports:

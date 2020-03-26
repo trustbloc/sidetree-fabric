@@ -39,7 +39,7 @@ func newRESTService(cfg restConfig, handlers ...common.HTTPHandler) (*restServic
 
 	var httpServer *httpserver.Server
 	if len(handlers) > 0 {
-		httpServer = httpserver.New(listenURL, handlers...)
+		httpServer = httpserver.New(listenURL, cfg.SidetreeTLSCertificate(), cfg.SidetreeTLSKey(), handlers...)
 	}
 
 	return &restService{
