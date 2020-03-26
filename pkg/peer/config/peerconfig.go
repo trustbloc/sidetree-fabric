@@ -15,8 +15,10 @@ import (
 )
 
 const (
-	sidetreeHostKey = "sidetree.host"
-	sidetreePortKey = "sidetree.port"
+	sidetreeHostKey        = "sidetree.host"
+	sidetreePortKey        = "sidetree.port"
+	sidetreeTLSCertificate = "sidetree.tls.cert.file"
+	sidetreeTLSKey         = "sidetree.tls.key.file"
 
 	confPeerFileSystemPath = "peer.fileSystemPath"
 	sidetreeOperationsDir  = "sidetree_ops"
@@ -26,6 +28,8 @@ const (
 type Peer struct {
 	sidetreeHost           string
 	sidetreePort           int
+	sidetreeTLSCertificate string
+	sidetreeTLSKey         string
 	levelDBOpQueueBasePath string
 }
 
@@ -34,6 +38,8 @@ func NewPeer() *Peer {
 	return &Peer{
 		sidetreeHost:           viper.GetString(sidetreeHostKey),
 		sidetreePort:           viper.GetInt(sidetreePortKey),
+		sidetreeTLSCertificate: viper.GetString(sidetreeTLSCertificate),
+		sidetreeTLSKey:         viper.GetString(sidetreeTLSKey),
 		levelDBOpQueueBasePath: filepath.Join(filepath.Clean(viper.GetString(confPeerFileSystemPath)), sidetreeOperationsDir),
 	}
 }
@@ -55,4 +61,14 @@ func (c *Peer) SidetreeListenURL() (string, error) {
 // LevelDBOpQueueBasePath returns the base path of the directory to store LevelDB operation queues
 func (c *Peer) LevelDBOpQueueBasePath() string {
 	return c.levelDBOpQueueBasePath
+}
+
+// SidetreeTLSCertificate returns the tls certificate
+func (c *Peer) SidetreeTLSCertificate() string {
+	return c.sidetreeTLSCertificate
+}
+
+// SidetreeTLSKey returns the tls key
+func (c *Peer) SidetreeTLSKey() string {
+	return c.sidetreeTLSKey
 }

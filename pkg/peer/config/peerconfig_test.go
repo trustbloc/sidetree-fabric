@@ -54,4 +54,34 @@ func TestPeerConfig(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, fmt.Sprintf("%s:%d", host, port), url)
 	})
+
+	t.Run("levelDBOpQueueBasePath -> success", func(t *testing.T) {
+		viper.Reset()
+		viper.Set("peer.fileSystemPath", "/opt")
+
+		cfg := NewPeer()
+		require.NotNil(t, cfg)
+
+		require.Equal(t, "/opt/"+sidetreeOperationsDir, cfg.LevelDBOpQueueBasePath())
+	})
+
+	t.Run("Tls cert -> success", func(t *testing.T) {
+		viper.Reset()
+		viper.Set("sidetree.tls.cert.file", "cert")
+
+		cfg := NewPeer()
+		require.NotNil(t, cfg)
+
+		require.Equal(t, "cert", cfg.SidetreeTLSCertificate())
+	})
+
+	t.Run("Tls key -> success", func(t *testing.T) {
+		viper.Reset()
+		viper.Set("sidetree.tls.key.file", "key")
+
+		cfg := NewPeer()
+		require.NotNil(t, cfg)
+
+		require.Equal(t, "key", cfg.SidetreeTLSKey())
+	})
 }

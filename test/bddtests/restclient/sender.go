@@ -7,6 +7,7 @@ package restclient
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,7 +31,12 @@ func SendRequest(url string, req []byte) (*HttpResponse, error) {
 
 // SendResolveRequest send a regular GET request to the sidetree-node and expects 'side tree document' argument as a response
 func SendResolveRequest(url string) (*HttpResponse, error) {
-	client := &http.Client{}
+	client := &http.Client{
+		// TODO add tls config https://github.com/trustbloc/sidetree-fabric/issues/179
+		// TODO !!!!!!!remove InsecureSkipVerify after configure tls for http client
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint: gosec
+		}}
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
@@ -53,7 +59,12 @@ func handleHttpResp(resp *http.Response) (*HttpResponse, error) {
 }
 
 func sendHTTPRequest(url string, req []byte) (*http.Response, error) {
-	client := &http.Client{}
+	client := &http.Client{
+		// TODO add tls config https://github.com/trustbloc/sidetree-fabric/issues/179
+		// TODO !!!!!!!remove InsecureSkipVerify after configure tls for http client
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint: gosec
+		}}
 
 	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(req))
 	if err != nil {
