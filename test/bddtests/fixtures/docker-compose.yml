@@ -243,7 +243,7 @@ services:
       # metrics config
       - CORE_METRICS_PROVIDER=prometheus
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
-      - CORE_LEDGER_ROLES=endorser,committer,sidetree-resolver
+      - CORE_LEDGER_ROLES=endorser,committer,sidetree-resolver,sidetree-observer
       # # the following setting starts chaincode containers on the same
       # # bridge network as the peers
       # # https://docs.docker.com/compose/networking/
