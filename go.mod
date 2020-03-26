@@ -19,6 +19,7 @@ require (
 	github.com/hyperledger/fabric/extensions v0.0.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.8.1
+	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.3.2
 	github.com/spf13/viper2015 v1.3.2
