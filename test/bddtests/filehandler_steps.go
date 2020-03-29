@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
-	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/pkg/errors"
 
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
@@ -95,14 +94,9 @@ func (d *FileHandlerSteps) updateDocument(url, docID, jsonPatch string) error {
 
 	uniqueSuffix := getUniqueSuffix(resolvedDocID[0])
 
-	patch, err := jsonpatch.DecodePatch([]byte(jsonPatch))
-	if err != nil {
-		return err
-	}
+	logger.Infof("Updating document [%s] at [%s] with patch %s", docID, url, jsonPatch)
 
-	logger.Infof("Updating document [%s] at [%s] with patch %s - %+v", docID, url, jsonPatch, patch)
-
-	req, err := d.getUpdateRequest(uniqueSuffix, patch)
+	req, err := d.getUpdateRequest(uniqueSuffix, jsonPatch)
 	if err != nil {
 		return err
 	}
@@ -255,12 +249,12 @@ func (d *FileHandlerSteps) getOpaqueDocument(content string) string {
 	return string(bytes)
 }
 
-func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, patch jsonpatch.Patch) ([]byte, error) {
+func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, patch string) ([]byte, error) {
 	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
-		DidUniqueSuffix: uniqueSuffix,
-		Patch:           patch,
-		UpdateOTP:       docutil.EncodeToString([]byte(updateOTP)),
-		MultihashCode:   sha2_256,
+		DidUniqueSuffix:   uniqueSuffix,
+		Patch:             patch,
+		UpdateRevealValue: []byte(updateOTP),
+		MultihashCode:     sha2_256,
 	})
 }
 
