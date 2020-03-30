@@ -27,7 +27,7 @@ DBUILD_CMD ?= docker build
 
 # Build flags
 GO_TAGS    ?=
-GO_LDFLAGS ?=
+GO_LDFLAGS ?= "-s -w -linkmode external -extldflags '-static'"
 
 # Local variables used by makefile
 PROJECT_NAME       = sidetree-fabric
