@@ -1,4 +1,3 @@
-#
 # Copyright SecureKey Technologies Inc. All Rights Reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -24,7 +23,11 @@
 DOCKER_CMD ?= docker
 GO_CMD     ?= go
 ALPINE_VER ?= 3.10
+DBUILD_CMD ?= docker build
+
+# Build flags
 GO_TAGS    ?=
+GO_LDFLAGS ?=
 
 # Local variables used by makefile
 PROJECT_NAME       = sidetree-fabric
@@ -49,8 +52,9 @@ FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
 export FABRIC_CLI_EXT_VERSION ?= 4ed7815d3158d1b75c252ad59cefc8054e535c55
 
 # Namespace for the blocnode image
-DOCKER_OUTPUT_NS     ?= trustbloc
-SIDETREE_FABRIC_IMAGE_NAME ?= sidetree-fabric
+DOCKER_OUTPUT_NS           ?= docker.pkg.github.com/trustbloc/sidetree-fabric
+SIDETREE_FABRIC_IMAGE_NAME ?= peer
+SIDETREE_FABRIC_IMAGE_TAG  ?= latest
 
 checks: license lint
 
@@ -95,16 +99,20 @@ bddtests: populate-fixtures docker-thirdparty fabric-peer-docker build-cc fabric
 fabric-peer:
 	@echo "Building fabric-peer"
 	@mkdir -p ./.build/bin
-	@cd cmd/peer && go build -o ../../.build/bin/fabric-peer main.go
+	@cd cmd/peer && go build -tags "$(GO_TAGS)" -ldflags "$(GO_LDFLAGS)" \
+        -o ../../.build/bin/fabric-peer main.go
 
 fabric-peer-docker:
 	@echo "Building fabric-peer image"
-	@docker build -f ./images/fabric-peer/Dockerfile --no-cache -t docker.pkg.github.com/trustbloc/sidetree-fabric/peer:latest \
-	--build-arg FABRIC_PEER_EXT_IMAGE=$(FABRIC_PEER_EXT_IMAGE) \
-	--build-arg FABRIC_PEER_EXT_TAG=$(FABRIC_PEER_EXT_TAG) \
-	--build-arg GO_VER=$(GO_VER) \
+	@$(DBUILD_CMD) \
+        -f ./images/fabric-peer/Dockerfile --no-cache \
+        -t $(DOCKER_OUTPUT_NS)/$(SIDETREE_FABRIC_IMAGE_NAME):$(SIDETREE_FABRIC_IMAGE_TAG) \
+	--build-arg FABRIC_PEER_UPSTREAM_IMAGE=$(FABRIC_PEER_EXT_IMAGE) \
+	--build-arg FABRIC_PEER_UPSTREAM_TAG=$(FABRIC_PEER_EXT_TAG) \
 	--build-arg ALPINE_VER=$(ALPINE_VER) \
-	--build-arg GO_TAGS=$(GO_TAGS) .
+	--build-arg GO_VER=$(GO_VER) \
+	--build-arg GO_LDFLAGS="$(GO_LDFLAGS)" \
+	--build-arg GO_TAGS="$(GO_TAGS)" .
 
 docker-thirdparty:
 	docker pull couchdb:2.3
