@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
-	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -210,52 +209,48 @@ func (d *DIDSideSteps) getUniqueSuffix() (string, error) {
 
 func getCreateRequest(doc string) ([]byte, error) {
 	return helper.NewCreateRequest(&helper.CreateRequestInfo{
-		OpaqueDocument:  doc,
-		RecoveryKey:     "recoveryKey",
-		NextRecoveryOTP: docutil.EncodeToString([]byte(recoveryOTP)),
-		NextUpdateOTP:   docutil.EncodeToString([]byte(updateOTP)),
-		MultihashCode:   sha2_256,
+		OpaqueDocument:          doc,
+		RecoveryKey:             "recoveryKey",
+		NextRecoveryRevealValue: []byte(recoveryOTP),
+		NextUpdateRevealValue:   []byte(updateOTP),
+		MultihashCode:           sha2_256,
 	})
 }
 
 func getRecoverRequest(doc, uniqueSuffix string) ([]byte, error) {
 	return helper.NewRecoverRequest(&helper.RecoverRequestInfo{
-		DidUniqueSuffix: uniqueSuffix,
-		OpaqueDocument:  doc,
-		RecoveryKey:     "HEX",
-		RecoveryOTP:     docutil.EncodeToString([]byte(recoveryOTP)),
-		NextRecoveryOTP: docutil.EncodeToString([]byte(recoveryOTP)),
-		NextUpdateOTP:   docutil.EncodeToString([]byte(updateOTP)),
-		MultihashCode:   sha2_256,
+		DidUniqueSuffix:         uniqueSuffix,
+		OpaqueDocument:          doc,
+		RecoveryKey:             "HEX",
+		RecoveryRevealValue:     []byte(recoveryOTP),
+		NextRecoveryRevealValue: []byte(recoveryOTP),
+		NextUpdateRevealValue:   []byte(updateOTP),
+		MultihashCode:           sha2_256,
 	})
 }
 
 func getRevokeRequest(did string) ([]byte, error) {
 	return helper.NewRevokeRequest(&helper.RevokeRequestInfo{
-		DidUniqueSuffix: did,
-		RecoveryOTP:     docutil.EncodeToString([]byte(recoveryOTP)),
+		DidUniqueSuffix:     did,
+		RecoveryRevealValue: []byte(recoveryOTP),
 	})
 }
 
 func getUpdateRequest(did, path, value string) ([]byte, error) {
 	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
-		DidUniqueSuffix: did,
-		UpdateOTP:       docutil.EncodeToString([]byte(updateOTP)),
-		Patch:           getUpdatePatch(path, value),
-		MultihashCode:   sha2_256,
+		DidUniqueSuffix:   did,
+		UpdateRevealValue: []byte(updateOTP),
+		Patch:             getUpdatePatch(path, value),
+		MultihashCode:     sha2_256,
 	})
 }
 
-func getUpdatePatch(path, value string) jsonpatch.Patch {
-	patchJSON := []byte(fmt.Sprintf(`[{"op": "replace", "path":  "%s", "value": "%s"}]`, path, value))
-	jsonPatch, err := jsonpatch.DecodePatch(patchJSON)
-	if err != nil {
-		panic(err)
-	}
+func getUpdatePatch(path, value string) string {
+	patchJSON := fmt.Sprintf(`[{"op": "replace", "path":  "%s", "value": "%s"}]`, path, value)
 
 	logger.Infof("JSON Patch: %s", patchJSON)
 
-	return jsonPatch
+	return patchJSON
 }
 
 func getOpaqueDocument(didDocumentPath string) string {

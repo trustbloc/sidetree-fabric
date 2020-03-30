@@ -11,11 +11,11 @@ import (
 	"errors"
 	"testing"
 
-	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
@@ -106,7 +106,7 @@ func TestDocumentValidator_IsValidPayload(t *testing.T) {
 		errExpected := errors.New("injected unmarshal op error")
 
 		restore := unmarshalUpdateOperation
-		unmarshalUpdateOperation = func([]byte) (s string, data *model.UpdateOperationData, err error) { return "", nil, errExpected }
+		unmarshalUpdateOperation = func([]byte) (s string, data *model.PatchDataModel, err error) { return "", nil, errExpected }
 		defer func() { unmarshalUpdateOperation = restore }()
 
 		req, err := getUpdateRequest(`[{"op": "add", "path": "/fileIndex/mappings/schema1.json", "value": "ew3e23w3"}]`)
@@ -165,45 +165,61 @@ func TestUnmarshalUpdateOperation(t *testing.T) {
 
 	t.Run("Invalid base64 encoding", func(t *testing.T) {
 		req := &model.UpdateRequest{
-			OperationData: `{"%sde3":"-+"}`,
+			PatchData: `{"%sde3":"-+"}`,
 		}
 
 		reqBytes, err := json.Marshal(req)
 		require.NoError(t, err)
 
 		suffix, op, err := unmarshalUpdateOperation(reqBytes)
-		require.EqualError(t, err, "invalid operation data")
+		require.EqualError(t, err, "invalid patch data")
 		require.Empty(t, suffix)
 		require.Nil(t, op)
 	})
 
-	t.Run("Invalid operation data", func(t *testing.T) {
+	t.Run("Invalid patch data", func(t *testing.T) {
 		encodedOp := docutil.EncodeToString([]byte("{"))
 
 		req := &model.UpdateRequest{
-			OperationData: encodedOp,
+			PatchData: encodedOp,
 		}
 
 		reqBytes, err := json.Marshal(req)
 		require.NoError(t, err)
 
-		suffix, op, err := unmarshalUpdateOperation(reqBytes)
-		require.EqualError(t, err, "invalid operation data")
+		suffix, patchData, err := unmarshalUpdateOperation(reqBytes)
+		require.EqualError(t, err, "invalid patch data")
 		require.Empty(t, suffix)
-		require.Nil(t, op)
+		require.Nil(t, patchData)
+	})
+}
+
+func TestValidatePatch(t *testing.T) {
+	t.Run("not ietf-json-patch", func(t *testing.T) {
+		p := patch.NewReplacePatch("doc")
+		err := validatePatch(p)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "patch action 'replace' not supported")
+	})
+	t.Run("missing patch value", func(t *testing.T) {
+		p := patch.NewJSONPatch("")
+		err := validatePatch(p)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "missing patches string value")
+	})
+	t.Run("invalid json patch", func(t *testing.T) {
+		p := patch.NewJSONPatch("invalid")
+		err := validatePatch(p)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid character 'i'")
 	})
 }
 
 func getUpdateRequest(patch string) ([]byte, error) {
-	jsonPatch, err := jsonpatch.DecodePatch([]byte(patch))
-	if err != nil {
-		return nil, err
-	}
-
 	return helper.NewUpdateRequest(
 		&helper.UpdateRequestInfo{
 			DidUniqueSuffix: "1234",
-			Patch:           jsonPatch,
+			Patch:           patch,
 			MultihashCode:   sha2_256,
 		})
 }
