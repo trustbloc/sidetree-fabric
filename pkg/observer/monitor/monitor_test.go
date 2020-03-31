@@ -79,7 +79,7 @@ func TestMonitor(t *testing.T) {
 	clients := newMockClients()
 	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 	clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-	require.NoError(t, clients.offLedger.Put(common.DocNs, docsMetaDataColName, peer1, metaBytes))
+	require.NoError(t, clients.offLedger.Put(common.DocNs, MetaDataColName, peer1, metaBytes))
 
 	clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 	clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
@@ -93,7 +93,7 @@ func TestMonitor(t *testing.T) {
 		time.Sleep(sleepTime)
 		m.Stop()
 
-		metaBytes, err := clients.offLedger.Get(common.DocNs, docsMetaDataColName, peer1)
+		metaBytes, err := clients.offLedger.Get(common.DocNs, MetaDataColName, peer1)
 		require.NoError(t, err)
 
 		meta := &MetaData{}
@@ -152,7 +152,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients := newMockClients()
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-		require.NoError(t, clients.offLedger.Put(common.DocNs, docsMetaDataColName, peer1, metaBytes))
+		require.NoError(t, clients.offLedger.Put(common.DocNs, MetaDataColName, peer1, metaBytes))
 		clients.dcas.GetReturns(nil, errors.New("injected DCAS error"))
 
 		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients)
@@ -189,7 +189,7 @@ func TestMonitor_Error(t *testing.T) {
 		bcInfo := &cb.BlockchainInfo{Height: 1002}
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-		clients.offLedger.WithGetErrorForKey(common.DocNs, docsMetaDataColName, peer1, errors.New("getLastBlockProcessed error"))
+		clients.offLedger.WithGetErrorForKey(common.DocNs, MetaDataColName, peer1, errors.New("getLastBlockProcessed error"))
 
 		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients)
 

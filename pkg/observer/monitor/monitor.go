@@ -25,7 +25,9 @@ import (
 var logger = flogging.MustGetLogger("sidetree_observer")
 
 const (
-	docsMetaDataColName = "meta_data"
+	// MetaDataColName is the name of the meta-data collection used by the Monitor
+	// to store peer-specific information
+	MetaDataColName = "meta_data"
 )
 
 // MetaData contains meta-data for the document store
@@ -238,7 +240,7 @@ func (m *Monitor) lastBlockProcessed() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	data, err := olClient.Get(common.DocNs, docsMetaDataColName, m.peerID)
+	data, err := olClient.Get(common.DocNs, MetaDataColName, m.peerID)
 	if err != nil {
 		return 0, errors.WithMessage(err, "error retrieving meta-data")
 	}
@@ -271,7 +273,7 @@ func (m *Monitor) setLastBlockProcessed(bNum uint64) error {
 		return err
 	}
 
-	err = olClient.Put(common.DocNs, docsMetaDataColName, m.peerID, bytes)
+	err = olClient.Put(common.DocNs, MetaDataColName, m.peerID, bytes)
 	if err != nil {
 		return errors.WithMessage(err, "error persisting meta-data")
 	}

@@ -9,13 +9,17 @@ package doc
 import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/common/flogging"
+
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
 )
+
+var logger = flogging.MustGetLogger("sidetree_chaincode")
 
 const (
 	ccVersion = "v1"
-
-	collection = "docs"
 
 	couchDB       = "couchdb"
 	docsCollIndex = `{"index": {"fields": ["id"]}, "ddoc": "indexIDDoc", "name": "indexID", "type": "json"}`
@@ -43,13 +47,23 @@ func (cc *DocumentCC) Version() string { return ccVersion }
 // Chaincode returns the DocumentCC chaincode
 func (cc *DocumentCC) Chaincode() shim.Chaincode { return cc }
 
-// GetDBArtifacts returns Couch DB indexes for the 'docs' collection
-func (cc *DocumentCC) GetDBArtifacts() map[string]*ccapi.DBArtifacts {
+// GetDBArtifacts returns Couch DB indexes for the collections in this chaincode
+// NOTE: All collections in this chaincode have the same indexes except for meta_data
+func (cc *DocumentCC) GetDBArtifacts(collNames []string) map[string]*ccapi.DBArtifacts {
+	collIndexes := make(map[string][]string)
+	for _, collName := range collNames {
+		if collName == monitor.MetaDataColName {
+			continue
+		}
+
+		collIndexes[collName] = []string{docsCollIndex}
+	}
+
+	logger.Debugf("Returning DB indexes for collections %s: %s", collNames, collIndexes)
+
 	return map[string]*ccapi.DBArtifacts{
 		couchDB: {
-			CollectionIndexes: map[string][]string{
-				collection: {docsCollIndex},
-			},
+			CollectionIndexes: collIndexes,
 		},
 	}
 }
