@@ -24,6 +24,8 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+	"github.com/trustbloc/sidetree-core-go/pkg/patch"
+	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
@@ -182,14 +184,20 @@ type Operation struct {
 	UniqueSuffix string
 	//The full ID of the document (including namespace)
 	ID string
+	//Operation patch data
+	PatchData *model.PatchDataModel
 }
 
 func getDefaultOperations(did string) []string {
 	id := namespace + docutil.NamespaceDelimiter + uniqueSuffix
 
 	return []string{
-		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "create"}),
-		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "update"}),
+		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "create", PatchData: &model.PatchDataModel{
+			Patches: []patch.Patch{},
+		}}),
+		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "update", PatchData: &model.PatchDataModel{
+			Patches: []patch.Patch{},
+		}}),
 	}
 }
 
