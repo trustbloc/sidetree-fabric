@@ -22,7 +22,7 @@ import (
 const (
 	documentCC        = "document_cc"
 	collection        = "docs"
-	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","operationBuffer","document","updateRevealValue","recoveryRevealValue","nextUpdateCommitmentHash","nextRecoveryCommitmentHash","hashAlgorithmInMultiHashCode","operationIndex","patch","signature","signingKeyID","transactionNumber","transactionTime","type","uniqueSuffix"]}`
+	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","operationBuffer","updateRevealValue","recoveryRevealValue","nextUpdateCommitmentHash","nextRecoveryCommitmentHash","hashAlgorithmInMultiHashCode","operationIndex","patchData","encodedPatchData","signedData","transactionNumber","transactionTime","type","uniqueSuffix"]}`
 )
 
 var logger = flogging.MustGetLogger("sidetree_context")
