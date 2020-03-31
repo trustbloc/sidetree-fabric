@@ -69,7 +69,7 @@ func (cc *SidetreeTxnCC) Version() string { return ccVersion }
 func (cc *SidetreeTxnCC) Chaincode() shim.Chaincode { return cc }
 
 // GetDBArtifacts returns Couch DB indexes for the 'docs' collection
-func (cc *SidetreeTxnCC) GetDBArtifacts() map[string]*ccapi.DBArtifacts { return nil }
+func (cc *SidetreeTxnCC) GetDBArtifacts([]string) map[string]*ccapi.DBArtifacts { return nil }
 
 // Init - nothing to do for now
 func (cc *SidetreeTxnCC) Init(stub shim.ChaincodeStubInterface) pb.Response {

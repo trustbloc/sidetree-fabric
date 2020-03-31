@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package filescc
+package file
 
 import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
@@ -17,36 +17,36 @@ const (
 	v1 = "v1"
 )
 
-// FilesCC is the chaincode that stores files in DCAS
-type FilesCC struct {
+// Chaincode is the chaincode that stores files in DCAS
+type Chaincode struct {
 	name string
 }
 
 // New returns a new example chaincode instance
-func New(name string) *FilesCC {
-	return &FilesCC{
+func New(name string) *Chaincode {
+	return &Chaincode{
 		name: name,
 	}
 }
 
 // Name returns the name of this chaincode
-func (cc *FilesCC) Name() string { return cc.name }
+func (cc *Chaincode) Name() string { return cc.name }
 
 // Version returns the version of the chaincode
-func (cc *FilesCC) Version() string { return v1 }
+func (cc *Chaincode) Version() string { return v1 }
 
 // Chaincode returns this chaincode
-func (cc *FilesCC) Chaincode() shim.Chaincode { return cc }
+func (cc *Chaincode) Chaincode() shim.Chaincode { return cc }
 
 // GetDBArtifacts returns Couch DB indexes (if applicable)
-func (cc *FilesCC) GetDBArtifacts() map[string]*ccapi.DBArtifacts { return nil }
+func (cc *Chaincode) GetDBArtifacts([]string) map[string]*ccapi.DBArtifacts { return nil }
 
 // Init is not used
-func (cc *FilesCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
+func (cc *Chaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
 // Invoke not implemented
-func (cc *FilesCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+func (cc *Chaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Error("Invoke not implemented")
 }

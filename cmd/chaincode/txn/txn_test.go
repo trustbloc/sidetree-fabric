@@ -20,6 +20,7 @@ import (
 
 const (
 	ccName = "sidetreetxncc"
+	coll1  = "coll1"
 )
 
 func TestNew(t *testing.T) {
@@ -28,7 +29,7 @@ func TestNew(t *testing.T) {
 	cc := New(ccName)
 	req.NotNil(cc)
 
-	req.Nil(cc.GetDBArtifacts())
+	req.Empty(cc.GetDBArtifacts([]string{coll1}))
 	req.Equal(ccName, cc.Name())
 	req.Equal(ccVersion, cc.Version())
 	req.Equal(cc, cc.Chaincode())

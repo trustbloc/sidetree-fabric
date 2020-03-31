@@ -15,7 +15,11 @@ import (
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/mocks"
 )
 
-const ccName = "document_cc"
+const (
+	ccName = "document_cc"
+	coll1  = "coll1"
+	coll2  = "coll2"
+)
 
 func TestNew(t *testing.T) {
 	req := require.New(t)
@@ -27,13 +31,13 @@ func TestNew(t *testing.T) {
 	req.Equal(ccVersion, cc.Version())
 	req.Equal(cc, cc.Chaincode())
 
-	dbArtifacts := cc.GetDBArtifacts()
+	dbArtifacts := cc.GetDBArtifacts([]string{coll1, coll2})
 	req.NotNil(dbArtifacts)
 
 	artifact, ok := dbArtifacts[couchDB]
 	req.True(ok)
 	req.Empty(artifact.Indexes)
-	req.Len(artifact.CollectionIndexes, 1)
+	req.Len(artifact.CollectionIndexes, 2)
 }
 
 func TestInvoke(t *testing.T) {
