@@ -19,6 +19,8 @@ import (
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
@@ -26,12 +28,13 @@ import (
 )
 
 const (
-	channel1      = "channel1"
-	peer1         = "peer1.org1.com"
-	txID1         = "tx1"
-	anchor1       = "anchor1"
-	monitorPeriod = 50 * time.Millisecond
-	sleepTime     = 200 * time.Millisecond
+	channel1       = "channel1"
+	peer1          = "peer1.org1.com"
+	txID1          = "tx1"
+	anchor1        = "anchor1"
+	monitorPeriod  = 50 * time.Millisecond
+	sleepTime      = 200 * time.Millisecond
+	metaDataCCName = "document"
 )
 
 func TestMonitor(t *testing.T) {
@@ -80,7 +83,8 @@ func TestMonitor(t *testing.T) {
 	clients := newMockClients()
 	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 	clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-	require.NoError(t, clients.offLedger.Put(common.DocNs, MetaDataColName, peer1, metaBytes))
+
+	require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
 
 	clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 	clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
@@ -90,13 +94,18 @@ func TestMonitor(t *testing.T) {
 	opStoreProvider := &stmocks.OperationStoreProvider{}
 
 	t.Run("Success", func(t *testing.T) {
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		cfg := config.Monitor{
+			Period:                monitorPeriod,
+			MetaDataChaincodeName: metaDataCCName,
+		}
+
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
 
-		metaBytes, err := clients.offLedger.Get(common.DocNs, MetaDataColName, peer1)
+		metaBytes, err := clients.offLedger.Get(cfg.MetaDataChaincodeName, MetaDataColName, peer1)
 		require.NoError(t, err)
 
 		meta := &MetaData{}
@@ -105,7 +114,12 @@ func TestMonitor(t *testing.T) {
 	})
 
 	t.Run("Disabled", func(t *testing.T) {
-		m := newMonitorWithMocks(t, channel1, 0, clients, opStoreProvider)
+		cfg := config.Monitor{
+			Period:                0,
+			MetaDataChaincodeName: metaDataCCName,
+		}
+
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -113,6 +127,11 @@ func TestMonitor(t *testing.T) {
 }
 
 func TestMonitor_Error(t *testing.T) {
+	cfg := config.Monitor{
+		Period:                monitorPeriod,
+		MetaDataChaincodeName: metaDataCCName,
+	}
+
 	b := peerextmocks.NewBlockBuilder(channel1, 1001)
 	tb1 := b.Transaction(txID1, pb.TxValidationCode_VALID)
 	tb1.ChaincodeAction(common.SidetreeNs).
@@ -127,7 +146,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients := newMockClients()
 		clients.blockchainProvider.ForChannelReturns(nil, errors.New("blockchain.ForChannel error"))
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -137,7 +156,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients := newMockClients()
 		clients.blockchain.GetBlockchainInfoReturns(nil, errors.New("blockchain.GetBlockchainInfo error"))
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -157,10 +176,10 @@ func TestMonitor_Error(t *testing.T) {
 		clients := newMockClients()
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-		require.NoError(t, clients.offLedger.Put(common.DocNs, MetaDataColName, peer1, metaBytes))
+		require.NoError(t, clients.offLedger.Put(cfg.MetaDataChaincodeName, MetaDataColName, peer1, metaBytes))
 		clients.dcas.GetReturns(nil, errors.New("injected DCAS error"))
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -170,7 +189,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients := newMockClients()
 		clients.offLedger.GetErr = errors.New("injected off-ledger error")
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -182,7 +201,7 @@ func TestMonitor_Error(t *testing.T) {
 		bcInfo := &cb.BlockchainInfo{Height: 1002}
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -194,9 +213,9 @@ func TestMonitor_Error(t *testing.T) {
 		bcInfo := &cb.BlockchainInfo{Height: 1002}
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-		clients.offLedger.WithGetErrorForKey(common.DocNs, MetaDataColName, peer1, errors.New("getLastBlockProcessed error"))
+		clients.offLedger.WithGetErrorForKey(metaDataCCName, MetaDataColName, peer1, errors.New("getLastBlockProcessed error"))
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -210,7 +229,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 		clients.dcas.GetReturnsOnCall(0, nil, errors.New("getAnchorFile error"))
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -224,7 +243,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 		clients.dcas.GetReturns([]byte("invalid anchor file"), nil)
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -243,7 +262,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 		clients.dcas.GetReturnsOnCall(1, nil, errors.New("get batch file error"))
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -262,7 +281,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -288,7 +307,7 @@ func TestMonitor_Error(t *testing.T) {
 
 		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -316,7 +335,7 @@ func TestMonitor_Error(t *testing.T) {
 
 		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -342,7 +361,7 @@ func TestMonitor_Error(t *testing.T) {
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
 
-		m := newMonitorWithMocks(t, channel1, monitorPeriod, clients, opStoreProvider)
+		m := newMonitorWithMocks(t, channel1, cfg, clients, opStoreProvider)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -378,9 +397,9 @@ func newMockClients() *mockClients {
 	return clients
 }
 
-func newMonitorWithMocks(t *testing.T, channelID string, period time.Duration, clients *mockClients, opStoreProvider ctxcommon.OperationStoreProvider) *Monitor {
+func newMonitorWithMocks(t *testing.T, channelID string, cfg config.Monitor, clients *mockClients, opStoreProvider ctxcommon.OperationStoreProvider) *Monitor {
 	m := New(
-		channelID, peer1, period,
+		channelID, peer1, cfg,
 		&ClientProviders{
 			OffLedger:  clients.offLedgerProvider,
 			DCAS:       clients.dcasProvider,

@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 )
 
 type SidetreeConfigService struct {

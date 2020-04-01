@@ -8,29 +8,10 @@ package config
 
 import (
 	"time"
-)
 
-const (
-	// GlobalMSPID is used as the consortium-wide MSP ID (i.e. non org-specific)
-	GlobalMSPID = "general"
+	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
-	// SidetreeAppVersion is the version of the Sidetree config application
-	SidetreeAppVersion = "1"
-
-	// ProtocolComponentName is the name of the Sidetree protocol config component
-	ProtocolComponentName = "protocol"
-
-	// SidetreePeerAppName is the name of the Sidetree config application
-	SidetreePeerAppName = "sidetree"
-
-	// SidetreePeerAppVersion is the version of the Sidetree config application
-	SidetreePeerAppVersion = "1"
-
-	// FileHandlerAppName is the name of the file handler config application
-	FileHandlerAppName = "file-handler"
-
-	// FileHandlerAppVersion is the version of the file handler config application
-	FileHandlerAppVersion = "1"
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 )
 
 // DocumentType specifies the type of the Sidetree document
@@ -52,7 +33,8 @@ type Namespace struct {
 
 // Monitor holds Sidetree monitor config
 type Monitor struct {
-	Period time.Duration
+	Period                time.Duration
+	MetaDataChaincodeName string
 }
 
 // SidetreePeer holds peer-specific Sidetree config
@@ -63,5 +45,15 @@ type SidetreePeer struct {
 
 // Sidetree holds general Sidetree configuration
 type Sidetree struct {
+	ChaincodeName      string
+	Collection         string
 	BatchWriterTimeout time.Duration
+}
+
+// SidetreeService is a service that loads Sidetree configuration
+type SidetreeService interface {
+	LoadProtocols(namespace string) (map[string]protocolApi.Protocol, error)
+	LoadSidetree(namespace string) (Sidetree, error)
+	LoadSidetreePeer(mspID, peerID string) (SidetreePeer, error)
+	LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error)
 }

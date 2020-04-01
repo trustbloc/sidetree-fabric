@@ -20,9 +20,10 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
+	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -111,7 +112,7 @@ func TestChannelManager(t *testing.T) {
 		BlockPublisher: extmocks.NewBlockPublisherProvider(),
 	}
 
-	stConfigService := &peermocks.SidetreeConfigService{}
+	stConfigService := &cfgmocks.SidetreeConfigService{}
 	stConfigService.LoadProtocolsReturns(protocolVersions, nil)
 	stConfigService.LoadFileHandlersReturns(fileHandlers, nil)
 
@@ -162,7 +163,7 @@ func TestChannelManager(t *testing.T) {
 	})
 
 	t.Run("Peer config not found", func(t *testing.T) {
-		stConfigService := &peermocks.SidetreeConfigService{}
+		stConfigService := &cfgmocks.SidetreeConfigService{}
 		stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, service.ErrConfigNotFound)
 
 		m := newChannelController(channel1, providers, stConfigService, ctrl)
@@ -177,5 +178,23 @@ func TestChannelManager(t *testing.T) {
 
 		time.Sleep(100 * time.Millisecond)
 		require.Len(t, ctrl.Invocations()[eventMethod], count)
+	})
+
+	t.Run("File handler config not found", func(t *testing.T) {
+		stConfigService := &cfgmocks.SidetreeConfigService{}
+		stConfigService.LoadFileHandlersReturns(nil, service.ErrConfigNotFound)
+
+		m := newChannelController(channel1, providers, stConfigService, ctrl)
+		require.NotNil(t, m)
+		defer m.Close()
+
+		count := len(ctrl.Invocations()[eventMethod])
+
+		m.handleUpdate(&ledgerconfig.KeyValue{
+			Key: ledgerconfig.NewPeerKey(msp1, peer1, peerconfig.FileHandlerAppName, peerconfig.FileHandlerAppVersion),
+		})
+
+		time.Sleep(100 * time.Millisecond)
+		require.Len(t, ctrl.Invocations()[eventMethod], count+1)
 	})
 }

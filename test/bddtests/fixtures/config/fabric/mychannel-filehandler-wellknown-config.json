@@ -1,7 +1,7 @@
 {
   "Description": "Consortium .wellknown files",
   "BasePath": "/.well-known/did-bloc",
-  "ChaincodeName": "files",
+  "ChaincodeName": "file",
   "Collection": "consortium",
   "IndexNamespace": "file:idx",
   "IndexDocID": ""

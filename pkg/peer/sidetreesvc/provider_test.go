@@ -17,9 +17,10 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
+	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -47,6 +48,8 @@ func TestProvider(t *testing.T) {
 	peerConfig.PeerIDReturns(peer1)
 
 	sidetreeCfg := config.Sidetree{
+		ChaincodeName:      "document",
+		Collection:         "docs",
 		BatchWriterTimeout: time.Second,
 	}
 
@@ -99,13 +102,13 @@ func TestProvider(t *testing.T) {
 		IndexNamespace: "file:idx",
 	}
 
-	sidetreeCfgService2 := &peermocks.SidetreeConfigService{}
+	sidetreeCfgService2 := &cfgmocks.SidetreeConfigService{}
 	sidetreeCfgService2.LoadSidetreeReturns(sidetreeCfg, nil)
 	sidetreeCfgService2.LoadSidetreePeerReturns(sidetreePeerCfg, nil)
 	sidetreeCfgService2.LoadProtocolsReturns(protocolVersions, nil)
 	sidetreeCfgService2.LoadFileHandlersReturns([]filehandler.Config{fileHandler1}, nil)
 
-	sidetreeCfgService1 := &peermocks.SidetreeConfigService{}
+	sidetreeCfgService1 := &cfgmocks.SidetreeConfigService{}
 
 	sidetreeCfgProvider := &peermocks.SidetreeConfigProvider{}
 	sidetreeCfgProvider.ForChannelReturnsOnCall(0, sidetreeCfgService1)

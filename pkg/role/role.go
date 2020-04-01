@@ -17,6 +17,9 @@ const (
 	// Observer indicates that this node observes batch writes to the ledger and persists document operations to the DB
 	Observer = "sidetree-observer"
 
+	// Monitor indicates that this node periodically monitors the blocks and checks that all document operations have been persisted to the DB
+	Monitor = "sidetree-monitor"
+
 	// Resolver indicates that this node exposes a REST API to resolve documents from the document operation store
 	Resolver = "sidetree-resolver"
 )
@@ -26,9 +29,9 @@ func IsObserver() bool {
 	return roles.HasRole(Observer)
 }
 
-// IsMonitor returns true if this node has the Resolver and the Committer roles
+// IsMonitor returns true if this node has the Monitor
 func IsMonitor() bool {
-	return IsResolver() && roles.IsCommitter()
+	return roles.HasRole(Monitor)
 }
 
 // IsResolver returns true if this node has the Resolver role

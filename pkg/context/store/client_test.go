@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
-	mocks2 "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
@@ -60,7 +60,7 @@ func TestWriteContent(t *testing.T) {
 	}
 
 	s := &mocks.Store{}
-	it := mocks2.NewResultsIterator().WithResults([]*queryresult.KV{vk1})
+	it := extmocks.NewResultsIterator().WithResults([]*queryresult.KV{vk1})
 	s.QueryReturns(it, nil)
 
 	c := NewClient(chID, namespace, s)
@@ -101,7 +101,7 @@ func TestClient_Put(t *testing.T) {
 
 func TestClient_Get(t *testing.T) {
 	s := &mocks.Store{}
-	s.QueryReturns(&mocks2.ResultsIterator{}, nil)
+	s.QueryReturns(&extmocks.ResultsIterator{}, nil)
 
 	c := NewClient(chID, namespace, s)
 

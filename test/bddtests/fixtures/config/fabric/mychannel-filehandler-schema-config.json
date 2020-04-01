@@ -1,7 +1,7 @@
 {
   "Description": "For verifiable credential schemas",
   "BasePath": "/schema",
-  "ChaincodeName": "files",
+  "ChaincodeName": "file",
   "Collection": "consortium",
   "IndexNamespace": "file:idx",
   "IndexDocID": ""

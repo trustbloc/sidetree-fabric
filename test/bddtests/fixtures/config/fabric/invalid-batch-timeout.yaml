@@ -5,3 +5,5 @@
 #
 
 batchWriterTimeout: 0s
+chaincodeName: document
+collection: diddoc

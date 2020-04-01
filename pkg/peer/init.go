@@ -30,7 +30,7 @@ func Initialize() {
 	resource.Register(operationqueue.NewProvider)
 
 	// Register chaincode
-	ucc.Register(func() ccapi.UserCC { return doc.New("document_cc") })
+	ucc.Register(func() ccapi.UserCC { return doc.New("document") })
 	ucc.Register(func() ccapi.UserCC { return txn.New("sidetreetxn_cc") })
-	ucc.Register(func() ccapi.UserCC { return file.New("files") })
+	ucc.Register(func() ccapi.UserCC { return file.New("file") })
 }

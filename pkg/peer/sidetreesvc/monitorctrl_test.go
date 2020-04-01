@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -40,8 +40,7 @@ func TestMonitorController(t *testing.T) {
 
 	t.Run("Monitor is started", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})
-		rolesValue[extroles.CommitterRole] = struct{}{}
-		rolesValue[role.Resolver] = struct{}{}
+		rolesValue[role.Monitor] = struct{}{}
 		extroles.SetRoles(rolesValue)
 		defer func() {
 			extroles.SetRoles(nil)

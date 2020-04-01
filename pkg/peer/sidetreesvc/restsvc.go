@@ -20,9 +20,9 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 

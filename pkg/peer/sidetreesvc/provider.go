@@ -18,9 +18,9 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")

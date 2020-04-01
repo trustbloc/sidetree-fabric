@@ -10,22 +10,25 @@ import (
 	"github.com/bluele/gcache"
 
 	commonledger "github.com/hyperledger/fabric/common/ledger"
-
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 )
 
 // Provider manages an operation store client for each namespace
 type Provider struct {
 	channelID    string
+	cfgService   config.SidetreeService
 	dcasProvider common.DCASClientProvider
 	cache        gcache.Cache
 }
 
 // NewProvider returns a new operation store client provider
-func NewProvider(channelID string, dcasProvider common.DCASClientProvider) *Provider {
+func NewProvider(channelID string, cfgServiceProvider config.SidetreeService, dcasProvider common.DCASClientProvider) *Provider {
 	p := &Provider{
 		channelID:    channelID,
+		cfgService:   cfgServiceProvider,
 		dcasProvider: dcasProvider,
 	}
 
@@ -47,6 +50,11 @@ func (p *Provider) ForNamespace(namespace string) (common.OperationStore, error)
 }
 
 func (p *Provider) createClient(namespace string) (*Client, error) {
+	cfg, err := p.cfgService.LoadSidetree(namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	dcasClient, err := p.dcasProvider.ForChannel(p.channelID)
 	if err != nil {
 		return nil, err
@@ -54,25 +62,29 @@ func (p *Provider) createClient(namespace string) (*Client, error) {
 
 	return NewClient(
 		p.channelID, namespace,
-		newStore(dcasClient),
+		newStore(dcasClient, cfg.ChaincodeName, cfg.Collection),
 	), nil
 }
 
 type dataStore struct {
-	dcasClient dcasclient.DCAS
+	dcasClient    dcasclient.DCAS
+	chaincodeName string
+	collection    string
 }
 
-func newStore(dcasClient dcasclient.DCAS) *dataStore {
+func newStore(dcasClient dcasclient.DCAS, chaincodeName, collection string) *dataStore {
 	return &dataStore{
-		dcasClient: dcasClient,
+		chaincodeName: chaincodeName,
+		collection:    collection,
+		dcasClient:    dcasClient,
 	}
 }
 
 func (qp *dataStore) Query(query string) (commonledger.ResultsIterator, error) {
-	return qp.dcasClient.Query(documentCC, collection, query)
+	return qp.dcasClient.Query(qp.chaincodeName, qp.collection, query)
 }
 
 func (qp *dataStore) Put(data []byte) error {
-	_, err := qp.dcasClient.Put(documentCC, collection, data)
+	_, err := qp.dcasClient.Put(qp.chaincodeName, qp.collection, data)
 	return err
 }

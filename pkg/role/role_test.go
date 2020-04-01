@@ -13,6 +13,15 @@ import (
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 )
 
+func TestIsResolver(t *testing.T) {
+	require.False(t, IsResolver())
+
+	restore := setRoles(Resolver)
+	defer restore()
+
+	require.True(t, IsResolver())
+}
+
 func TestIsBatchWriter(t *testing.T) {
 	require.False(t, IsBatchWriter())
 
@@ -25,7 +34,7 @@ func TestIsBatchWriter(t *testing.T) {
 func TestIsMonitor(t *testing.T) {
 	require.False(t, IsMonitor())
 
-	restore := setRoles(extroles.CommitterRole, Resolver)
+	restore := setRoles(Monitor)
 	defer restore()
 
 	require.True(t, IsMonitor())
