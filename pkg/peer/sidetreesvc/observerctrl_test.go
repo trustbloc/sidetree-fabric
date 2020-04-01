@@ -13,16 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
 func TestObserverController(t *testing.T) {
-	bp := extmocks.NewBlockPublisherProvider()
-
-	providers := &observer.Providers{
-		BlockPublisher: bp,
-	}
+	bp := extmocks.NewBlockPublisher()
+	n := notifier.New(bp)
 
 	t.Run("Observer role", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})
@@ -32,7 +31,7 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		o := newObserverController(channel1, providers)
+		o := newObserverController(channel1, &mocks.DCASClientProvider{}, &mocks.OperationStoreProvider{}, n)
 		require.NotNil(t, o)
 
 		require.NoError(t, o.Start())
@@ -47,7 +46,7 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		o := newObserverController(channel1, providers)
+		o := newObserverController(channel1, &mocks.DCASClientProvider{}, &mocks.OperationStoreProvider{}, n)
 		require.NotNil(t, o)
 
 		require.NoError(t, o.Start())

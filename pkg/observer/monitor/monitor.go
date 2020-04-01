@@ -14,10 +14,13 @@ import (
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
+
 	olclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
+	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
 )
@@ -37,10 +40,9 @@ type MetaData struct {
 
 // ClientProviders contains the providers for off-ledger, DCAS, and blockchain clients
 type ClientProviders struct {
-	OffLedger       common.OffLedgerClientProvider
-	DCAS            common.DCASClientProvider
-	Blockchain      common.BlockchainClientProvider
-	OpStoreProvider common.OperationStoreClientProvider
+	OffLedger  common.OffLedgerClientProvider
+	DCAS       common.DCASClientProvider
+	Blockchain common.BlockchainClientProvider
 }
 
 // Monitor maintains multiple document monitors - one for each channel. A document monitor ensures that the peer
@@ -58,7 +60,7 @@ type Monitor struct {
 }
 
 // New returns a new document monitor
-func New(channelID, localPeerID string, period time.Duration, clientProviders *ClientProviders) *Monitor {
+func New(channelID, localPeerID string, period time.Duration, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider) *Monitor {
 	m := &Monitor{
 		channelID:       channelID,
 		peerID:          localPeerID,
@@ -67,8 +69,8 @@ func New(channelID, localPeerID string, period time.Duration, clientProviders *C
 		txnProcessor: observer.NewTxnProcessor(
 			&observer.Providers{
 				DCASClient:       NewSidetreeDCASReader(channelID, clientProviders.DCAS),
-				OpStore:          NewOperationStore(channelID, clientProviders.DCAS),
-				OpFilterProvider: operationfilter.NewProvider(channelID, clientProviders.OpStoreProvider),
+				OpStoreProvider:  NewOperationStoreProvider(channelID, opStoreProvider),
+				OpFilterProvider: operationfilter.NewProvider(channelID, opStoreProvider),
 			},
 		),
 		done: make(chan struct{}, 1),

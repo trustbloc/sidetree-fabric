@@ -7,7 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 package sidetreesvc
 
 import (
+	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -16,11 +20,18 @@ type observerController struct {
 	observer  *observer.Observer
 }
 
-func newObserverController(channelID string, providers *observer.Providers) *observerController {
+func newObserverController(channelID string, dcasProvider common.DCASClientProvider, opStoreProvider common.OperationStoreProvider, notifier sidetreeobserver.Ledger) *observerController {
 	var o *observer.Observer
 
 	if role.IsObserver() {
-		o = observer.New(channelID, providers)
+		o = observer.New(channelID,
+			&observer.Providers{
+				DCAS:           dcasProvider,
+				OperationStore: opStoreProvider,
+				Ledger:         notifier,
+				Filter:         operationfilter.NewProvider(channelID, opStoreProvider),
+			},
+		)
 	}
 
 	return &observerController{
