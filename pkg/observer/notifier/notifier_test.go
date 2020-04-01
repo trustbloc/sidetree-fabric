@@ -14,6 +14,7 @@ import (
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/stretchr/testify/require"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
@@ -25,11 +26,9 @@ const (
 
 func TestRegisterForAnchorFileAddress(t *testing.T) {
 	p := &mockBlockPublisher{}
-	notifier := New(p)
 
 	t.Run("test key in kvrwset is deleted", func(t *testing.T) {
-		// register to receive sidetree txn value
-		sideTreeTxnCh := notifier.RegisterForSidetreeTxn()
+		sideTreeTxnCh := New(p).RegisterForSidetreeTxn()
 		done := make(chan []sidetreeobserver.SidetreeTxn, 1)
 		go func() {
 			for {
@@ -38,6 +37,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 					done <- sideTreeTxn
 				case <-time.After(1 * time.Second):
 					done <- []sidetreeobserver.SidetreeTxn{}
+					return
 				}
 			}
 		}()
@@ -47,8 +47,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 	})
 
 	t.Run("test namespace not equal to sideTreeTxnCCName", func(t *testing.T) {
-		// register to receive sidetree txn value
-		sideTreeTxnCh := notifier.RegisterForSidetreeTxn()
+		sideTreeTxnCh := New(p).RegisterForSidetreeTxn()
 		done := make(chan []sidetreeobserver.SidetreeTxn, 1)
 		go func() {
 			for {
@@ -57,6 +56,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 					done <- sideTreeTxn
 				case <-time.After(1 * time.Second):
 					done <- []sidetreeobserver.SidetreeTxn{}
+					return
 				}
 			}
 		}()
@@ -66,8 +66,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 	})
 
 	t.Run("test success", func(t *testing.T) {
-		// register to receive sidetree txn value
-		sideTreeTxnCh := notifier.RegisterForSidetreeTxn()
+		sideTreeTxnCh := New(p).RegisterForSidetreeTxn()
 		done := make(chan []sidetreeobserver.SidetreeTxn, 1)
 		go func() {
 			for {
@@ -76,6 +75,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 					done <- sideTreeTxn
 				case <-time.After(1 * time.Second):
 					done <- []sidetreeobserver.SidetreeTxn{}
+					return
 				}
 			}
 		}()
@@ -83,7 +83,6 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 		result := <-done
 		require.Equal(t, result[0].AnchorAddress, v1)
 	})
-
 }
 
 type mockBlockPublisher struct {

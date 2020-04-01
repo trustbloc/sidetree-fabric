@@ -8,8 +8,12 @@ package config
 
 import (
 	"github.com/pkg/errors"
+
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+
+	sidetreecfg "github.com/trustbloc/sidetree-fabric/pkg/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
 )
 
 const (
@@ -48,13 +52,25 @@ func (v *sidetreeValidator) validateConfig(kv *config.KeyValue) error {
 		return errors.Errorf("unsupported application version [%s] for %s", kv.AppVersion, kv.Key)
 	}
 
-	var sidetreeCfg Sidetree
+	var sidetreeCfg sidetreecfg.Sidetree
 	if err := unmarshal(kv.Value, &sidetreeCfg); err != nil {
 		return errors.WithMessagef(err, "invalid config %s", kv.Key)
 	}
 
 	if sidetreeCfg.BatchWriterTimeout == 0 {
 		return errors.Errorf("field 'BatchWriterTimeout' must contain a value greater than 0 for %s", kv.Key)
+	}
+
+	if sidetreeCfg.ChaincodeName == "" {
+		return errors.Errorf("field 'ChaincodeName' is required for %s", kv.Key)
+	}
+
+	if sidetreeCfg.Collection == "" {
+		return errors.Errorf("field 'Collection' is required for %s", kv.Key)
+	}
+
+	if sidetreeCfg.Collection == monitor.MetaDataColName {
+		return errors.Errorf("field 'Collection' must not use reserved name [%s] for %s", sidetreeCfg.Collection, kv.Key)
 	}
 
 	return nil

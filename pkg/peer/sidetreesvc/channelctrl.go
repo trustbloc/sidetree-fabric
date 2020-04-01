@@ -10,17 +10,19 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -146,29 +148,25 @@ func (c *channelController) load() error {
 
 	logger.Debugf("[%s] Updating Sidetree service channelController ...", c.channelID)
 
-	storeProvider := store.NewProvider(c.channelID, c.DCASProvider)
+	storeProvider := store.NewProvider(c.channelID, c.sidetreeCfgService, c.DCASProvider)
 
-	modifiedCtx, err := c.loadContexts(cfg.Namespaces, storeProvider)
-	if err != nil {
+	if err := c.loadContexts(cfg.Namespaces, storeProvider); err != nil {
 		return err
 	}
 
-	modifiedHandlers, err := c.loadFileHandlers(fileHandlerCfg)
-	if err != nil {
+	if err := c.loadFileHandlers(fileHandlerCfg); err != nil {
 		return err
 	}
 
-	if err := c.startObserver(storeProvider); err != nil {
+	if err := c.restartObserver(storeProvider); err != nil {
 		return err
 	}
 
-	if err := c.startMonitor(cfg.Monitor, storeProvider); err != nil {
+	if err := c.restartMonitor(cfg.Monitor, storeProvider); err != nil {
 		return err
 	}
 
-	if modifiedCtx || modifiedHandlers {
-		c.restServiceController.RestartRESTService()
-	}
+	c.restServiceController.RestartRESTService()
 
 	logger.Debugf("[%s] Successfully started Sidetree channelController.", c.channelID)
 
@@ -180,10 +178,10 @@ type contextPair struct {
 	oldCtx *context
 }
 
-func (c *channelController) loadContexts(namespaces []config.Namespace, storeProvider ctxcommon.OperationStoreProvider) (modified bool, err error) {
+func (c *channelController) loadContexts(namespaces []config.Namespace, storeProvider ctxcommon.OperationStoreProvider) error {
 	loadedContexts, err := c.loadNewContexts(namespaces, storeProvider)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	var newContexts []*context
@@ -207,13 +205,13 @@ func (c *channelController) loadContexts(namespaces []config.Namespace, storePro
 
 	for _, ctx := range newContexts {
 		if err := ctx.Start(); err != nil {
-			return false, err
+			return err
 		}
 
 		c.contexts[ctx.Namespace()] = ctx
 	}
 
-	return len(newContexts) > 0 || len(oldContexts) > 0, nil
+	return nil
 }
 
 func (c *channelController) loadNewContexts(namespaces []config.Namespace, storeProvider ctxcommon.OperationStoreProvider) ([]*context, error) {
@@ -247,10 +245,9 @@ func (c *channelController) loadFileHandlerConfig() ([]filehandler.Config, error
 	return nil, err
 }
 
-func (c *channelController) startObserver(storeProvider ctxcommon.OperationStoreProvider) error {
+func (c *channelController) restartObserver(storeProvider ctxcommon.OperationStoreProvider) error {
 	if c.observer != nil {
-		// Already started
-		return nil
+		c.observer.Stop()
 	}
 
 	c.observer = newObserverController(c.channelID, c.DCASProvider, storeProvider, c.notifier)
@@ -258,10 +255,9 @@ func (c *channelController) startObserver(storeProvider ctxcommon.OperationStore
 	return c.observer.Start()
 }
 
-func (c *channelController) startMonitor(cfg config.Monitor, storeProvider ctxcommon.OperationStoreProvider) error {
+func (c *channelController) restartMonitor(cfg config.Monitor, storeProvider ctxcommon.OperationStoreProvider) error {
 	if c.monitor != nil {
-		// Already started
-		return nil
+		c.monitor.Stop()
 	}
 
 	c.monitor = newMonitorController(c.channelID, c.PeerConfig, cfg, c.MonitorProviders, storeProvider)
@@ -319,26 +315,24 @@ func (c *channelController) isMonitoringNamespace(namespace string) bool {
 
 func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
 	if kv.MspID == c.PeerConfig.MSPID() && kv.PeerID == c.PeerConfig.PeerID() &&
-		(kv.AppName == config.SidetreePeerAppName || kv.AppName == config.FileHandlerAppName) {
+		(kv.AppName == peerconfig.SidetreePeerAppName || kv.AppName == peerconfig.FileHandlerAppName) {
 		return true
 	}
 
-	if kv.MspID == config.GlobalMSPID && c.isMonitoringNamespace(kv.AppName) {
+	if kv.MspID == peerconfig.GlobalMSPID && c.isMonitoringNamespace(kv.AppName) {
 		return true
 	}
 
 	return false
 }
 
-func (c *channelController) loadFileHandlers(handlerCfg []filehandler.Config) (modified bool, err error) {
-	numPrevious := len(c.fileHandlers)
-
+func (c *channelController) loadFileHandlers(handlerCfg []filehandler.Config) error {
 	c.fileHandlers = make(map[string]*fileHandlers)
 
 	for _, cfg := range handlerCfg {
 		h, err := c.loadFileHandler(cfg)
 		if err != nil {
-			return false, err
+			return err
 		}
 
 		if h != nil {
@@ -346,7 +340,7 @@ func (c *channelController) loadFileHandlers(handlerCfg []filehandler.Config) (m
 		}
 	}
 
-	return len(c.fileHandlers) > 0 || numPrevious > 0, nil
+	return nil
 }
 
 func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandlers, error) {

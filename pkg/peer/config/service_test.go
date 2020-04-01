@@ -13,7 +13,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 	ledgercfg "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config/mocks"
+
+	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/peer/config/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
 
 //go:generate counterfeiter -o ./mocks/configserviceprovider.gen.go --fake-name ConfigServiceProvider . configServiceProvider
@@ -43,7 +45,7 @@ func TestNewSidetreeProvider(t *testing.T) {
 	configProvider := &mocks.ConfigServiceProvider{}
 	configProvider.ForChannelReturns(configService)
 
-	validatorRegistry := &mocks.ValidatorRegistry{}
+	validatorRegistry := &cfgmocks.ValidatorRegistry{}
 
 	p := NewSidetreeProvider(configProvider, validatorRegistry)
 	require.NotNil(t, p)

@@ -11,9 +11,9 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 )
 
 type batchWriter interface {

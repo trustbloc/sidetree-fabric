@@ -13,6 +13,7 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
@@ -24,30 +25,37 @@ type blockPublisher interface {
 	AddWriteHandler(handler gossipapi.WriteHandler)
 }
 
-// Notifier holds the gossip adapter and channel id
+// Notifier receives anchor file 'write' events and sends them to a Go channel.
 type Notifier struct {
-	publisher blockPublisher
+	publisher             blockPublisher
+	anchorFileAddressChan chan []sidetreeobserver.SidetreeTxn
 }
 
 // New return new instance of Notifier
 func New(publisher blockPublisher) *Notifier {
-	return &Notifier{publisher: publisher}
+	n := &Notifier{
+		publisher:             publisher,
+		anchorFileAddressChan: make(chan []sidetreeobserver.SidetreeTxn, 100),
+	}
+
+	n.publisher.AddWriteHandler(n.handleWrite)
+
+	return n
 }
 
 // RegisterForSidetreeTxn register to get AnchorFileAddress value from writeset in the block committed by sidetreetxn_cc
 func (n *Notifier) RegisterForSidetreeTxn() <-chan []sidetreeobserver.SidetreeTxn {
-	anchorFileAddressChan := make(chan []sidetreeobserver.SidetreeTxn, 100)
-	n.publisher.AddWriteHandler(func(txMetadata gossipapi.TxMetadata, namespace string, kvWrite *kvrwset.KVWrite) error {
-		if namespace != common.SidetreeNs {
-			logger.Debugf("write NameSpace: %s not equal %s will skip this kvrwset", namespace, common.SidetreeNs)
-			return nil
-		}
-		if !kvWrite.IsDelete && strings.HasPrefix(kvWrite.Key, common.AnchorAddrPrefix) {
-			logger.Debugf("found anchor address key[%s], value [%s]", kvWrite.Key, string(kvWrite.Value))
-			anchorFileAddressChan <- []sidetreeobserver.SidetreeTxn{{TransactionTime: txMetadata.BlockNum, TransactionNumber: txMetadata.TxNum, AnchorAddress: string(kvWrite.Value)}}
-		}
-		return nil
-	})
+	return n.anchorFileAddressChan
+}
 
-	return anchorFileAddressChan
+func (n *Notifier) handleWrite(txMetadata gossipapi.TxMetadata, namespace string, kvWrite *kvrwset.KVWrite) error {
+	if namespace != common.SidetreeNs {
+		logger.Infof("write NameSpace: %s not equal %s will skip this kvrwset", namespace, common.SidetreeNs)
+		return nil
+	}
+	if !kvWrite.IsDelete && strings.HasPrefix(kvWrite.Key, common.AnchorAddrPrefix) {
+		logger.Infof("found anchor address key[%s], value [%s]", kvWrite.Key, string(kvWrite.Value))
+		n.anchorFileAddressChan <- []sidetreeobserver.SidetreeTxn{{TransactionTime: txMetadata.BlockNum, TransactionNumber: txMetadata.TxNum, AnchorAddress: string(kvWrite.Value)}}
+	}
+	return nil
 }

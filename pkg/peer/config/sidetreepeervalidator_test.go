@@ -18,7 +18,8 @@ const (
 )
 
 const (
-	org1Peer1Cfg                = `{"Monitor":{"Period":"3s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"}]}`
+	org1Peer1Cfg                = `{"Monitor":{"MetaDataChaincodeName":"document","Period":"3s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"}]}`
+	org1Peer1CfgNoMetaDataCC    = `{"Monitor":{"Period":"3s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"}]}`
 	org1Peer1NoNamespaceCfg     = `{"Namespaces":[{"BasePath":"/document"}]}`
 	org1Peer1NoBasePathCfg      = `{"Namespaces":[{"Namespace":"did:sidetree"}]}`
 	org1Peer1InvalidBasePathCfg = `{"Namespaces":[{"Namespace":"did:sidetree","BasePath":"document"}]}`
@@ -40,6 +41,12 @@ func TestSidetreePeerValidator_Validate(t *testing.T) {
 
 	t.Run("Config with apps -> success", func(t *testing.T) {
 		require.NoError(t, v.Validate(config.NewKeyValue(key, config.NewValue(txID, org1Peer1Cfg, config.FormatJSON))))
+	})
+
+	t.Run("No MetaDataChaincodeName -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, org1Peer1CfgNoMetaDataCC, config.FormatJSON)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'MetaDataChaincodeName' is required")
 	})
 
 	t.Run("No peer ID -> error", func(t *testing.T) {

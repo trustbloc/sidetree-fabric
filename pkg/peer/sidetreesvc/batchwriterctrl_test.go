@@ -13,18 +13,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
-	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
-
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
+	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
 //go:generate counterfeiter -o ../mocks/batchcontext.gen.go --fake-name BatchContext github.com/trustbloc/sidetree-core-go/pkg/batch.Context
 //go:generate counterfeiter -o ../mocks/protocolclient.gen.go --fake-name ProtocolClient github.com/trustbloc/sidetree-core-go/pkg/api/protocol.Client
-//go:generate counterfeiter -o ../mocks/sidetreeconfigservice.gen.go --fake-name SidetreeConfigService ../config SidetreeService
+//go:generate counterfeiter -o ../../config/mocks/sidetreeconfigservice.gen.go --fake-name SidetreeConfigService ../../config SidetreeService
 
 const (
 	namespace = "did:sidetree"
@@ -41,14 +41,14 @@ func TestBatchWriter(t *testing.T) {
 		extroles.SetRoles(nil)
 	}()
 
-	ctx := &mocks.BatchContext{}
+	ctx := &peermocks.BatchContext{}
 	ctx.OperationQueueReturns(&opqueue.MemQueue{})
 
-	pc := &mocks.ProtocolClient{}
+	pc := &peermocks.ProtocolClient{}
 	ctx.ProtocolReturns(pc)
 
 	t.Run("Success", func(t *testing.T) {
-		cfgService := &mocks.SidetreeConfigService{}
+		cfgService := &cfgmocks.SidetreeConfigService{}
 		cfgService.LoadSidetreeReturns(config.Sidetree{BatchWriterTimeout: time.Second}, nil)
 
 		bw, err := newBatchWriter(channel1, namespace, ctx, cfgService)
@@ -62,7 +62,7 @@ func TestBatchWriter(t *testing.T) {
 
 	t.Run("sidetreeService error", func(t *testing.T) {
 		errExpected := errors.New("injected sidetreeCfgService service error")
-		cfgService := &mocks.SidetreeConfigService{}
+		cfgService := &cfgmocks.SidetreeConfigService{}
 		cfgService.LoadSidetreeReturns(config.Sidetree{}, errExpected)
 
 		bw, err := newBatchWriter(channel1, namespace, ctx, cfgService)

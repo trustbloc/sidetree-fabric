@@ -8,7 +8,10 @@ package config
 
 import (
 	"github.com/pkg/errors"
+
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
+
+	sidetreecfg "github.com/trustbloc/sidetree-fabric/pkg/config"
 )
 
 // sidetreePeerValidator validates the SidetreePeer configuration
@@ -34,13 +37,13 @@ func (v *sidetreePeerValidator) Validate(kv *config.KeyValue) error {
 		return errors.Errorf("unsupported application version [%s] for %s", kv.AppVersion, kv.Key)
 	}
 
-	var sidetreeCfg SidetreePeer
+	var sidetreeCfg sidetreecfg.SidetreePeer
 	if err := unmarshal(kv.Value, &sidetreeCfg); err != nil {
 		return errors.WithMessagef(err, "invalid config %s", kv.Key)
 	}
 
-	if sidetreeCfg.Monitor.Period == 0 {
-		logger.Infof("The Sidetree monitor period is set to 0 and therefore will be disabled for peer [%s].", kv.PeerID)
+	if err := v.validateMonitor(kv, sidetreeCfg.Monitor); err != nil {
+		return err
 	}
 
 	for _, ns := range sidetreeCfg.Namespaces {
@@ -52,7 +55,7 @@ func (v *sidetreePeerValidator) Validate(kv *config.KeyValue) error {
 	return nil
 }
 
-func (v *sidetreePeerValidator) validateNamespace(kv *config.KeyValue, ns Namespace) error {
+func (v *sidetreePeerValidator) validateNamespace(kv *config.KeyValue, ns sidetreecfg.Namespace) error {
 	if ns.Namespace == "" {
 		return errors.Errorf("field 'Namespace' is required for %s", kv.Key)
 	}
@@ -63,6 +66,19 @@ func (v *sidetreePeerValidator) validateNamespace(kv *config.KeyValue, ns Namesp
 
 	if ns.BasePath[0:1] != "/" {
 		return errors.Errorf("field 'BasePath' must begin with '/' for %s", kv.Key)
+	}
+
+	return nil
+}
+
+func (v *sidetreePeerValidator) validateMonitor(kv *config.KeyValue, cfg sidetreecfg.Monitor) error {
+	if cfg.Period == 0 {
+		logger.Infof("The Sidetree monitor period is set to 0 and therefore will be disabled for peer [%s].", kv.PeerID)
+		return nil
+	}
+
+	if cfg.MetaDataChaincodeName == "" {
+		return errors.Errorf("field 'MetaDataChaincodeName' is required for %s", kv.Key)
 	}
 
 	return nil

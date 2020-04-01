@@ -14,9 +14,9 @@ import (
 	"github.com/spf13/viper"
 
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
-
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 )
 
@@ -35,14 +35,6 @@ type SidetreeProvider struct {
 	configProvider configServiceProvider
 }
 
-// SidetreeService is a service that loads Sidetree configuration
-type SidetreeService interface {
-	LoadProtocols(namespace string) (map[string]protocolApi.Protocol, error)
-	LoadSidetree(namespace string) (Sidetree, error)
-	LoadSidetreePeer(mspID, peerID string) (SidetreePeer, error)
-	LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error)
-}
-
 // NewSidetreeProvider returns a new SidetreeProvider instance
 func NewSidetreeProvider(configProvider configServiceProvider, registry validatorRegistry) *SidetreeProvider {
 	logger.Info("Creating Sidetree config provider")
@@ -57,7 +49,7 @@ func NewSidetreeProvider(configProvider configServiceProvider, registry validato
 }
 
 // ForChannel returns the service for the given channel
-func (p *SidetreeProvider) ForChannel(channelID string) SidetreeService {
+func (p *SidetreeProvider) ForChannel(channelID string) config.SidetreeService {
 	return &sidetreeService{service: p.configProvider.ForChannel(channelID)}
 }
 
@@ -66,28 +58,28 @@ type sidetreeService struct {
 }
 
 // LoadSidetree loads the Sidetree configuration for the given namespace
-func (c *sidetreeService) LoadSidetree(namespace string) (Sidetree, error) {
+func (c *sidetreeService) LoadSidetree(namespace string) (config.Sidetree, error) {
 	key := ledgerconfig.NewAppKey(GlobalMSPID, namespace, SidetreeAppVersion)
 
-	var sidetreeConfig Sidetree
+	var sidetreeConfig config.Sidetree
 	if err := c.load(key, &sidetreeConfig); err != nil {
-		return Sidetree{}, errors.WithMessagef(err, "unable to load Sidetree config key %s", key)
+		return config.Sidetree{}, errors.WithMessagef(err, "unable to load Sidetree config key %s", key)
 	}
 
 	if sidetreeConfig.BatchWriterTimeout == 0 {
-		return Sidetree{}, errors.New("batchWriterTimeout must be greater than 0")
+		return config.Sidetree{}, errors.New("batchWriterTimeout must be greater than 0")
 	}
 
 	return sidetreeConfig, nil
 }
 
 // LoadSidetreePeer loads the peer-specific Sidetree configuration
-func (c *sidetreeService) LoadSidetreePeer(mspID, peerID string) (SidetreePeer, error) {
+func (c *sidetreeService) LoadSidetreePeer(mspID, peerID string) (config.SidetreePeer, error) {
 	key := ledgerconfig.NewPeerKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion)
 
-	var sidetreeConfig SidetreePeer
+	var sidetreeConfig config.SidetreePeer
 	if err := c.load(key, &sidetreeConfig); err != nil {
-		return SidetreePeer{}, errors.WithMessagef(err, "unable to load Sidetree peer config key %s", key)
+		return config.SidetreePeer{}, errors.WithMessagef(err, "unable to load Sidetree peer config key %s", key)
 	}
 
 	return sidetreeConfig, nil

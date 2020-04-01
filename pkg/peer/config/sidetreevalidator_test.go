@@ -18,7 +18,16 @@ const (
 	protocolInvalidAlgoCfg            = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":2777,"maxOperationByteSize":2000,"maxOperationsPerBatch":10}`
 	protocolInvalidMaxOperPerBatchCfg = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":2000}`
 	protocolInvalidMaxOperByteSizeCfg = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationsPerBatch":10}`
-	appCfg                            = `batchWriterTimeout: 1s`
+	appCfg                            = `
+batchWriterTimeout: 1s
+chaincodeName: document
+collection: docs
+`
+	appCfgNoCC         = `batchWriterTimeout: 1s`
+	appCfgNoCollection = `
+batchWriterTimeout: 1s
+chaincodeName: document
+`
 )
 
 func TestSidetreeValidator_Validate(t *testing.T) {
@@ -43,6 +52,18 @@ func TestSidetreeValidator_Validate(t *testing.T) {
 		err := v.Validate(config.NewKeyValue(k, config.NewValue(txID, `{}`, config.FormatJSON, sidetreeTag)))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "unexpected component")
+	})
+
+	t.Run("No chaincodeName -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(appKey, config.NewValue(txID, appCfgNoCC, config.FormatYAML, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'ChaincodeName' is required")
+	})
+
+	t.Run("No collection -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(appKey, config.NewValue(txID, appCfgNoCollection, config.FormatYAML, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'Collection' is required")
 	})
 
 	t.Run("App config -> success", func(t *testing.T) {

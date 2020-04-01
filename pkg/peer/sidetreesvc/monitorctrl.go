@@ -7,9 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package sidetreesvc
 
 import (
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -21,7 +21,7 @@ type monitorController struct {
 func newMonitorController(channelID string, peerConfig peerConfig, monitorCfg config.Monitor, providers *monitor.ClientProviders, opStoreProvider common.OperationStoreProvider) *monitorController {
 	var m *monitor.Monitor
 	if role.IsMonitor() {
-		m = monitor.New(channelID, peerConfig.PeerID(), monitorCfg.Period, providers, opStoreProvider)
+		m = monitor.New(channelID, peerConfig.PeerID(), monitorCfg, providers, opStoreProvider)
 	}
 
 	return &monitorController{

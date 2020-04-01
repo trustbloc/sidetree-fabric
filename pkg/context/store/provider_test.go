@@ -12,8 +12,11 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	"github.com/stretchr/testify/require"
-	mocks2 "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
+	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
@@ -30,14 +33,16 @@ func TestProvider(t *testing.T) {
 		Key:       "did:sidetree:suffix",
 		Value:     []byte("{}"),
 	}
-	it := mocks2.NewResultsIterator().WithResults([]*queryresult.KV{vk1})
+	it := extmocks.NewResultsIterator().WithResults([]*queryresult.KV{vk1})
 	dcasClient.QueryReturns(it, nil)
+
+	cfgService := &cfgmocks.SidetreeConfigService{}
 
 	t.Run("Get and Put", func(t *testing.T) {
 		dcasProvider := &mocks.DCASClientProvider{}
 		dcasProvider.ForChannelReturns(dcasClient, nil)
 
-		p := NewProvider(channel1, dcasProvider)
+		p := NewProvider(channel1, cfgService, dcasProvider)
 		require.NotNil(t, p)
 
 		s, err := p.ForNamespace(ns1)
@@ -56,7 +61,24 @@ func TestProvider(t *testing.T) {
 		dcasProvider := &mocks.DCASClientProvider{}
 		dcasProvider.ForChannelReturns(nil, errExpected)
 
-		p := NewProvider(channel1, dcasProvider)
+		p := NewProvider(channel1, cfgService, dcasProvider)
+		require.NotNil(t, p)
+
+		s, err := p.ForNamespace(ns1)
+		require.EqualError(t, err, errExpected.Error())
+		require.Nil(t, s)
+	})
+
+	t.Run("Config service error", func(t *testing.T) {
+		errExpected := errors.New("injected config service error")
+
+		cfgService := &cfgmocks.SidetreeConfigService{}
+		cfgService.LoadSidetreeReturns(config.Sidetree{}, errExpected)
+
+		dcasProvider := &mocks.DCASClientProvider{}
+		dcasProvider.ForChannelReturns(dcasClient, nil)
+
+		p := NewProvider(channel1, cfgService, dcasProvider)
 		require.NotNil(t, p)
 
 		s, err := p.ForNamespace(ns1)

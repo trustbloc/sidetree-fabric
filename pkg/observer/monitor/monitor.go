@@ -7,31 +7,24 @@ SPDX-License-Identifier: Apache-2.0
 package monitor
 
 import (
-	"encoding/json"
 	"strings"
 	"time"
 
-	cb "github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
 
-	olclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
+	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
 )
 
 var logger = flogging.MustGetLogger("sidetree_observer")
-
-const (
-	// MetaDataColName is the name of the meta-data collection used by the Monitor
-	// to store peer-specific information
-	MetaDataColName = "meta_data"
-)
 
 // MetaData contains meta-data for the document store
 type MetaData struct {
@@ -45,27 +38,32 @@ type ClientProviders struct {
 	Blockchain common.BlockchainClientProvider
 }
 
+type metaDataStore interface {
+	Get() (*MetaData, error)
+	Put(*MetaData) error
+}
+
 // Monitor maintains multiple document monitors - one for each channel. A document monitor ensures that the peer
 // has all of the document operations that it's supposed to have. The monitor reads blocks from the ledger looking
 // for batch writes. It traverses through all of the document operations in the batch and ensures that the peer
 // has the operations stored in the DCAS document store.
 type Monitor struct {
-	*ClientProviders
-	channelID    string
-	peerID       string
-	period       time.Duration
-	blockVisitor *blockvisitor.Visitor
-	done         chan struct{}
-	txnProcessor *observer.TxnProcessor
+	channelID     string
+	period        time.Duration
+	blockVisitor  *blockvisitor.Visitor
+	done          chan struct{}
+	txnProcessor  *observer.TxnProcessor
+	blockchain    common.BlockchainClientProvider
+	metaDataStore metaDataStore
 }
 
 // New returns a new document monitor
-func New(channelID, localPeerID string, period time.Duration, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider) *Monitor {
+func New(channelID, localPeerID string, cfg config.Monitor, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider) *Monitor {
 	m := &Monitor{
-		channelID:       channelID,
-		peerID:          localPeerID,
-		period:          period,
-		ClientProviders: clientProviders,
+		channelID:     channelID,
+		period:        cfg.Period,
+		blockchain:    clientProviders.Blockchain,
+		metaDataStore: NewMetaDataStore(channelID, localPeerID, cfg.MetaDataChaincodeName, clientProviders.OffLedger),
 		txnProcessor: observer.NewTxnProcessor(
 			&observer.Providers{
 				DCASClient:       NewSidetreeDCASReader(channelID, clientProviders.DCAS),
@@ -230,32 +228,17 @@ func (m *Monitor) getBlockByNumber(bNum uint64) (*cb.Block, error) {
 }
 
 func (m *Monitor) blockchainClient() (client.Blockchain, error) {
-	return m.Blockchain.ForChannel(m.channelID)
-}
-
-func (m *Monitor) offLedgerClient() (olclient.OffLedger, error) {
-	return m.OffLedger.ForChannel(m.channelID)
+	return m.blockchain.ForChannel(m.channelID)
 }
 
 func (m *Monitor) lastBlockProcessed() (uint64, error) {
-	olClient, err := m.offLedgerClient()
+	metaData, err := m.metaDataStore.Get()
 	if err != nil {
+		if err == errMetaDataNotFound {
+			return 0, nil
+		}
+
 		return 0, err
-	}
-	data, err := olClient.Get(common.DocNs, MetaDataColName, m.peerID)
-	if err != nil {
-		return 0, errors.WithMessage(err, "error retrieving meta-data")
-	}
-
-	if len(data) == 0 {
-		logger.Debugf("[%s] No MetaData exists for peer [%s]", m.channelID, m.peerID)
-		return 0, nil
-	}
-
-	metaData := &MetaData{}
-	err = json.Unmarshal(data, metaData)
-	if err != nil {
-		return 0, errors.WithMessage(err, "error unmarshalling meta-data")
 	}
 
 	return metaData.LastBlockProcessed, nil
@@ -263,21 +246,12 @@ func (m *Monitor) lastBlockProcessed() (uint64, error) {
 
 func (m *Monitor) setLastBlockProcessed(bNum uint64) error {
 	metaData := &MetaData{LastBlockProcessed: bNum}
+
 	logger.Debugf("[%s] Updating meta-data: %+v", m.channelID, metaData)
 
-	bytes, err := json.Marshal(metaData)
-	if err != nil {
-		return errors.WithMessage(err, "error marshalling meta-data")
-	}
-
-	olClient, err := m.offLedgerClient()
-	if err != nil {
-		return err
-	}
-
-	err = olClient.Put(common.DocNs, MetaDataColName, m.peerID, bytes)
-	if err != nil {
+	if err := m.metaDataStore.Put(metaData); err != nil {
 		return errors.WithMessage(err, "error persisting meta-data")
 	}
+
 	return nil
 }

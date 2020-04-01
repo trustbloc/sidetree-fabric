@@ -1,6 +1,7 @@
 {
   "Monitor": {
-    "Period": "3s"
+    "Period": "30s",
+    "MetaDataChaincodeName": "document"
   },
   "Namespaces": [
     {

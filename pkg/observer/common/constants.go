@@ -15,10 +15,4 @@ const (
 
 	// AnchorAddrPrefix is the anchor address prefix that is used to persist anchors
 	AnchorAddrPrefix = "sidetreetxn_"
-
-	// DocNs is the namespace under which documents are stored
-	DocNs = "document_cc"
-
-	// DocColl is the name of the collection where documents are store
-	DocColl = "docs"
 )

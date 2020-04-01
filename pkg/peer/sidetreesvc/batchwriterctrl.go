@@ -8,8 +8,8 @@ package sidetreesvc
 
 import (
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -58,6 +58,6 @@ func (bw *batchWriterController) Stop() {
 	if bw.Writer != nil {
 		logger.Infof("[%s] Stopping batch writer for Sidetree [%s]", bw.channelID, bw.namespace)
 
-		bw.Writer.Start()
+		bw.Writer.Stop()
 	}
 }

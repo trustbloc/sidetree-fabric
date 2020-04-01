@@ -15,8 +15,8 @@ import (
 
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -69,7 +69,7 @@ func TestRESTHandlers(t *testing.T) {
 	nsCfg := config.Namespace{}
 	bw := &peermocks.BatchWriter{}
 	pp := &peermocks.ProtocolProvider{}
-	osc := &mocks.OperationStore{}
+	os := &mocks.OperationStore{}
 
 	t.Run("Resolver and batch-writer role -> not empty", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})
@@ -80,7 +80,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, osc)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Len(t, rh.HTTPHandlers(), 2)
@@ -94,7 +94,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, osc)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Empty(t, rh.HTTPHandlers())

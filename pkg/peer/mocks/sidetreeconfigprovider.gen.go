@@ -4,7 +4,7 @@ package mocks
 import (
 	"sync"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 )
 
 type SidetreeConfigProvider struct {
