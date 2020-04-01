@@ -9,16 +9,13 @@ package observer
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
-	viper "github.com/spf13/viper2015"
 	"github.com/stretchr/testify/require"
 	offledgerdcas "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
-	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
@@ -29,8 +26,12 @@ import (
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
+
+//go:generate counterfeiter -o ../mocks/operationstore.gen.go --fake-name OperationStore ../context/common OperationStore
+//go:generate counterfeiter -o ../mocks/opstoreprovider.gen.go --fake-name OperationStoreProvider ../context/common OperationStoreProvider
 
 const (
 	channel      = "diddoc"
@@ -57,97 +58,37 @@ func TestObserver(t *testing.T) {
 	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(c, nil)
 
-	opStore := &obmocks.OperationStoreClient{}
-	opStoreProvider := &obmocks.OpStoreClientProvider{}
-	opStoreProvider.GetReturns(opStore)
+	opStore := &stmocks.OperationStore{}
+	opStoreProvider := &stmocks.OperationStoreProvider{}
+	opStoreProvider.ForNamespaceReturns(opStore, nil)
 
-	providers := &Providers{
-		DCAS:            dcasProvider,
-		OffLedger:       &obmocks.OffLedgerClientProvider{},
-		BlockPublisher:  mocks.NewBlockPublisherProvider().WithBlockPublisher(p),
-		OpStoreProvider: opStoreProvider,
-	}
-	observer := New(channel, providers)
+	observer := New(channel,
+		&Providers{
+			DCAS:           dcasProvider,
+			OperationStore: opStoreProvider,
+			Ledger:         notifier.New(p),
+			Filter:         &sidetreeobserver.NoopOperationFilterProvider{},
+		},
+	)
 	require.NotNil(t, observer)
 	require.NoError(t, observer.Start())
 
-	anchor := getAnchorAddress(uniqueSuffix)
-	require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(anchor)}))
+	defer observer.Stop()
+
+	txMetaData := gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}
+	kvWrite := &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(getAnchorAddress(uniqueSuffix))}
+
+	require.NoError(t, p.HandleWrite(txMetaData, sideTreeTxnCCName, kvWrite))
 	time.Sleep(200 * time.Millisecond)
 
 	// since there was one batch file with two operations we will have two entries in document map
-	m, err := c.GetMap(common.DocNs, common.DocColl)
-	require.Nil(t, err)
-	require.Equal(t, 2, len(m))
-}
+	putCalls := opStore.Invocations()["Put"]
+	require.Len(t, putCalls, 1)
+	require.Len(t, putCalls[0], 1)
 
-func TestDCASPut(t *testing.T) {
-	c := getDefaultDCASClient()
-	c.PutErr = fmt.Errorf("put error")
-	dcasClientProvider := &mockDCASClientProvider{
-		client: c,
-	}
-	err := (newDCAS(channel, dcasClientProvider)).Put([]*batch.Operation{{Type: "1"}})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "dcas put failed")
-}
-
-func TestObserver_Start(t *testing.T) {
-	// Ensure the roles are initialized, otherwise they'll be overwritten
-	// when we run the tests
-	require.True(t, extroles.IsEndorser())
-
-	t.Run("endorser role", func(t *testing.T) {
-		// create endorser role only
-		rolesValue := make(map[extroles.Role]struct{})
-		rolesValue[extroles.EndorserRole] = struct{}{}
-		extroles.SetRoles(rolesValue)
-		defer func() {
-			extroles.SetRoles(nil)
-		}()
-
-		providers := &Providers{
-			DCAS:           &stmocks.DCASClientProvider{},
-			OffLedger:      &obmocks.OffLedgerClientProvider{},
-			BlockPublisher: mocks.NewBlockPublisherProvider(),
-		}
-		observer := New(channel, providers)
-		require.NotNil(t, observer)
-
-		observer.Start()
-
-		observer.Stop()
-	})
-
-	t.Run("monitor role", func(t *testing.T) {
-		rolesValue := make(map[extroles.Role]struct{})
-		rolesValue[extroles.CommitterRole] = struct{}{}
-		rolesValue[role.Resolver] = struct{}{}
-		extroles.SetRoles(rolesValue)
-		defer func() {
-			extroles.SetRoles(nil)
-		}()
-
-		providers := &Providers{
-			DCAS:           &stmocks.DCASClientProvider{},
-			OffLedger:      &obmocks.OffLedgerClientProvider{},
-			BlockPublisher: mocks.NewBlockPublisherProvider(),
-		}
-		observer := New(channel, providers)
-		require.NotNil(t, observer)
-
-		viper.Set("peer.id", "peer0.org1.com")
-		observer.Start()
-		observer.Stop()
-	})
-}
-
-type mockDCASClientProvider struct {
-	client dcasclient.DCAS
-}
-
-func (m *mockDCASClientProvider) ForChannel(channelID string) (dcasclient.DCAS, error) {
-	return m.client, nil
+	ops, ok := putCalls[0][0].([]*batch.Operation)
+	require.True(t, ok)
+	require.Len(t, ops, 2)
 }
 
 func getDefaultDCASClient() *obmocks.MockDCASClient {

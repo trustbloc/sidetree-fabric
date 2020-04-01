@@ -18,7 +18,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/observer"
+	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 )
@@ -59,11 +59,11 @@ type operationQueueProvider interface {
 type providers struct {
 	*ContextProviders
 
-	PeerConfig        peerConfig
-	RESTConfig        restConfig
-	ConfigProvider    configServiceProvider
-	ObserverProviders *observer.Providers
-	MonitorProviders  *monitor.ClientProviders
+	PeerConfig       peerConfig
+	RESTConfig       restConfig
+	ConfigProvider   configServiceProvider
+	MonitorProviders *monitor.ClientProviders
+	BlockPublisher   ctxcommon.BlockPublisherProvider
 }
 
 // Provider implements a Sidetree services provider which is responsible for managing Sidetree

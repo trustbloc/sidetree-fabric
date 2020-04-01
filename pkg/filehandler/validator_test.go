@@ -18,13 +18,13 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
 const sha2_256 = 18
 
 func TestDocumentValidator_IsValidOriginalDocument(t *testing.T) {
-	v := NewValidator(&mocks.OperationStoreClient{})
+	v := NewValidator(&mocks.OperationStore{})
 	require.NotNil(t, v)
 
 	t.Run("Invalid document", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestDocumentValidator_IsValidOriginalDocument(t *testing.T) {
 }
 
 func TestDocumentValidator_IsValidPayload(t *testing.T) {
-	s := &mocks.OperationStoreClient{}
+	s := &mocks.OperationStore{}
 	s.GetReturns([]*batch.Operation{{}}, nil)
 
 	v := NewValidator(s)
@@ -146,7 +146,7 @@ func TestDocumentValidator_IsValidPayload(t *testing.T) {
 }
 
 func TestDocumentValidator_TransformDocument(t *testing.T) {
-	v := NewValidator(&mocks.OperationStoreClient{})
+	v := NewValidator(&mocks.OperationStore{})
 	require.NotNil(t, v)
 
 	doc := make(document.Document)

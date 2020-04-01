@@ -12,9 +12,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -29,7 +31,7 @@ const (
 var _ = extroles.GetRoles()
 
 func TestMonitorController(t *testing.T) {
-	peerCfg := &mocks.PeerConfig{}
+	peerCfg := &peermocks.PeerConfig{}
 	peerCfg.PeerIDReturns(peer1)
 	peerCfg.MSPIDReturns(msp1)
 
@@ -45,7 +47,7 @@ func TestMonitorController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		m := newMonitorController(channel1, peerCfg, monitorCfg, providers)
+		m := newMonitorController(channel1, peerCfg, monitorCfg, providers, &mocks.OperationStoreProvider{})
 		require.NotNil(t, m)
 
 		require.NoError(t, m.Start())
@@ -62,7 +64,7 @@ func TestMonitorController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		m := newMonitorController(channel1, peerCfg, monitorCfg, providers)
+		m := newMonitorController(channel1, peerCfg, monitorCfg, providers, &mocks.OperationStoreProvider{})
 		require.NotNil(t, m)
 
 		require.NoError(t, m.Start())

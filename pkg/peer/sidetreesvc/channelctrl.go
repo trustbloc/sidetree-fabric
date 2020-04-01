@@ -12,11 +12,14 @@ import (
 	"github.com/pkg/errors"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
-
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
+	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
+	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -52,6 +55,7 @@ type channelController struct {
 
 	mutex        sync.RWMutex
 	channelID    string
+	notifier     observer.Ledger
 	observer     *observerController
 	monitor      *monitorController
 	contexts     map[string]*context
@@ -66,6 +70,7 @@ func newChannelController(channelID string, providers *providers, configService 
 		contexts:              make(map[string]*context),
 		sidetreeCfgService:    configService,
 		fileHandlers:          make(map[string]*fileHandlers),
+		notifier:              notifier.New(providers.BlockPublisher.ForChannel(channelID)),
 	}
 
 	providers.ConfigProvider.ForChannel(channelID).AddUpdateHandler(ctrl.handleUpdate)
@@ -141,7 +146,9 @@ func (c *channelController) load() error {
 
 	logger.Debugf("[%s] Updating Sidetree service channelController ...", c.channelID)
 
-	modifiedCtx, err := c.loadContexts(cfg.Namespaces)
+	storeProvider := store.NewProvider(c.channelID, c.DCASProvider)
+
+	modifiedCtx, err := c.loadContexts(cfg.Namespaces, storeProvider)
 	if err != nil {
 		return err
 	}
@@ -151,11 +158,11 @@ func (c *channelController) load() error {
 		return err
 	}
 
-	if err := c.startObserver(); err != nil {
+	if err := c.startObserver(storeProvider); err != nil {
 		return err
 	}
 
-	if err := c.startMonitor(cfg.Monitor); err != nil {
+	if err := c.startMonitor(cfg.Monitor, storeProvider); err != nil {
 		return err
 	}
 
@@ -173,8 +180,8 @@ type contextPair struct {
 	oldCtx *context
 }
 
-func (c *channelController) loadContexts(namespaces []config.Namespace) (modified bool, err error) {
-	loadedContexts, err := c.loadNewContexts(namespaces)
+func (c *channelController) loadContexts(namespaces []config.Namespace, storeProvider ctxcommon.OperationStoreProvider) (modified bool, err error) {
+	loadedContexts, err := c.loadNewContexts(namespaces, storeProvider)
 	if err != nil {
 		return false, err
 	}
@@ -209,11 +216,11 @@ func (c *channelController) loadContexts(namespaces []config.Namespace) (modifie
 	return len(newContexts) > 0 || len(oldContexts) > 0, nil
 }
 
-func (c *channelController) loadNewContexts(namespaces []config.Namespace) ([]*context, error) {
+func (c *channelController) loadNewContexts(namespaces []config.Namespace, storeProvider ctxcommon.OperationStoreProvider) ([]*context, error) {
 	var contexts []*context
 
 	for _, nsCfg := range namespaces {
-		ctx, err := newContext(c.channelID, nsCfg, c.sidetreeCfgService, c.ContextProviders)
+		ctx, err := newContext(c.channelID, nsCfg, c.sidetreeCfgService, c.ContextProviders, storeProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -240,24 +247,24 @@ func (c *channelController) loadFileHandlerConfig() ([]filehandler.Config, error
 	return nil, err
 }
 
-func (c *channelController) startObserver() error {
+func (c *channelController) startObserver(storeProvider ctxcommon.OperationStoreProvider) error {
 	if c.observer != nil {
 		// Already started
 		return nil
 	}
 
-	c.observer = newObserverController(c.channelID, c.ObserverProviders)
+	c.observer = newObserverController(c.channelID, c.DCASProvider, storeProvider, c.notifier)
 
 	return c.observer.Start()
 }
 
-func (c *channelController) startMonitor(cfg config.Monitor) error {
+func (c *channelController) startMonitor(cfg config.Monitor, storeProvider ctxcommon.OperationStoreProvider) error {
 	if c.monitor != nil {
 		// Already started
 		return nil
 	}
 
-	c.monitor = newMonitorController(c.channelID, c.PeerConfig, cfg, c.MonitorProviders)
+	c.monitor = newMonitorController(c.channelID, c.PeerConfig, cfg, c.MonitorProviders, storeProvider)
 
 	return c.monitor.Start()
 }

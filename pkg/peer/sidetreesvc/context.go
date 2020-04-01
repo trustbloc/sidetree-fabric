@@ -12,7 +12,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 )
 
@@ -52,13 +52,12 @@ func (c *context) Stop() {
 
 // ContextProviders defines the providers required by the context
 type ContextProviders struct {
-	TxnProvider                  txnServiceProvider
-	DCASProvider                 dcasClientProvider
-	OperationQueueProvider       operationQueueProvider
-	OperationStoreClientProvider common.OperationStoreClientProvider
+	TxnProvider            txnServiceProvider
+	DCASProvider           dcasClientProvider
+	OperationQueueProvider operationQueueProvider
 }
 
-func newContext(channelID string, nsCfg config.Namespace, cfg config.SidetreeService, providers *ContextProviders) (*context, error) {
+func newContext(channelID string, nsCfg config.Namespace, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider common.OperationStoreProvider) (*context, error) {
 	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, nsCfg.Namespace)
 
 	ctx, err := newSidetreeContext(channelID, nsCfg.Namespace, cfg, providers.TxnProvider, providers.DCASProvider, providers.OperationQueueProvider)
@@ -75,9 +74,12 @@ func newContext(channelID string, nsCfg config.Namespace, cfg config.SidetreeSer
 
 	logger.Debugf("[%s] Creating Sidetree REST handlers [%s]", channelID, nsCfg.Namespace)
 
-	opStore := providers.OperationStoreClientProvider.Get(channelID, nsCfg.Namespace)
+	store, err := opStoreProvider.ForNamespace(nsCfg.Namespace)
+	if err != nil {
+		return nil, err
+	}
 
-	restHandlers, err := newRESTHandlers(channelID, nsCfg, bw, ctx, opStore)
+	restHandlers, err := newRESTHandlers(channelID, nsCfg, bw, ctx, store)
 	if err != nil {
 		return nil, err
 	}

@@ -15,7 +15,7 @@ import (
 
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
-	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -69,7 +69,7 @@ func TestRESTHandlers(t *testing.T) {
 	nsCfg := config.Namespace{}
 	bw := &peermocks.BatchWriter{}
 	pp := &peermocks.ProtocolProvider{}
-	osc := &obmocks.OperationStoreClient{}
+	osc := &mocks.OperationStore{}
 
 	t.Run("Resolver and batch-writer role -> not empty", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})

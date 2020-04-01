@@ -11,10 +11,13 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
-	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
-	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
+
+	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
+
+	"github.com/hyperledger/fabric/common/flogging"
+	commonledger "github.com/hyperledger/fabric/common/ledger"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 )
@@ -27,37 +30,34 @@ const (
 
 var logger = flogging.MustGetLogger("sidetree_context")
 
-type dcasClientProvider interface {
-	ForChannel(channelID string) (client.DCAS, error)
+type store interface {
+	Query(query string) (commonledger.ResultsIterator, error)
+	Put(value []byte) error
 }
 
 // Client implements client for accessing document operations
 type Client struct {
-	channelID     string
-	namespace     string
-	storeProvider dcasClientProvider
+	channelID string
+	namespace string
+	store     store
 }
 
-// New returns a new store client
-func New(channelID, namespace string, storeProvider dcasClientProvider) *Client {
+// NewClient returns a new operation store client
+func NewClient(channelID, namespace string, s store) *Client {
 	return &Client{
-		channelID:     channelID,
-		namespace:     namespace,
-		storeProvider: storeProvider,
+		channelID: channelID,
+		namespace: namespace,
+		store:     s,
 	}
 }
 
 // Get retrieves all document operations for specified document ID
 func (c *Client) Get(uniqueSuffix string) ([]*batch.Operation, error) {
 	id := c.namespace + docutil.NamespaceDelimiter + uniqueSuffix
-	logger.Debugf("get operations for doc[%s]", id)
 
-	sp, err := c.storeProvider.ForChannel(c.channelID)
-	if err != nil {
-		return nil, err
-	}
+	logger.Debugf("[%s-%s] Querying for operations for ID [%s]", c.channelID, c.namespace, id)
 
-	iter, err := sp.Query(documentCC, collection, fmt.Sprintf(queryByIDTemplate, id))
+	iter, err := c.store.Query(fmt.Sprintf(queryByIDTemplate, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query document operations")
 	}
@@ -76,16 +76,32 @@ func (c *Client) Get(uniqueSuffix string) ([]*batch.Operation, error) {
 	}
 
 	if len(ops) == 0 {
+		logger.Debugf("[%s-%s] No operations found for ID [%s]", c.channelID, c.namespace, id)
 		return nil, errors.New("uniqueSuffix not found in the store")
 	}
+
+	logger.Debugf("[%s-%s] Found operations for ID [%s]: %s", c.channelID, c.namespace, id, ops)
 
 	return getOperations(ops)
 }
 
 // Put stores an operation
-func (c *Client) Put(op *batch.Operation) error {
-	// TODO: Not sure where/if this is useds
-	panic("not implemented")
+func (c *Client) Put(ops []*batch.Operation) error {
+	for _, op := range ops {
+		bytes, err := json.Marshal(op)
+		if err != nil {
+			return errors.Wrapf(err, "json marshal for op failed")
+		}
+
+		logger.Debugf("[%s-%s] Storing operation %s", c.channelID, c.namespace, bytes)
+
+		err = c.store.Put(bytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func getOperations(ops [][]byte) ([]*batch.Operation, error) {

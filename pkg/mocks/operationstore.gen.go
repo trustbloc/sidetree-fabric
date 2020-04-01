@@ -5,14 +5,14 @@ import (
 	"sync"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-	"github.com/trustbloc/sidetree-core-go/pkg/processor"
+	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 )
 
-type OperationStoreClient struct {
-	GetStub        func(uniqueSuffix string) ([]*batch.Operation, error)
+type OperationStore struct {
+	GetStub        func(suffix string) ([]*batch.Operation, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
-		uniqueSuffix string
+		suffix string
 	}
 	getReturns struct {
 		result1 []*batch.Operation
@@ -22,10 +22,10 @@ type OperationStoreClient struct {
 		result1 []*batch.Operation
 		result2 error
 	}
-	PutStub        func(op *batch.Operation) error
+	PutStub        func(ops []*batch.Operation) error
 	putMutex       sync.RWMutex
 	putArgsForCall []struct {
-		op *batch.Operation
+		ops []*batch.Operation
 	}
 	putReturns struct {
 		result1 error
@@ -37,16 +37,16 @@ type OperationStoreClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OperationStoreClient) Get(uniqueSuffix string) ([]*batch.Operation, error) {
+func (fake *OperationStore) Get(suffix string) ([]*batch.Operation, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
-		uniqueSuffix string
-	}{uniqueSuffix})
-	fake.recordInvocation("Get", []interface{}{uniqueSuffix})
+		suffix string
+	}{suffix})
+	fake.recordInvocation("Get", []interface{}{suffix})
 	fake.getMutex.Unlock()
 	if fake.GetStub != nil {
-		return fake.GetStub(uniqueSuffix)
+		return fake.GetStub(suffix)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -54,19 +54,19 @@ func (fake *OperationStoreClient) Get(uniqueSuffix string) ([]*batch.Operation, 
 	return fake.getReturns.result1, fake.getReturns.result2
 }
 
-func (fake *OperationStoreClient) GetCallCount() int {
+func (fake *OperationStore) GetCallCount() int {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	return len(fake.getArgsForCall)
 }
 
-func (fake *OperationStoreClient) GetArgsForCall(i int) string {
+func (fake *OperationStore) GetArgsForCall(i int) string {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
-	return fake.getArgsForCall[i].uniqueSuffix
+	return fake.getArgsForCall[i].suffix
 }
 
-func (fake *OperationStoreClient) GetReturns(result1 []*batch.Operation, result2 error) {
+func (fake *OperationStore) GetReturns(result1 []*batch.Operation, result2 error) {
 	fake.GetStub = nil
 	fake.getReturns = struct {
 		result1 []*batch.Operation
@@ -74,7 +74,7 @@ func (fake *OperationStoreClient) GetReturns(result1 []*batch.Operation, result2
 	}{result1, result2}
 }
 
-func (fake *OperationStoreClient) GetReturnsOnCall(i int, result1 []*batch.Operation, result2 error) {
+func (fake *OperationStore) GetReturnsOnCall(i int, result1 []*batch.Operation, result2 error) {
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
@@ -88,16 +88,21 @@ func (fake *OperationStoreClient) GetReturnsOnCall(i int, result1 []*batch.Opera
 	}{result1, result2}
 }
 
-func (fake *OperationStoreClient) Put(op *batch.Operation) error {
+func (fake *OperationStore) Put(ops []*batch.Operation) error {
+	var opsCopy []*batch.Operation
+	if ops != nil {
+		opsCopy = make([]*batch.Operation, len(ops))
+		copy(opsCopy, ops)
+	}
 	fake.putMutex.Lock()
 	ret, specificReturn := fake.putReturnsOnCall[len(fake.putArgsForCall)]
 	fake.putArgsForCall = append(fake.putArgsForCall, struct {
-		op *batch.Operation
-	}{op})
-	fake.recordInvocation("Put", []interface{}{op})
+		ops []*batch.Operation
+	}{opsCopy})
+	fake.recordInvocation("Put", []interface{}{opsCopy})
 	fake.putMutex.Unlock()
 	if fake.PutStub != nil {
-		return fake.PutStub(op)
+		return fake.PutStub(ops)
 	}
 	if specificReturn {
 		return ret.result1
@@ -105,26 +110,26 @@ func (fake *OperationStoreClient) Put(op *batch.Operation) error {
 	return fake.putReturns.result1
 }
 
-func (fake *OperationStoreClient) PutCallCount() int {
+func (fake *OperationStore) PutCallCount() int {
 	fake.putMutex.RLock()
 	defer fake.putMutex.RUnlock()
 	return len(fake.putArgsForCall)
 }
 
-func (fake *OperationStoreClient) PutArgsForCall(i int) *batch.Operation {
+func (fake *OperationStore) PutArgsForCall(i int) []*batch.Operation {
 	fake.putMutex.RLock()
 	defer fake.putMutex.RUnlock()
-	return fake.putArgsForCall[i].op
+	return fake.putArgsForCall[i].ops
 }
 
-func (fake *OperationStoreClient) PutReturns(result1 error) {
+func (fake *OperationStore) PutReturns(result1 error) {
 	fake.PutStub = nil
 	fake.putReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *OperationStoreClient) PutReturnsOnCall(i int, result1 error) {
+func (fake *OperationStore) PutReturnsOnCall(i int, result1 error) {
 	fake.PutStub = nil
 	if fake.putReturnsOnCall == nil {
 		fake.putReturnsOnCall = make(map[int]struct {
@@ -136,7 +141,7 @@ func (fake *OperationStoreClient) PutReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *OperationStoreClient) Invocations() map[string][][]interface{} {
+func (fake *OperationStore) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.getMutex.RLock()
@@ -150,7 +155,7 @@ func (fake *OperationStoreClient) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *OperationStoreClient) recordInvocation(key string, args []interface{}) {
+func (fake *OperationStore) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -162,4 +167,4 @@ func (fake *OperationStoreClient) recordInvocation(key string, args []interface{
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ processor.OperationStoreClient = new(OperationStoreClient)
+var _ common.OperationStore = new(OperationStore)

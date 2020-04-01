@@ -22,9 +22,8 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer"
-	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -94,22 +93,22 @@ func TestChannelManager(t *testing.T) {
 	configProvider := &peermocks.ConfigServiceProvider{}
 	configProvider.ForChannelReturns(configSvc)
 
-	observerProviders := &observer.Providers{
-		BlockPublisher: extmocks.NewBlockPublisherProvider(),
-	}
-
 	opQueue := &opqueue.MemQueue{}
 	opQueueProvider := &mocks.OperationQueueProvider{}
 	opQueueProvider.CreateReturns(opQueue, nil)
 
+	dcas := &mocks.DCASClient{}
+	dcasProvider := &mocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(dcas, nil)
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
-			OperationQueueProvider:       opQueueProvider,
-			OperationStoreClientProvider: &obmocks.OpStoreClientProvider{},
+			DCASProvider:           dcasProvider,
+			OperationQueueProvider: opQueueProvider,
 		},
-		PeerConfig:        peerConfig,
-		ConfigProvider:    configProvider,
-		ObserverProviders: observerProviders,
+		PeerConfig:     peerConfig,
+		ConfigProvider: configProvider,
+		BlockPublisher: extmocks.NewBlockPublisherProvider(),
 	}
 
 	stConfigService := &peermocks.SidetreeConfigService{}
@@ -131,46 +130,52 @@ func TestChannelManager(t *testing.T) {
 	require.Len(t, ctrl.Invocations()[eventMethod], count+1)
 	require.Len(t, m.RESTHandlers(), 6)
 
-	t.Run("Update peer sidetreeCfgService -> success", func(t *testing.T) {
+	t.Run("Update peer config -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewPeerKey(msp1, peer1, config.SidetreePeerAppName, config.SidetreePeerAppVersion),
+			Key: ledgerconfig.NewPeerKey(msp1, peer1, peerconfig.SidetreePeerAppName, peerconfig.SidetreePeerAppVersion),
 		})
 
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		require.Len(t, ctrl.Invocations()[eventMethod], count+1)
 	})
 
-	t.Run("Update consortium sidetreeCfgService -> success", func(t *testing.T) {
+	t.Run("Update consortium config -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewAppKey(config.GlobalMSPID, didTrustblocNamespace, "1"),
+			Key: ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, didTrustblocNamespace, "1"),
 		})
 
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		require.Len(t, ctrl.Invocations()[eventMethod], count+1)
 	})
 
-	t.Run("Irrelevant sidetreeCfgService update -> success", func(t *testing.T) {
+	t.Run("Irrelevant config update -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewAppKey(config.GlobalMSPID, "some-app-name", "1"),
+			Key: ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, "some-app-name", "1"),
 		})
 
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		require.Len(t, ctrl.Invocations()[eventMethod], count)
 	})
 
-	t.Run("Peer sidetreeCfgService not found", func(t *testing.T) {
+	t.Run("Peer config not found", func(t *testing.T) {
+		stConfigService := &peermocks.SidetreeConfigService{}
+		stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, service.ErrConfigNotFound)
+
+		m := newChannelController(channel1, providers, stConfigService, ctrl)
+		require.NotNil(t, m)
+		defer m.Close()
+
 		count := len(ctrl.Invocations()[eventMethod])
 
-		stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, service.ErrConfigNotFound)
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewAppKey(config.GlobalMSPID, didTrustblocNamespace, "1"),
+			Key: ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, didTrustblocNamespace, "1"),
 		})
 
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		require.Len(t, ctrl.Invocations()[eventMethod], count)
 	})
 }

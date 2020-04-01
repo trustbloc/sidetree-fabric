@@ -16,7 +16,6 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
@@ -31,10 +30,9 @@ func TestContext(t *testing.T) {
 	}
 
 	ctxProviders := &ContextProviders{
-		TxnProvider:                  &peermocks.TxnServiceProvider{},
-		DCASProvider:                 &peermocks.DCASClientProvider{},
-		OperationQueueProvider:       &mocks.OperationQueueProvider{},
-		OperationStoreClientProvider: &obmocks.OpStoreClientProvider{},
+		TxnProvider:            &peermocks.TxnServiceProvider{},
+		DCASProvider:           &peermocks.DCASClientProvider{},
+		OperationQueueProvider: &mocks.OperationQueueProvider{},
 	}
 
 	t.Run("Success", func(t *testing.T) {
@@ -50,7 +48,7 @@ func TestContext(t *testing.T) {
 		stConfigService := &peermocks.SidetreeConfigService{}
 		stConfigService.LoadProtocolsReturns(protocolVersions, nil)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
 		require.NoError(t, err)
 		require.NotNil(t, ctx)
 
@@ -63,10 +61,33 @@ func TestContext(t *testing.T) {
 		ctx.Stop()
 	})
 
+	t.Run("Operation store error", func(t *testing.T) {
+		errExpected := errors.New("injected operation store error")
+
+		protocolVersions := map[string]protocolApi.Protocol{
+			"0.5": {
+				StartingBlockChainTime:       100,
+				HashAlgorithmInMultiHashCode: 18,
+				MaxOperationsPerBatch:        100,
+				MaxOperationByteSize:         1000,
+			},
+		}
+
+		stConfigService := &peermocks.SidetreeConfigService{}
+		stConfigService.LoadProtocolsReturns(protocolVersions, nil)
+
+		opStoreProvider := &mocks.OperationStoreProvider{}
+		opStoreProvider.ForNamespaceReturns(nil, errExpected)
+
+		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders, opStoreProvider)
+		require.EqualError(t, err, errExpected.Error())
+		require.Nil(t, ctx)
+	})
+
 	t.Run("No protocols -> error", func(t *testing.T) {
 		stConfigService := &peermocks.SidetreeConfigService{}
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "no protocols defined")
 		require.Nil(t, ctx)
@@ -77,7 +98,7 @@ func TestContext(t *testing.T) {
 		stConfigService := &peermocks.SidetreeConfigService{}
 		stConfigService.LoadProtocolsReturns(nil, errExpected)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders)
+		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
 		require.EqualError(t, err, errExpected.Error())
 		require.Nil(t, ctx)
 	})

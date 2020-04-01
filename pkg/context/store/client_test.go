@@ -7,17 +7,21 @@ SPDX-License-Identifier: Apache-2.0
 package store
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
+	mocks2 "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
-	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/context/store/mocks"
 )
+
+//go:generate counterfeiter -o ./mocks/store.gen.go --fake-name Store . store
 
 const (
 	chID = "mychannel"
@@ -27,43 +31,39 @@ const (
 )
 
 func TestNew(t *testing.T) {
-	dcasProvider := &stmocks.DCASClientProvider{}
-	dcasClient := obmocks.NewMockDCASClient()
-	dcasProvider.ForChannelReturns(dcasClient, nil)
-
-	c := New(chID, namespace, dcasProvider)
+	c := NewClient(chID, namespace, &mocks.Store{})
 	require.NotNil(t, c)
 }
 
 func TestProviderError(t *testing.T) {
 	testErr := errors.New("provider error")
-	dcasProvider := &stmocks.DCASClientProvider{}
-	dcasProvider.ForChannelReturns(nil, testErr)
 
-	c := New(chID, namespace, dcasProvider)
+	s := &mocks.Store{}
+	s.QueryReturns(nil, testErr)
+
+	c := NewClient(chID, namespace, s)
 	require.NotNil(t, c)
 
 	payload, err := c.Get(id)
-	require.EqualError(t, err, testErr.Error())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), testErr.Error())
 	require.Nil(t, payload)
 }
 
 func TestWriteContent(t *testing.T) {
-	dcasProvider := &stmocks.DCASClientProvider{}
-	dcasClient := obmocks.NewMockDCASClient()
-	dcasProvider.ForChannelReturns(dcasClient, nil)
-
 	didID := namespace + docutil.NamespaceDelimiter + id
 
 	vk1 := &queryresult.KV{
-		Namespace: documentCC + "~" + collection,
+		Namespace: "document~diddoc",
 		Key:       didID,
 		Value:     []byte("{}"),
 	}
 
-	query := fmt.Sprintf(queryByIDTemplate, didID)
-	dcasClient.WithQueryResults(documentCC, collection, query, []*queryresult.KV{vk1})
-	c := New(chID, namespace, dcasProvider)
+	s := &mocks.Store{}
+	it := mocks2.NewResultsIterator().WithResults([]*queryresult.KV{vk1})
+	s.QueryReturns(it, nil)
+
+	c := NewClient(chID, namespace, s)
 
 	ops, err := c.Get(id)
 	require.Nil(t, err)
@@ -80,12 +80,35 @@ func TestGetOperationsError(t *testing.T) {
 }
 
 func TestClient_Put(t *testing.T) {
-	c := New(chID, namespace, &stmocks.DCASClientProvider{})
+	t.Run("Success", func(t *testing.T) {
+		s := &mocks.Store{}
+		c := NewClient(chID, namespace, s)
 
-	require.PanicsWithValue(t, "not implemented", func() {
-		err := c.Put(&batch.Operation{})
-		require.NoError(t, err)
+		require.NoError(t, c.Put([]*batch.Operation{{}}))
 	})
+
+	t.Run("Store error", func(t *testing.T) {
+		errExpected := errors.New("injected store error")
+		s := &mocks.Store{}
+		s.PutReturns(errExpected)
+
+		c := NewClient(chID, namespace, s)
+
+		err := c.Put([]*batch.Operation{{}})
+		require.EqualError(t, err, errExpected.Error())
+	})
+}
+
+func TestClient_Get(t *testing.T) {
+	s := &mocks.Store{}
+	s.QueryReturns(&mocks2.ResultsIterator{}, nil)
+
+	c := NewClient(chID, namespace, s)
+
+	ops, err := c.Get("suffix")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not found")
+	require.Empty(t, ops)
 }
 
 func TestSort(t *testing.T) {

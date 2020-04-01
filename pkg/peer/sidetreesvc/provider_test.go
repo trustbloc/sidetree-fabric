@@ -11,16 +11,14 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	"github.com/trustbloc/fabric-peer-ext/pkg/gossip/blockpublisher"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer"
-	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -48,6 +46,10 @@ func TestProvider(t *testing.T) {
 	peerConfig.MSPIDReturns(msp1)
 	peerConfig.PeerIDReturns(peer1)
 
+	sidetreeCfg := config.Sidetree{
+		BatchWriterTimeout: time.Second,
+	}
+
 	sidetreePeerCfg := config.SidetreePeer{}
 	sidetreePeerCfg.Namespaces = []config.Namespace{
 		{
@@ -69,30 +71,39 @@ func TestProvider(t *testing.T) {
 	configProvider := &peermocks.ConfigServiceProvider{}
 	configProvider.ForChannelReturns(configSvc)
 
-	observerProviders := &observer.Providers{
-		BlockPublisher: blockpublisher.NewProvider(),
-	}
-
 	opQueueProvider := &mocks.OperationQueueProvider{}
 	opQueueProvider.CreateReturns(&opqueue.MemQueue{}, nil)
 
 	restConfig := &peermocks.RestConfig{}
 	restConfig.SidetreeListenURLReturns("localhost:7721", nil)
 
+	dcasClient := &mocks.DCASClient{}
+	dcasProvider := &mocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(dcasClient, nil)
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
-			OperationQueueProvider:       opQueueProvider,
-			OperationStoreClientProvider: &obmocks.OpStoreClientProvider{},
+			OperationQueueProvider: opQueueProvider,
+			DCASProvider:           dcasProvider,
 		},
-		PeerConfig:        peerConfig,
-		RESTConfig:        restConfig,
-		ConfigProvider:    configProvider,
-		ObserverProviders: observerProviders,
+		PeerConfig:     peerConfig,
+		RESTConfig:     restConfig,
+		ConfigProvider: configProvider,
+		BlockPublisher: blockpublisher.NewProvider(),
+	}
+
+	fileHandler1 := filehandler.Config{
+		BasePath:       "/path",
+		ChaincodeName:  "cc1",
+		Collection:     "coll1",
+		IndexNamespace: "file:idx",
 	}
 
 	sidetreeCfgService2 := &peermocks.SidetreeConfigService{}
+	sidetreeCfgService2.LoadSidetreeReturns(sidetreeCfg, nil)
 	sidetreeCfgService2.LoadSidetreePeerReturns(sidetreePeerCfg, nil)
 	sidetreeCfgService2.LoadProtocolsReturns(protocolVersions, nil)
+	sidetreeCfgService2.LoadFileHandlersReturns([]filehandler.Config{fileHandler1}, nil)
 
 	sidetreeCfgService1 := &peermocks.SidetreeConfigService{}
 
