@@ -21,6 +21,7 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 
 	"github.com/trustbloc/sidetree-fabric/test/bddtests/restclient"
@@ -249,10 +250,15 @@ func (d *FileHandlerSteps) getOpaqueDocument(content string) string {
 	return string(bytes)
 }
 
-func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, patch string) ([]byte, error) {
+func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch string) ([]byte, error) {
+	updatePatch, err := patch.NewJSONPatch(jsonPatch)
+	if err != nil {
+		return nil, err
+	}
+
 	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
 		DidUniqueSuffix:   uniqueSuffix,
-		Patch:             patch,
+		Patch:             updatePatch,
 		UpdateRevealValue: []byte(updateOTP),
 		MultihashCode:     sha2_256,
 	})
