@@ -166,3 +166,46 @@ Feature:
 
     When client sends request to "https://localhost:48526/document" to resolve DID document
     Then check success response contains "updatedValue"
+
+
+    @create_add_remove_public_key
+    Scenario: add and remove public keys
+    When client sends request to "https://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    Then check success response contains "#didDocumentHash"
+    And we wait 10 seconds
+
+    When client sends request to "https://localhost:48526/document" to resolve DID document
+    Then check success response contains "#didDocumentHash"
+
+    When client sends request to "https://localhost:48526/document" to add public key with ID "newKey" to DID document
+    Then we wait 10 seconds
+
+    When client sends request to "https://localhost:48526/document" to resolve DID document
+    Then check success response contains "newKey"
+
+    When client sends request to "https://localhost:48526/document" to remove public key with ID "newKey" from DID document
+    Then we wait 10 seconds
+
+    When client sends request to "https://localhost:48526/document" to resolve DID document
+    Then check success response does NOT contain "newKey"
+
+    @create_add_remove_services
+    Scenario: add and remove service endpoints
+    When client sends request to "https://localhost:48526/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    Then check success response contains "#didDocumentHash"
+    And we wait 10 seconds
+
+    When client sends request to "https://localhost:48526/document" to resolve DID document
+    Then check success response contains "#didDocumentHash"
+
+    When client sends request to "https://localhost:48526/document" to add service endpoint with ID "newService" to DID document
+    Then we wait 10 seconds
+
+    When client sends request to "https://localhost:48526/document" to resolve DID document
+    Then check success response contains "newService"
+
+    When client sends request to "https://localhost:48526/document" to remove service endpoint with ID "newService" from DID document
+    Then we wait 10 seconds
+
+    When client sends request to "https://localhost:48526/document" to resolve DID document
+    Then check success response does NOT contain "newService"

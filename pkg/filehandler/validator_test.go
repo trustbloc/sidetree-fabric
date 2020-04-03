@@ -196,30 +196,43 @@ func TestUnmarshalUpdateOperation(t *testing.T) {
 
 func TestValidatePatch(t *testing.T) {
 	t.Run("not ietf-json-patch", func(t *testing.T) {
-		p := patch.NewReplacePatch("doc")
-		err := validatePatch(p)
+		p, err := patch.NewReplacePatch("{}")
+		require.NoError(t, err)
+
+		err = validatePatch(p)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "patch action 'replace' not supported")
 	})
 	t.Run("missing patch value", func(t *testing.T) {
-		p := patch.NewJSONPatch("")
-		err := validatePatch(p)
+		p, err := patch.NewJSONPatch(`[{"op": "add", "path": "path", "value": "value"}]`)
+		require.NoError(t, err)
+		p["patches"] = ""
+
+		err = validatePatch(p)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "missing patches string value")
 	})
 	t.Run("invalid json patch", func(t *testing.T) {
-		p := patch.NewJSONPatch("invalid")
-		err := validatePatch(p)
+		p, err := patch.NewJSONPatch(`[{"op": "add", "path": "path", "value": "value"}]`)
+		require.NoError(t, err)
+		p["patches"] = "invalid"
+
+		err = validatePatch(p)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "invalid character 'i'")
 	})
 }
 
-func getUpdateRequest(patch string) ([]byte, error) {
+func getUpdateRequest(patches string) ([]byte, error) {
+	updatePatch, err := patch.NewJSONPatch(patches)
+	if err != nil {
+		return nil, err
+	}
+
 	return helper.NewUpdateRequest(
 		&helper.UpdateRequestInfo{
 			DidUniqueSuffix: "1234",
-			Patch:           patch,
+			Patch:           updatePatch,
 			MultihashCode:   sha2_256,
 		})
 }
