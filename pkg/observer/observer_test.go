@@ -23,6 +23,8 @@ import (
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
@@ -39,7 +41,7 @@ const (
 	uniqueSuffix = "abc123"
 
 	sideTreeTxnCCName = "sidetreetxn_cc"
-	anchorAddrPrefix  = "sidetreetxn_"
+	dcasColl          = "dcas"
 	k1                = "key1"
 )
 
@@ -54,7 +56,12 @@ func TestObserver(t *testing.T) {
 
 	p := mocks.NewBlockPublisher()
 
-	c := getDefaultDCASClient()
+	dcasCfg := config.DCAS{
+		ChaincodeName: sideTreeTxnCCName,
+		Collection:    dcasColl,
+	}
+
+	c := getDefaultDCASClient(dcasCfg)
 	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(c, nil)
 
@@ -62,7 +69,7 @@ func TestObserver(t *testing.T) {
 	opStoreProvider := &stmocks.OperationStoreProvider{}
 	opStoreProvider.ForNamespaceReturns(opStore, nil)
 
-	observer := New(channel,
+	observer := New(channel, dcasCfg,
 		&Providers{
 			DCAS:           dcasProvider,
 			OperationStore: opStoreProvider,
@@ -76,7 +83,7 @@ func TestObserver(t *testing.T) {
 	defer observer.Stop()
 
 	txMetaData := gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}
-	kvWrite := &kvrwset.KVWrite{Key: anchorAddrPrefix + k1, IsDelete: false, Value: []byte(getAnchorAddress(uniqueSuffix))}
+	kvWrite := &kvrwset.KVWrite{Key: common.AnchorAddrPrefix + k1, IsDelete: false, Value: []byte(getAnchorAddress(uniqueSuffix))}
 
 	require.NoError(t, p.HandleWrite(txMetaData, sideTreeTxnCCName, kvWrite))
 	time.Sleep(200 * time.Millisecond)
@@ -91,16 +98,16 @@ func TestObserver(t *testing.T) {
 	require.Len(t, ops, 2)
 }
 
-func getDefaultDCASClient() *obmocks.MockDCASClient {
+func getDefaultDCASClient(cfg config.DCAS) *obmocks.MockDCASClient {
 	dcasClient := obmocks.NewMockDCASClient()
 
 	batchBytes, anchorBytes := getSidetreeTxnPrerequisites(uniqueSuffix)
-	_, err := dcasClient.Put(common.SidetreeNs, common.SidetreeColl, batchBytes)
+	_, err := dcasClient.Put(cfg.ChaincodeName, cfg.Collection, batchBytes)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = dcasClient.Put(common.SidetreeNs, common.SidetreeColl, anchorBytes)
+	_, err = dcasClient.Put(cfg.ChaincodeName, cfg.Collection, anchorBytes)
 	if err != nil {
 		panic(err)
 	}

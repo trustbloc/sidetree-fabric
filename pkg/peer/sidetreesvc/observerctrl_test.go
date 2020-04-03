@@ -14,6 +14,7 @@ import (
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -31,7 +32,7 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		o := newObserverController(channel1, &mocks.DCASClientProvider{}, &mocks.OperationStoreProvider{}, n)
+		o := newObserverController(channel1, config.DCAS{}, &mocks.DCASClientProvider{}, &mocks.OperationStoreProvider{}, n)
 		require.NotNil(t, o)
 
 		require.NoError(t, o.Start())
@@ -46,7 +47,7 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		o := newObserverController(channel1, &mocks.DCASClientProvider{}, &mocks.OperationStoreProvider{}, n)
+		o := newObserverController(channel1, config.DCAS{}, &mocks.DCASClientProvider{}, &mocks.OperationStoreProvider{}, n)
 		require.NotNil(t, o)
 
 		require.NoError(t, o.Start())

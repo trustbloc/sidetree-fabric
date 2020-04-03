@@ -21,10 +21,10 @@ var myStepDefinitionsWrapper = function () {
     this.When(/^client sends request to "([^"]*)" to resolve DID document$/, function (callback) {
         callback.pending();
     });
-    this.When(/^client writes content "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, callback) {
+    this.When(/^client writes content "([^"]*)" using "([^"]*)" and the "([^"]*)" collection on the "([^"]*)" channel$/, function (arg1, arg2, arg3, callback) {
         callback.pending();
     });
-    this.Then(/^client verifies that written content at the returned address from "([^"]*)" matches original content on the "([^"]*)" channel$/, function (arg1, arg2, callback) {
+    this.Then(/^client verifies that written content at the returned address from "([^"]*)" and the "([^"]*)" collection matches original content on the "([^"]*)" channel$/, function (arg1, arg2, callback) {
         callback.pending();
     });
     this.When(/^client creates document with ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, callback) {

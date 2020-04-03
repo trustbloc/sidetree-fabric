@@ -14,11 +14,14 @@ import (
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
-const chID = "mychannel"
+const (
+	chID   = "mychannel"
+	ccName = "cc1"
+)
 
 func TestNew(t *testing.T) {
 	txnProvider := &stmocks.TxnServiceProvider{}
-	c := New(chID, txnProvider)
+	c := New(chID, ccName, txnProvider)
 	require.NotNil(t, c)
 }
 
@@ -28,7 +31,7 @@ func TestGetClientError(t *testing.T) {
 	txnProvider := &stmocks.TxnServiceProvider{}
 	txnProvider.ForChannelReturns(nil, testErr)
 
-	c := New(chID, txnProvider)
+	c := New(chID, ccName, txnProvider)
 	require.NotNil(t, c)
 
 	err := c.WriteAnchor("anchor")
@@ -40,7 +43,7 @@ func TestWriteAnchor(t *testing.T) {
 	txnProvider := &stmocks.TxnServiceProvider{}
 	txnProvider.ForChannelReturns(txnService, nil)
 
-	c := New(chID, txnProvider)
+	c := New(chID, ccName, txnProvider)
 
 	err := c.WriteAnchor("anchor")
 	require.Nil(t, err)
@@ -55,7 +58,7 @@ func TestWriteAnchorError(t *testing.T) {
 
 	txnProvider := &stmocks.TxnServiceProvider{}
 	txnProvider.ForChannelReturns(txnService, nil)
-	bc := New(chID, txnProvider)
+	bc := New(chID, ccName, txnProvider)
 
 	err := bc.WriteAnchor("anchor")
 	require.NotNil(t, err)
@@ -65,7 +68,7 @@ func TestWriteAnchorError(t *testing.T) {
 func TestClient_Read(t *testing.T) {
 	require.PanicsWithValue(t, "not implemented", func() {
 		txnProvider := &stmocks.TxnServiceProvider{}
-		c := New(chID, txnProvider)
+		c := New(chID, ccName, txnProvider)
 		c.Read(1000)
 	})
 }

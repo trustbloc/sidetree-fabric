@@ -36,6 +36,7 @@ func TestMonitorController(t *testing.T) {
 	peerCfg.MSPIDReturns(msp1)
 
 	monitorCfg := config.Monitor{Period: time.Second}
+	dcasCfg := config.DCAS{}
 	providers := &monitor.ClientProviders{}
 
 	t.Run("Monitor is started", func(t *testing.T) {
@@ -46,7 +47,7 @@ func TestMonitorController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		m := newMonitorController(channel1, peerCfg, monitorCfg, providers, &mocks.OperationStoreProvider{})
+		m := newMonitorController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{})
 		require.NotNil(t, m)
 
 		require.NoError(t, m.Start())
@@ -63,7 +64,7 @@ func TestMonitorController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		m := newMonitorController(channel1, peerCfg, monitorCfg, providers, &mocks.OperationStoreProvider{})
+		m := newMonitorController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{})
 		require.NotNil(t, m)
 
 		require.NoError(t, m.Start())

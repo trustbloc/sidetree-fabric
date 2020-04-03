@@ -2,6 +2,12 @@
   "MspID": "general",
   "Apps": [
     {
+      "AppName": "sidetree-dcas",
+      "Version": "1",
+      "Config": "file://./yourchannel-dcas-config.yaml",
+      "Format": "yaml"
+    },
+    {
       "AppName": "did:bloc:yourdomain.com",
       "Version": "1",
       "Tags": ["sidetree"],

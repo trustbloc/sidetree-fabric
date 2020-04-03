@@ -18,10 +18,10 @@ type monitorController struct {
 	monitor   *monitor.Monitor
 }
 
-func newMonitorController(channelID string, peerConfig peerConfig, monitorCfg config.Monitor, providers *monitor.ClientProviders, opStoreProvider common.OperationStoreProvider) *monitorController {
+func newMonitorController(channelID string, peerConfig peerConfig, monitorCfg config.Monitor, dcasCfg config.DCAS, providers *monitor.ClientProviders, opStoreProvider common.OperationStoreProvider) *monitorController {
 	var m *monitor.Monitor
 	if role.IsMonitor() {
-		m = monitor.New(channelID, peerConfig.PeerID(), monitorCfg, providers, opStoreProvider)
+		m = monitor.New(channelID, peerConfig.PeerID(), monitorCfg, dcasCfg, providers, opStoreProvider)
 	}
 
 	return &monitorController{

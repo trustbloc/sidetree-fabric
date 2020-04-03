@@ -9,6 +9,7 @@ package sidetreesvc
 import (
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
@@ -20,11 +21,11 @@ type observerController struct {
 	observer  *observer.Observer
 }
 
-func newObserverController(channelID string, dcasProvider common.DCASClientProvider, opStoreProvider common.OperationStoreProvider, notifier sidetreeobserver.Ledger) *observerController {
+func newObserverController(channelID string, dcasCfg config.DCAS, dcasProvider common.DCASClientProvider, opStoreProvider common.OperationStoreProvider, notifier sidetreeobserver.Ledger) *observerController {
 	var o *observer.Observer
 
 	if role.IsObserver() {
-		o = observer.New(channelID,
+		o = observer.New(channelID, dcasCfg,
 			&observer.Providers{
 				DCAS:           dcasProvider,
 				OperationStore: opStoreProvider,

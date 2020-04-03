@@ -64,6 +64,17 @@ type SidetreeConfigService struct {
 		result1 []filehandler.Config
 		result2 error
 	}
+	LoadDCASStub        func() (config.DCAS, error)
+	loadDCASMutex       sync.RWMutex
+	loadDCASArgsForCall []struct{}
+	loadDCASReturns     struct {
+		result1 config.DCAS
+		result2 error
+	}
+	loadDCASReturnsOnCall map[int]struct {
+		result1 config.DCAS
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -274,6 +285,49 @@ func (fake *SidetreeConfigService) LoadFileHandlersReturnsOnCall(i int, result1 
 	}{result1, result2}
 }
 
+func (fake *SidetreeConfigService) LoadDCAS() (config.DCAS, error) {
+	fake.loadDCASMutex.Lock()
+	ret, specificReturn := fake.loadDCASReturnsOnCall[len(fake.loadDCASArgsForCall)]
+	fake.loadDCASArgsForCall = append(fake.loadDCASArgsForCall, struct{}{})
+	fake.recordInvocation("LoadDCAS", []interface{}{})
+	fake.loadDCASMutex.Unlock()
+	if fake.LoadDCASStub != nil {
+		return fake.LoadDCASStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.loadDCASReturns.result1, fake.loadDCASReturns.result2
+}
+
+func (fake *SidetreeConfigService) LoadDCASCallCount() int {
+	fake.loadDCASMutex.RLock()
+	defer fake.loadDCASMutex.RUnlock()
+	return len(fake.loadDCASArgsForCall)
+}
+
+func (fake *SidetreeConfigService) LoadDCASReturns(result1 config.DCAS, result2 error) {
+	fake.LoadDCASStub = nil
+	fake.loadDCASReturns = struct {
+		result1 config.DCAS
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *SidetreeConfigService) LoadDCASReturnsOnCall(i int, result1 config.DCAS, result2 error) {
+	fake.LoadDCASStub = nil
+	if fake.loadDCASReturnsOnCall == nil {
+		fake.loadDCASReturnsOnCall = make(map[int]struct {
+			result1 config.DCAS
+			result2 error
+		})
+	}
+	fake.loadDCASReturnsOnCall[i] = struct {
+		result1 config.DCAS
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *SidetreeConfigService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -285,6 +339,8 @@ func (fake *SidetreeConfigService) Invocations() map[string][][]interface{} {
 	defer fake.loadSidetreePeerMutex.RUnlock()
 	fake.loadFileHandlersMutex.RLock()
 	defer fake.loadFileHandlersMutex.RUnlock()
+	fake.loadDCASMutex.RLock()
+	defer fake.loadDCASMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

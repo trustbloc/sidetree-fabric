@@ -11,21 +11,33 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+)
+
+const (
+	sideTreeTxnCCName = "sidetreetxn_cc"
+	dcasColl          = "dcas"
 )
 
 func TestSidetreeDCASReader_Read(t *testing.T) {
 	dcasClient := obmocks.NewMockDCASClient()
 	dcasClientProvider := &stmocks.DCASClientProvider{}
 	dcasClientProvider.ForChannelReturns(dcasClient, nil)
-	r := NewSidetreeDCASReader(channel1, dcasClientProvider)
+
+	dcasCfg := config.DCAS{
+		ChaincodeName: sideTreeTxnCCName,
+		Collection:    dcasColl,
+	}
+
+	r := NewSidetreeDCASReader(channel1, dcasCfg, dcasClientProvider)
 	require.NotNil(t, r)
 
 	t.Run("Found", func(t *testing.T) {
 		expectedValue := []byte("some value")
-		key, err := dcasClient.Put(common.SidetreeNs, common.SidetreeColl, expectedValue)
+		key, err := dcasClient.Put(dcasCfg.ChaincodeName, dcasCfg.Collection, expectedValue)
 		require.NoError(t, err)
 
 		value, err := r.Read(key)
@@ -50,7 +62,13 @@ func TestSidetreeDCASReader_ReadError(t *testing.T) {
 
 	dcasClientProvider := &stmocks.DCASClientProvider{}
 	dcasClientProvider.ForChannelReturns(dcasClient, nil)
-	r := NewSidetreeDCASReader(channel1, dcasClientProvider)
+
+	dcasCfg := config.DCAS{
+		ChaincodeName: sideTreeTxnCCName,
+		Collection:    dcasColl,
+	}
+
+	r := NewSidetreeDCASReader(channel1, dcasCfg, dcasClientProvider)
 	require.NotNil(t, r)
 
 	errExpected := errors.New("injected Put error")

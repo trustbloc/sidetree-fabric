@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	sidetreeTxnCC  = "sidetreetxn_cc"
 	writeAnchorFcn = "writeAnchor"
 )
 
@@ -23,15 +22,17 @@ type txnServiceProvider interface {
 
 // Client implements blockchain client for writing anchors
 type Client struct {
-	channelID   string
-	txnProvider txnServiceProvider
+	channelID     string
+	chaincodeName string
+	txnProvider   txnServiceProvider
 }
 
 // New returns a new blockchain client
-func New(channelID string, txnProvider txnServiceProvider) *Client {
+func New(channelID, chaincodeName string, txnProvider txnServiceProvider) *Client {
 	return &Client{
-		channelID:   channelID,
-		txnProvider: txnProvider,
+		channelID:     channelID,
+		chaincodeName: chaincodeName,
+		txnProvider:   txnProvider,
 	}
 }
 
@@ -43,7 +44,7 @@ func (c *Client) WriteAnchor(anchor string) error {
 	}
 
 	_, err = txnService.EndorseAndCommit(&txnapi.Request{
-		ChaincodeID: sidetreeTxnCC,
+		ChaincodeID: c.chaincodeName,
 		Args:        [][]byte{[]byte(writeAnchorFcn), []byte(anchor)},
 	})
 	if err != nil {

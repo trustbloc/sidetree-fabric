@@ -30,6 +30,11 @@ func TestContext(t *testing.T) {
 		BasePath:  didTrustblocBasePath,
 	}
 
+	dcasCfg := config.DCAS{
+		ChaincodeName: "cc1",
+		Collection:    "dcas",
+	}
+
 	ctxProviders := &ContextProviders{
 		TxnProvider:            &peermocks.TxnServiceProvider{},
 		DCASProvider:           &peermocks.DCASClientProvider{},
@@ -49,7 +54,7 @@ func TestContext(t *testing.T) {
 		stConfigService := &cfgmocks.SidetreeConfigService{}
 		stConfigService.LoadProtocolsReturns(protocolVersions, nil)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
+		ctx, err := newContext(channel1, nsCfg, dcasCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
 		require.NoError(t, err)
 		require.NotNil(t, ctx)
 
@@ -80,7 +85,7 @@ func TestContext(t *testing.T) {
 		opStoreProvider := &mocks.OperationStoreProvider{}
 		opStoreProvider.ForNamespaceReturns(nil, errExpected)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders, opStoreProvider)
+		ctx, err := newContext(channel1, nsCfg, dcasCfg, stConfigService, ctxProviders, opStoreProvider)
 		require.EqualError(t, err, errExpected.Error())
 		require.Nil(t, ctx)
 	})
@@ -88,7 +93,7 @@ func TestContext(t *testing.T) {
 	t.Run("No protocols -> error", func(t *testing.T) {
 		stConfigService := &cfgmocks.SidetreeConfigService{}
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
+		ctx, err := newContext(channel1, nsCfg, dcasCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "no protocols defined")
 		require.Nil(t, ctx)
@@ -99,7 +104,7 @@ func TestContext(t *testing.T) {
 		stConfigService := &cfgmocks.SidetreeConfigService{}
 		stConfigService.LoadProtocolsReturns(nil, errExpected)
 
-		ctx, err := newContext(channel1, nsCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
+		ctx, err := newContext(channel1, nsCfg, dcasCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{})
 		require.EqualError(t, err, errExpected.Error())
 		require.Nil(t, ctx)
 	})

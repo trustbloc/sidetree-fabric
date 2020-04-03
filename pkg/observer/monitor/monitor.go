@@ -58,7 +58,7 @@ type Monitor struct {
 }
 
 // New returns a new document monitor
-func New(channelID, localPeerID string, cfg config.Monitor, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider) *Monitor {
+func New(channelID, localPeerID string, cfg config.Monitor, dcasCfg config.DCAS, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider) *Monitor {
 	m := &Monitor{
 		channelID:     channelID,
 		period:        cfg.Period,
@@ -66,7 +66,7 @@ func New(channelID, localPeerID string, cfg config.Monitor, clientProviders *Cli
 		metaDataStore: NewMetaDataStore(channelID, localPeerID, cfg.MetaDataChaincodeName, clientProviders.OffLedger),
 		txnProcessor: observer.NewTxnProcessor(
 			&observer.Providers{
-				DCASClient:       NewSidetreeDCASReader(channelID, clientProviders.DCAS),
+				DCASClient:       NewSidetreeDCASReader(channelID, dcasCfg, clientProviders.DCAS),
 				OpStoreProvider:  NewOperationStoreProvider(channelID, opStoreProvider),
 				OpFilterProvider: operationfilter.NewProvider(channelID, opStoreProvider),
 			},
@@ -166,12 +166,8 @@ func (m *Monitor) checkBlock(bNum uint64) error {
 }
 
 func (m *Monitor) handleWrite(w *blockvisitor.Write) error {
-	if w.Namespace != common.SidetreeNs {
-		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since it is not the Sidetree namespace [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.SidetreeNs)
-		return nil
-	}
 	if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
-		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, common.SidetreeNs, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
+		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
 		return nil
 	}
 

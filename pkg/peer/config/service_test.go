@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	ledgercfg "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/peer/config/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
@@ -37,6 +38,9 @@ const (
 	peerCfgJson                      = `{"Monitor":{"Period":"5s"},"Rest":{"Host":"0.0.0.0","Port":"48326"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"},{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev/document"}]}`
 	fileHandler1CfgJson              = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
 	fileHandler2CfgJson              = `{"BasePath":"/.well-known/trustbloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:5678"}`
+	dcasCfgJson                      = `{"ChaincodeName":"cc1","Collection":"dcas"}`
+	dcasCfgMissingCCJson             = `{"Collection":"dcas"}`
+	dcasCfgMissingCollJson           = `{"ChaincodeName":"cc1"}`
 )
 
 func TestNewSidetreeProvider(t *testing.T) {
@@ -220,5 +224,60 @@ func TestNewSidetreeProvider(t *testing.T) {
 		require.Len(t, cfg, 2)
 		require.Equal(t, "/schema", cfg[0].BasePath)
 		require.Equal(t, "/.well-known/trustbloc", cfg[1].BasePath)
+	})
+
+	t.Run("LoadDCAS", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			cfgValue := &ledgercfg.Value{
+				TxID:   "tx1",
+				Format: "json",
+				Config: dcasCfgJson,
+			}
+
+			configService.GetReturns(cfgValue, nil)
+
+			cfg, err := s.LoadDCAS()
+			require.NoError(t, err)
+			require.Equal(t, "cc1", cfg.ChaincodeName)
+			require.Equal(t, "dcas", cfg.Collection)
+		})
+
+		t.Run("Service error", func(t *testing.T) {
+			errExpected := errors.New("injected service error")
+			configService.GetReturns(nil, errExpected)
+
+			cfg, err := s.LoadDCAS()
+			require.Error(t, err)
+			require.Contains(t, err.Error(), errExpected.Error())
+			require.Equal(t, config.DCAS{}, cfg)
+		})
+
+		t.Run("Missing ChaincodeName", func(t *testing.T) {
+			cfgValue := &ledgercfg.Value{
+				TxID:   "tx1",
+				Format: "json",
+				Config: dcasCfgMissingCCJson,
+			}
+
+			configService.GetReturns(cfgValue, nil)
+
+			cfg, err := s.LoadDCAS()
+			require.EqualError(t, err, "field 'ChaincodeName' is required")
+			require.Equal(t, config.DCAS{}, cfg)
+		})
+
+		t.Run("Missing ChaincodeName", func(t *testing.T) {
+			cfgValue := &ledgercfg.Value{
+				TxID:   "tx1",
+				Format: "json",
+				Config: dcasCfgMissingCollJson,
+			}
+
+			configService.GetReturns(cfgValue, nil)
+
+			cfg, err := s.LoadDCAS()
+			require.EqualError(t, err, "field 'Collection' is required")
+			require.Equal(t, config.DCAS{}, cfg)
+		})
 	})
 }

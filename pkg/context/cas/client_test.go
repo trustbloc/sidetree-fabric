@@ -11,14 +11,25 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
-const chID = "mychannel"
+const (
+	chID   = "mychannel"
+	ccName = "cc1"
+	coll   = "coll1"
+)
 
 func TestNew(t *testing.T) {
 	dcasProvider := &stmocks.DCASClientProvider{}
-	c := New(chID, dcasProvider)
+	c := New(chID,
+		config.DCAS{
+			ChaincodeName: ccName,
+			Collection:    coll,
+		},
+		dcasProvider)
 	require.NotNil(t, c)
 }
 
@@ -28,7 +39,12 @@ func TestForChannelError(t *testing.T) {
 	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(nil, testErr)
 
-	c := New(chID, dcasProvider)
+	c := New(chID,
+		config.DCAS{
+			ChaincodeName: ccName,
+			Collection:    coll,
+		},
+		dcasProvider)
 	require.NotNil(t, c)
 
 	content := []byte("content")
@@ -52,7 +68,12 @@ func TestWriteContent(t *testing.T) {
 	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(dcasClient, nil)
 
-	cas := New(chID, dcasProvider)
+	cas := New(chID,
+		config.DCAS{
+			ChaincodeName: ccName,
+			Collection:    coll,
+		},
+		dcasProvider)
 	require.NotNil(t, cas)
 
 	address, err := cas.Write(content)
@@ -73,7 +94,12 @@ func TestWriteContentError(t *testing.T) {
 	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(dcasClient, nil)
 
-	cas := New(chID, dcasProvider)
+	cas := New(chID,
+		config.DCAS{
+			ChaincodeName: ccName,
+			Collection:    coll,
+		},
+		dcasProvider)
 
 	content := []byte("content")
 	address, err := cas.Write(content)
@@ -91,7 +117,12 @@ func TestReadContentError(t *testing.T) {
 	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(dcasClient, nil)
 
-	cas := New(chID, dcasProvider)
+	cas := New(chID,
+		config.DCAS{
+			ChaincodeName: ccName,
+			Collection:    coll,
+		},
+		dcasProvider)
 
 	read, err := cas.Read("address")
 	require.NotNil(t, err)

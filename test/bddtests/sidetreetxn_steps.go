@@ -28,10 +28,10 @@ func NewSidetreeSteps(context *bddtests.BDDContext) *SidetreeTxnSteps {
 	return &SidetreeTxnSteps{BDDContext: context}
 }
 
-func (t *SidetreeTxnSteps) writeContent(content, ccID, channelID string) error {
+func (t *SidetreeTxnSteps) writeContent(content, ccID, coll, channelID string) error {
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
-	args := []string{"writeContent", content}
+	args := []string{"writeContent", coll, content}
 	resp, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil)
 	if err != nil {
 		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
@@ -43,11 +43,11 @@ func (t *SidetreeTxnSteps) writeContent(content, ccID, channelID string) error {
 	return nil
 }
 
-func (t *SidetreeTxnSteps) readContent(ccID, channelID string) error {
+func (t *SidetreeTxnSteps) readContent(ccID, coll, channelID string) error {
 
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
-	args := []string{"readContent", t.address}
+	args := []string{"readContent", coll, t.address}
 	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil)
 	if err != nil {
 		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
@@ -60,7 +60,7 @@ func (t *SidetreeTxnSteps) readContent(ccID, channelID string) error {
 	return nil
 }
 
-func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, channelID string) error {
+func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, coll, channelID string) error {
 	logger.Infof("Preparing to write anchor batch on channel [%s]", channelID)
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
@@ -69,14 +69,14 @@ func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, channelID string) error {
 
 	batchFile := getBatchFileBytes(operations)
 	logger.Infof("... writing batch file on channel [%s]", channelID)
-	err := t.writeContent(batchFile, ccID, channelID)
+	err := t.writeContent(batchFile, ccID, coll, channelID)
 	if err != nil {
 		return fmt.Errorf("write batch file to DCAS return error: %s", err)
 	}
 
 	anchor := getAnchorFileBytes(t.address, []string{"uniqueSuffix1", "uniqueSuffix2"})
 	logger.Infof("... writing anchor file on channel [%s]", channelID)
-	err = t.writeContent(anchor, ccID, channelID)
+	err = t.writeContent(anchor, ccID, coll, channelID)
 	if err != nil {
 		return fmt.Errorf("write anchor file to DCAS return error: %s", err)
 	}
@@ -220,8 +220,8 @@ func getBatchFileBytes(operations []string) string {
 
 func getAnchorFileBytes(batchFileHash string, uniqueSuffixes []string) string {
 	af := AnchorFile{
-		BatchFileHash: batchFileHash,
-		UniqueSuffixes:    uniqueSuffixes,
+		BatchFileHash:  batchFileHash,
+		UniqueSuffixes: uniqueSuffixes,
 	}
 	s, err := json.Marshal(af)
 	if err != nil {
@@ -234,8 +234,8 @@ func getAnchorFileBytes(batchFileHash string, uniqueSuffixes []string) string {
 func (t *SidetreeTxnSteps) RegisterSteps(s *godog.Suite) {
 	s.BeforeScenario(t.BDDContext.BeforeScenario)
 	s.AfterScenario(t.BDDContext.AfterScenario)
-	s.Step(`^client writes content "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.writeContent)
-	s.Step(`^client verifies that written content at the returned address from "([^"]*)" matches original content on the "([^"]*)" channel$`, t.readContent)
+	s.Step(`^client writes content "([^"]*)" using "([^"]*)" and the "([^"]*)" collection on the "([^"]*)" channel$`, t.writeContent)
+	s.Step(`^client verifies that written content at the returned address from "([^"]*)" and the "([^"]*)" collection matches original content on the "([^"]*)" channel$`, t.readContent)
 	s.Step(`^client writes operations batch file and anchor file for ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.anchorBatch)
 	s.Step(`^client creates document with ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.createDocument)
 	s.Step(`^client updates document with ID "([^"]*)" using "([^"]*)" on the "([^"]*)" channel$`, t.updateDocument)
