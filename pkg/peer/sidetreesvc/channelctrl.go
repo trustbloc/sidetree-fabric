@@ -143,6 +143,11 @@ func (c *channelController) load() error {
 		return err
 	}
 
+	dcasCfg, err := c.loadDCASConfig()
+	if err != nil {
+		return err
+	}
+
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -150,7 +155,7 @@ func (c *channelController) load() error {
 
 	storeProvider := store.NewProvider(c.channelID, c.sidetreeCfgService, c.DCASProvider)
 
-	if err := c.loadContexts(cfg.Namespaces, storeProvider); err != nil {
+	if err := c.loadContexts(cfg.Namespaces, dcasCfg, storeProvider); err != nil {
 		return err
 	}
 
@@ -158,11 +163,11 @@ func (c *channelController) load() error {
 		return err
 	}
 
-	if err := c.restartObserver(storeProvider); err != nil {
+	if err := c.restartObserver(dcasCfg, storeProvider); err != nil {
 		return err
 	}
 
-	if err := c.restartMonitor(cfg.Monitor, storeProvider); err != nil {
+	if err := c.restartMonitor(cfg.Monitor, dcasCfg, storeProvider); err != nil {
 		return err
 	}
 
@@ -178,8 +183,8 @@ type contextPair struct {
 	oldCtx *context
 }
 
-func (c *channelController) loadContexts(namespaces []config.Namespace, storeProvider ctxcommon.OperationStoreProvider) error {
-	loadedContexts, err := c.loadNewContexts(namespaces, storeProvider)
+func (c *channelController) loadContexts(namespaces []config.Namespace, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
+	loadedContexts, err := c.loadNewContexts(namespaces, dcasCfg, storeProvider)
 	if err != nil {
 		return err
 	}
@@ -214,11 +219,11 @@ func (c *channelController) loadContexts(namespaces []config.Namespace, storePro
 	return nil
 }
 
-func (c *channelController) loadNewContexts(namespaces []config.Namespace, storeProvider ctxcommon.OperationStoreProvider) ([]*context, error) {
+func (c *channelController) loadNewContexts(namespaces []config.Namespace, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) ([]*context, error) {
 	var contexts []*context
 
 	for _, nsCfg := range namespaces {
-		ctx, err := newContext(c.channelID, nsCfg, c.sidetreeCfgService, c.ContextProviders, storeProvider)
+		ctx, err := newContext(c.channelID, nsCfg, dcasCfg, c.sidetreeCfgService, c.ContextProviders, storeProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -245,22 +250,26 @@ func (c *channelController) loadFileHandlerConfig() ([]filehandler.Config, error
 	return nil, err
 }
 
-func (c *channelController) restartObserver(storeProvider ctxcommon.OperationStoreProvider) error {
+func (c *channelController) loadDCASConfig() (config.DCAS, error) {
+	return c.sidetreeCfgService.LoadDCAS()
+}
+
+func (c *channelController) restartObserver(dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
 	if c.observer != nil {
 		c.observer.Stop()
 	}
 
-	c.observer = newObserverController(c.channelID, c.DCASProvider, storeProvider, c.notifier)
+	c.observer = newObserverController(c.channelID, dcasCfg, c.DCASProvider, storeProvider, c.notifier)
 
 	return c.observer.Start()
 }
 
-func (c *channelController) restartMonitor(cfg config.Monitor, storeProvider ctxcommon.OperationStoreProvider) error {
+func (c *channelController) restartMonitor(monitorCfg config.Monitor, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
 	if c.monitor != nil {
 		c.monitor.Stop()
 	}
 
-	c.monitor = newMonitorController(c.channelID, c.PeerConfig, cfg, c.MonitorProviders, storeProvider)
+	c.monitor = newMonitorController(c.channelID, c.PeerConfig, monitorCfg, dcasCfg, c.MonitorProviders, storeProvider)
 
 	return c.monitor.Start()
 }
@@ -315,7 +324,9 @@ func (c *channelController) isMonitoringNamespace(namespace string) bool {
 
 func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
 	if kv.MspID == c.PeerConfig.MSPID() && kv.PeerID == c.PeerConfig.PeerID() &&
-		(kv.AppName == peerconfig.SidetreePeerAppName || kv.AppName == peerconfig.FileHandlerAppName) {
+		(kv.AppName == peerconfig.SidetreePeerAppName ||
+			kv.AppName == peerconfig.FileHandlerAppName ||
+			kv.AppName == peerconfig.DCASAppName) {
 		return true
 	}
 

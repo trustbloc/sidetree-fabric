@@ -14,6 +14,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/blockchain"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/cas"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/protocol"
@@ -44,6 +45,7 @@ type operationQueueProvider interface {
 // New creates new Sidetree context
 func New(
 	channelID, namespace string,
+	dcasCfg config.DCAS,
 	protocolVersions map[string]protocolApi.Protocol,
 	txnProvider txnServiceProvider,
 	dcasProvider dcasClientProvider,
@@ -57,8 +59,8 @@ func New(
 		channelID:        channelID,
 		namespace:        namespace,
 		protocolClient:   protocol.New(protocolVersions),
-		casClient:        cas.New(channelID, dcasProvider),
-		blockchainClient: blockchain.New(channelID, txnProvider),
+		casClient:        cas.New(channelID, dcasCfg, dcasProvider),
+		blockchainClient: blockchain.New(channelID, dcasCfg.ChaincodeName, txnProvider),
 		opQueue:          opQueue,
 	}, nil
 }

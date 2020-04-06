@@ -32,6 +32,7 @@ import (
 	extpeer "github.com/trustbloc/fabric-peer-ext/pkg/peer"
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -60,6 +61,8 @@ const (
 	tx5 = "tx5"
 	tx6 = "tx6"
 
+	dcasCfgJson = `{"ChaincodeName":"sidetreetxn","Collection":"dcas"}`
+
 	peerSidetreeCfgJson  = `{"Monitor":{"Period":"5s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"}]}`
 	peerTrustblocCfgJson = `{"Monitor":{"Period":"5s"},"Namespaces":[{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev"}]}`
 	peerBothCfgJson      = `{"Monitor":{"Period":"5s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"},{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev"}]}`
@@ -83,6 +86,9 @@ var (
 	_ = blockpublisher.ProviderInstance
 	_ = storeprovider.NewProviderFactory()
 	_ = extroles.GetRoles()
+
+	dcasCfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewAppKey(config.GlobalMSPID, config.DCASAppName, config.DCASAppVersion))
+	dcasCfgValueBytes = marshalConfigValue(tx1, dcasCfgJson, "json")
 
 	didTrustblocCfgKeyBytes         = ledgercfgmgr.MarshalKey(ledgercfg.NewAppKey(config.GlobalMSPID, didTrustblocNamespace, v1))
 	didTrustblocCfgValueBytes       = marshalConfigValue(tx1, didTrustblocCfgYaml, "yaml")
@@ -124,6 +130,7 @@ func TestInitialize(t *testing.T) {
 	defer restore()
 
 	qe := mocks.NewQueryExecutor().
+		WithState(configSCC, dcasCfgKeyBytes, dcasCfgValueBytes).
 		WithState(configSCC, didTrustblocCfgKeyBytes, didTrustblocCfgValueBytes).
 		WithState(configSCC, getIndexKey(didTrustblocCfgKeyBytes, []string{config.GlobalMSPID}), []byte("{}")).
 		WithState(configSCC, didSidetreeCfgKeyBytes, didSidetreeCfgValueBytes).

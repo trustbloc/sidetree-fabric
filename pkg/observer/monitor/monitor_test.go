@@ -44,7 +44,7 @@ func TestMonitor(t *testing.T) {
 
 	b := peerextmocks.NewBlockBuilder(channel1, 1001)
 	tb1 := b.Transaction(txID1, pb.TxValidationCode_VALID)
-	tb1.ChaincodeAction(common.SidetreeNs).
+	tb1.ChaincodeAction(sideTreeTxnCCName).
 		Write(common.AnchorAddrPrefix+anchor1, []byte(anchor1)).
 		Write("non_anchor_key", []byte("some value"))
 	tb1.ChaincodeAction("some_other_cc").
@@ -134,7 +134,7 @@ func TestMonitor_Error(t *testing.T) {
 
 	b := peerextmocks.NewBlockBuilder(channel1, 1001)
 	tb1 := b.Transaction(txID1, pb.TxValidationCode_VALID)
-	tb1.ChaincodeAction(common.SidetreeNs).
+	tb1.ChaincodeAction(sideTreeTxnCCName).
 		Write(common.AnchorAddrPrefix+anchor1, []byte(anchor1)).
 		Write("non_anchor_key", []byte("some value"))
 	tb1.ChaincodeAction("some_other_cc").
@@ -398,8 +398,13 @@ func newMockClients() *mockClients {
 }
 
 func newMonitorWithMocks(t *testing.T, channelID string, cfg config.Monitor, clients *mockClients, opStoreProvider ctxcommon.OperationStoreProvider) *Monitor {
+	dcasCfg := config.DCAS{
+		ChaincodeName: sideTreeTxnCCName,
+		Collection:    dcasColl,
+	}
+
 	m := New(
-		channelID, peer1, cfg,
+		channelID, peer1, cfg, dcasCfg,
 		&ClientProviders{
 			OffLedger:  clients.offLedgerProvider,
 			DCAS:       clients.dcasProvider,

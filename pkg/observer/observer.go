@@ -10,6 +10,7 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
@@ -18,12 +19,14 @@ import (
 var logger = flogging.MustGetLogger("sidetree_observer")
 
 type dcas struct {
+	config.DCAS
 	channelID      string
 	clientProvider common.DCASClientProvider
 }
 
-func newDCAS(channelID string, provider common.DCASClientProvider) *dcas {
+func newDCAS(channelID string, dcasCfg config.DCAS, provider common.DCASClientProvider) *dcas {
 	return &dcas{
+		DCAS:           dcasCfg,
 		channelID:      channelID,
 		clientProvider: provider,
 	}
@@ -34,7 +37,7 @@ func (d *dcas) Read(key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return dcasClient.Get(common.SidetreeNs, common.SidetreeColl, key)
+	return dcasClient.Get(d.ChaincodeName, d.Collection, key)
 }
 
 func (d *dcas) getDCASClient() (dcasclient.DCAS, error) {
@@ -56,10 +59,10 @@ type Providers struct {
 }
 
 // New returns a new Observer
-func New(channelID string, providers *Providers) *Observer {
+func New(channelID string, dcasCfg config.DCAS, providers *Providers) *Observer {
 	stProviders := &sidetreeobserver.Providers{
 		Ledger:           providers.Ledger,
-		DCASClient:       newDCAS(channelID, providers.DCAS),
+		DCASClient:       newDCAS(channelID, dcasCfg, providers.DCAS),
 		OpStoreProvider:  storeProvider(providers.OperationStore),
 		OpFilterProvider: providers.Filter,
 	}

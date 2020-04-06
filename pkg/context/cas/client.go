@@ -8,11 +8,8 @@ package cas
 
 import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
-)
 
-const (
-	sidetreeTxnCC = "sidetreetxn_cc"
-	collection    = "dcas"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 )
 
 type dcasClientProvider interface {
@@ -21,13 +18,15 @@ type dcasClientProvider interface {
 
 // Client implements client for accessing the underlying content addressable storage
 type Client struct {
+	config.DCAS
 	dcasProvider dcasClientProvider
 	channelID    string
 }
 
 // New returns a new CAS client
-func New(channelID string, dcasProvider dcasClientProvider) *Client {
+func New(channelID string, dcasCfg config.DCAS, dcasProvider dcasClientProvider) *Client {
 	return &Client{
+		DCAS:         dcasCfg,
 		channelID:    channelID,
 		dcasProvider: dcasProvider,
 	}
@@ -40,7 +39,7 @@ func (c *Client) Write(content []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return dcasClient.Put(sidetreeTxnCC, collection, content)
+	return dcasClient.Put(c.ChaincodeName, c.Collection, content)
 }
 
 // Read reads the content at the given address from content addressable storage
@@ -50,5 +49,5 @@ func (c *Client) Read(address string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return dcasClient.Get(sidetreeTxnCC, collection, address)
+	return dcasClient.Get(c.ChaincodeName, c.Collection, address)
 }

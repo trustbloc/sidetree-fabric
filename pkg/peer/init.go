@@ -31,6 +31,6 @@ func Initialize() {
 
 	// Register chaincode
 	ucc.Register(func() ccapi.UserCC { return doc.New("document") })
-	ucc.Register(func() ccapi.UserCC { return txn.New("sidetreetxn_cc") })
+	ucc.Register(func() ccapi.UserCC { return txn.New("sidetreetxn") })
 	ucc.Register(func() ccapi.UserCC { return file.New("file") })
 }

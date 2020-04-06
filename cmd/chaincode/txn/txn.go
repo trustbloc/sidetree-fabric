@@ -14,7 +14,9 @@ import (
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/flogging"
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
+
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
 var logger = flogging.MustGetLogger("sidetreetxncc")
@@ -28,10 +30,6 @@ const (
 	writeAnchor  = "writeAnchor"
 	anchorBatch  = "anchorBatch"
 	warmup       = "warmup"
-	// collection is the name of the private data collection for storing content
-	collection = "dcas"
-	// anchor address prefix
-	anchorAddrPrefix = "sidetreetxn_"
 )
 
 // funcMap is a map of functions by function name
@@ -109,15 +107,15 @@ func (cc *SidetreeTxnCC) Invoke(stub shim.ChaincodeStubInterface) (resp pb.Respo
 // writeContent will write content using cas client
 func (cc *SidetreeTxnCC) write(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
-	if len(args) < 1 || len(args[0]) == 0 {
-		err := "missing content"
+	if len(args) != 2 || len(args[0]) == 0 || len(args[1]) == 0 {
+		err := "collection and content are required"
 		logger.Debugf("[txID %s] %s", txID, err)
 		return shim.Error(err)
 	}
 
-	client := cas.New(stub, collection)
+	client := cas.New(stub, string(args[0]))
 
-	address, err := client.Write(args[0])
+	address, err := client.Write(args[1])
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to write content: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)
@@ -130,15 +128,15 @@ func (cc *SidetreeTxnCC) write(stub shim.ChaincodeStubInterface, args [][]byte) 
 // readContent will read content using cas client
 func (cc *SidetreeTxnCC) read(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
-	if len(args) < 1 || len(args[0]) == 0 {
-		errMsg := "missing content address"
+	if len(args) != 2 || len(args[0]) == 0 || len(args[1]) == 0 {
+		errMsg := "collection and content address are required"
 		logger.Debugf("[txID %s] %s", txID, errMsg)
 		return shim.Error(errMsg)
 	}
 
-	client := cas.New(stub, collection)
+	client := cas.New(stub, string(args[0]))
 
-	address := string(args[0])
+	address := string(args[1])
 	payload, err := client.Read(address)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to read content: %s", err.Error())
@@ -161,16 +159,16 @@ func (cc *SidetreeTxnCC) read(stub shim.ChaincodeStubInterface, args [][]byte) p
 func (cc *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
 
-	if len(args) < 2 || len(args[0]) == 0 || len(args[1]) == 0 {
-		errMsg := "batch and anchor files are required"
+	if len(args) != 3 || len(args[0]) == 0 || len(args[1]) == 0 || len(args[2]) == 0 {
+		errMsg := "collection, batch, and anchor files are required"
 		logger.Debugf("[txID %s] %s", txID, errMsg)
 		return shim.Error(errMsg)
 	}
 
-	client := cas.New(stub, collection)
+	client := cas.New(stub, string(args[0]))
 
 	// write batch file
-	_, err := client.Write(args[0])
+	_, err := client.Write(args[1])
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to write batch content: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)
@@ -178,7 +176,7 @@ func (cc *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]
 	}
 
 	// write anchor file
-	anchorAddr, err := client.Write(args[1])
+	anchorAddr, err := client.Write(args[2])
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to write anchor content: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)
@@ -186,7 +184,7 @@ func (cc *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]
 	}
 
 	// record anchor file address on the ledger (Sidetree Transaction)
-	err = stub.PutState(anchorAddrPrefix+anchorAddr, []byte(anchorAddr))
+	err = stub.PutState(common.AnchorAddrPrefix+anchorAddr, []byte(anchorAddr))
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to write anchor address: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)
@@ -199,7 +197,7 @@ func (cc *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]
 // writeAnchor will record anchor file address on the ledger
 func (cc *SidetreeTxnCC) writeAnchor(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
-	if len(args) < 1 || len(args[0]) == 0 {
+	if len(args) != 1 || len(args[0]) == 0 {
 		errMsg := "missing anchor file address"
 		logger.Debugf("[txID %s] %s", txID, errMsg)
 		return shim.Error(errMsg)
@@ -208,7 +206,7 @@ func (cc *SidetreeTxnCC) writeAnchor(stub shim.ChaincodeStubInterface, args [][]
 	anchorAddr := string(args[0])
 
 	// record anchor file address on the ledger (Sidetree Transaction)
-	err := stub.PutState(anchorAddrPrefix+anchorAddr, []byte(anchorAddr))
+	err := stub.PutState(common.AnchorAddrPrefix+anchorAddr, []byte(anchorAddr))
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to write anchor address: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)

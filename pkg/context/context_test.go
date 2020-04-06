@@ -14,6 +14,8 @@ import (
 
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
@@ -24,6 +26,8 @@ import (
 const (
 	channelID = "channel1"
 	namespace = "did:sidetree"
+	ccName    = "cc1"
+	coll      = "coll1"
 )
 
 func TestNew(t *testing.T) {
@@ -35,13 +39,18 @@ func TestNew(t *testing.T) {
 	errExpected := errors.New("injected op queue error")
 	opQueueProvider.CreateReturns(nil, errExpected)
 
-	sctx, err := New(channelID, namespace, protocolVersions, txnProvider, dcasProvider, opQueueProvider)
+	dcasCfg := config.DCAS{
+		ChaincodeName: ccName,
+		Collection:    coll,
+	}
+
+	sctx, err := New(channelID, namespace, dcasCfg, protocolVersions, txnProvider, dcasProvider, opQueueProvider)
 	require.EqualError(t, err, errExpected.Error())
 	require.Nil(t, sctx)
 
 	opQueueProvider.CreateReturns(&opqueue.MemQueue{}, nil)
 
-	sctx, err = New(channelID, namespace, protocolVersions, txnProvider, dcasProvider, opQueueProvider)
+	sctx, err = New(channelID, namespace, dcasCfg, protocolVersions, txnProvider, dcasProvider, opQueueProvider)
 	require.NoError(t, err)
 	require.NotNil(t, sctx)
 

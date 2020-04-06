@@ -16,7 +16,7 @@ Feature:
     Given the channel "mychannel" is created and all peers have joined
 
     And "system" chaincode "configscc" is instantiated from path "in-process" on the "mychannel" channel with args "" with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" with collection policy ""
-    And "system" chaincode "sidetreetxn_cc" is instantiated from path "in-process" on the "mychannel" channel with args "" with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" with collection policy "dcas-cfg"
+    And "system" chaincode "sidetreetxn" is instantiated from path "in-process" on the "mychannel" channel with args "" with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" with collection policy "dcas-cfg"
     And "system" chaincode "document" is instantiated from path "in-process" on the "mychannel" channel with args "" with endorsement policy "OR('Org1MSP.member','Org2MSP.member')" with collection policy "diddoc-cfg,fileidx-cfg,meta-data-cfg"
 
     And fabric-cli network is initialized
@@ -39,5 +39,5 @@ Feature:
   @sidetree_1
   Scenario: Sidetree Txn Test
     # sidetree content test
-    When client writes content "Hello World" using "sidetreetxn_cc" on the "mychannel" channel
-    Then client verifies that written content at the returned address from "sidetreetxn_cc" matches original content on the "mychannel" channel
+    When client writes content "Hello World" using "sidetreetxn" and the "dcas" collection on the "mychannel" channel
+    Then client verifies that written content at the returned address from "sidetreetxn" and the "dcas" collection matches original content on the "mychannel" channel

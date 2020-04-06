@@ -27,4 +27,10 @@ const (
 
 	// FileHandlerAppVersion is the version of the file handler config application
 	FileHandlerAppVersion = "1"
+
+	// DCASAppName is the name of the DCAS config application
+	DCASAppName = "sidetree-dcas"
+
+	// DCASAppVersion is the version of the DCAS config application
+	DCASAppVersion = "1"
 )

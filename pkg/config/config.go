@@ -43,6 +43,12 @@ type SidetreePeer struct {
 	Namespaces []Namespace
 }
 
+// DCAS holds Distributed Content Addressable Store (DCAS) configuration
+type DCAS struct {
+	ChaincodeName string
+	Collection    string
+}
+
 // Sidetree holds general Sidetree configuration
 type Sidetree struct {
 	ChaincodeName      string
@@ -56,4 +62,5 @@ type SidetreeService interface {
 	LoadSidetree(namespace string) (Sidetree, error)
 	LoadSidetreePeer(mspID, peerID string) (SidetreePeer, error)
 	LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error)
+	LoadDCAS() (DCAS, error)
 }

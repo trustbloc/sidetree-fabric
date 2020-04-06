@@ -42,6 +42,7 @@ func NewSidetreeProvider(configProvider configServiceProvider, registry validato
 	registry.Register(&sidetreeValidator{})
 	registry.Register(&sidetreePeerValidator{})
 	registry.Register(&fileHandlerValidator{})
+	registry.Register(&dcasValidator{})
 
 	return &SidetreeProvider{
 		configProvider: configProvider,
@@ -138,6 +139,26 @@ func (c *sidetreeService) LoadFileHandlers(mspID, peerID string) ([]filehandler.
 	}
 
 	return handlers, nil
+}
+
+// LoadDCAS loads the DCAS configuration
+func (c *sidetreeService) LoadDCAS() (config.DCAS, error) {
+	key := ledgerconfig.NewAppKey(GlobalMSPID, DCASAppName, SidetreeAppVersion)
+
+	var dcasCfg config.DCAS
+	if err := c.load(key, &dcasCfg); err != nil {
+		return config.DCAS{}, errors.WithMessagef(err, "unable to load DCAS config key %s", key)
+	}
+
+	if dcasCfg.ChaincodeName == "" {
+		return config.DCAS{}, errors.New("field 'ChaincodeName' is required")
+	}
+
+	if dcasCfg.Collection == "" {
+		return config.DCAS{}, errors.New("field 'Collection' is required")
+	}
+
+	return dcasCfg, nil
 }
 
 func (c *sidetreeService) load(key *ledgerconfig.Key, v interface{}) error {
