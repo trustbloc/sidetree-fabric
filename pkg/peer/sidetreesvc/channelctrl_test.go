@@ -41,6 +41,9 @@ const (
 	fileIndexBasePath  = "/file"
 
 	eventMethod = "RestartRESTService"
+
+	tx1 = "tx1"
+	tx2 = "tx2"
 )
 
 func TestChannelManager(t *testing.T) {
@@ -134,7 +137,8 @@ func TestChannelManager(t *testing.T) {
 	t.Run("Update peer config -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewPeerKey(msp1, peer1, peerconfig.SidetreePeerAppName, peerconfig.SidetreePeerAppVersion),
+			Key:   ledgerconfig.NewPeerKey(msp1, peer1, peerconfig.SidetreePeerAppName, peerconfig.SidetreePeerAppVersion),
+			Value: &ledgerconfig.Value{TxID: tx1},
 		})
 
 		time.Sleep(100 * time.Millisecond)
@@ -144,18 +148,29 @@ func TestChannelManager(t *testing.T) {
 	t.Run("Update consortium config -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, didTrustblocNamespace, "1"),
+			Key:   ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, didTrustblocNamespace, "1"),
+			Value: &ledgerconfig.Value{TxID: tx2},
 		})
 
 		time.Sleep(100 * time.Millisecond)
 		require.Len(t, ctrl.Invocations()[eventMethod], count+1)
+
+		count = len(ctrl.Invocations()[eventMethod])
+		m.handleUpdate(&ledgerconfig.KeyValue{
+			Key:   ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, didTrustblocNamespace, "1"),
+			Value: &ledgerconfig.Value{TxID: tx2},
+		})
+
+		time.Sleep(100 * time.Millisecond)
+		require.Len(t, ctrl.Invocations()[eventMethod], count)
 	})
 
 	t.Run("Irrelevant config update -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, "some-app-name", "1"),
+			Key:   ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, "some-app-name", "1"),
+			Value: &ledgerconfig.Value{TxID: tx1},
 		})
 
 		time.Sleep(100 * time.Millisecond)
@@ -173,7 +188,8 @@ func TestChannelManager(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, didTrustblocNamespace, "1"),
+			Key:   ledgerconfig.NewAppKey(peerconfig.GlobalMSPID, didTrustblocNamespace, "1"),
+			Value: &ledgerconfig.Value{TxID: tx1},
 		})
 
 		time.Sleep(100 * time.Millisecond)
@@ -191,7 +207,8 @@ func TestChannelManager(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
 
 		m.handleUpdate(&ledgerconfig.KeyValue{
-			Key: ledgerconfig.NewPeerKey(msp1, peer1, peerconfig.FileHandlerAppName, peerconfig.FileHandlerAppVersion),
+			Key:   ledgerconfig.NewPeerKey(msp1, peer1, peerconfig.FileHandlerAppName, peerconfig.FileHandlerAppVersion),
+			Value: &ledgerconfig.Value{TxID: tx1},
 		})
 
 		time.Sleep(100 * time.Millisecond)
