@@ -62,6 +62,7 @@ type channelController struct {
 	monitor      *monitorController
 	contexts     map[string]*context
 	fileHandlers map[string]*fileHandlers
+	cfgTxID      string
 }
 
 func newChannelController(channelID string, providers *providers, configService config.SidetreeService, listener restServiceController) *channelController {
@@ -298,8 +299,15 @@ func (c *channelController) handleUpdate(kv *ledgerconfig.KeyValue) {
 		return
 	}
 
+	// If multiple components are updated in the same transaction then we'll get multiple notifications,
+	// so avoid reloading the config multiple times by checking the ID of the last transaction that was handled.
+	if !c.compareAndSetTxID(kv.TxID) {
+		logger.Debugf("[%s] Got sidetree config update for %s but the update for TxID [%s] was already handled", c.channelID, kv.Key, kv.TxID)
+		return
+	}
+
 	go func() {
-		logger.Debugf("[%s] Got sidetree config update for Sidetree: %s. Loading ...", c.channelID, kv)
+		logger.Infof("[%s] Got config update for Sidetree: %s. Loading ...", c.channelID, kv.Key)
 
 		if err := c.load(); err != nil {
 			logger.Errorf("[%s] Error handling Sidetree config update: %s", c.channelID, err)
@@ -391,4 +399,18 @@ func (c *channelController) getDocHandler(ns string) (*dochandler.DocumentHandle
 	}
 
 	return ctx.rest.docHandler, nil
+}
+
+// compareAndSetTxID sets the value of the transaction ID if it's not already set and returns true.
+// If the transaction ID is already set then false is returned.
+func (c *channelController) compareAndSetTxID(txID string) bool {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.cfgTxID != txID {
+		c.cfgTxID = txID
+		return true
+	}
+
+	return false
 }
