@@ -38,246 +38,133 @@ services:
         - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/etc/hyperledger/msp/orderer
         - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/etc/hyperledger/tls/orderer
         - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/ca.crt:/etc/hyperledger/mutual_tls/orderer/ca.crt
+
   peer0.org1.example.com:
+    extends:
+      file: docker-compose-base.yml
+      service: peer
     container_name: peer0.org1.example.com
-    image: ${FABRIC_PEER_FIXTURE_IMAGE}:latest
     environment:
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_ID=peer0.org1.example.com
-      - FABRIC_LOGGING_SPEC=comm.grpc.server=error:cauthdsl=warn:gossip=warn:grpc=warn:ledger=info:msp=warn:policies=warn:peer.gossip=warn:endorser=warn:sidetree_peer=debug:sidetree_context=debug:info
-      ## the following setting redirects chaincode container logs to the peer container logs
-      - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_PEER_LOCALMSPID=Org1MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
       - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      - CORE_PEER_TLS_CLIENTAUTHREQUIRED=true
-      - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/etc/hyperledger/fabric/tls/ca.crt /etc/hyperledger/mutual_tls/peer/ca.crt
-      # override chaincode images
-      - CORE_CHAINCODE_BUILDER=${TRUSTBLOCK_NS}/${FABRIC_BUILDER_FIXTURE_IMAGE}:${ARCH}-${FABRIC_BUILDER_FIXTURE_TAG}
-      - CORE_CHAINCODE_GOLANG_RUNTIME=${FABRIC_NS}/${FABRIC_BASEOS_FIXTURE_IMAGE}:${FABRIC_BASEOS_FIXTURE_TAG}
-      # metrics config
-      - CORE_METRICS_PROVIDER=prometheus
-      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
-      - CORE_LEDGER_ROLES=endorser,committer,sidetree-batch-writer,sidetree-resolver,sidetree-monitor
-      # # the following setting starts chaincode containers on the same
-      # # bridge network as the peers
-      # # https://docs.docker.com/compose/networking/
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fixtures_default
-      # CouchDB Settings
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_TRANSIENTDATA_CACHESIZE=1000
-      - CORE_LEDGER_TRANSIENTDATA_CLEANUPEXPIRED_INTERVAL=5s
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
-      - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
-      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
-      - CORE_SIDETREE_PORT=48326
-      - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    tty: true
+      - CORE_LEDGER_ROLES=committer,sidetree-batch-writer,sidetree-resolver,sidetree-observer,sidetree-monitor
     ports:
       - 7051:7051
       - 48326:48326
     volumes:
-      - /var/run/:/host/var/run/
       - ./fabric/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/msp/peer
       - ./fabric/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
-      # Give Snap the orderer CA
-      - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca-cert.pem
-      - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls:/etc/hyperledger/mutual_tls/peer
-      - ${COMPOSE_DIR}/config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
     depends_on:
       - builder
       - orderer.example.com
 
   peer1.org1.example.com:
+    extends:
+      file: docker-compose-base.yml
+      service: peer
     container_name: peer1.org1.example.com
-    image: ${FABRIC_PEER_FIXTURE_IMAGE}:latest
     environment:
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_ID=peer1.org1.example.com
-      - FABRIC_LOGGING_SPEC=comm.grpc.server=error:cauthdsl=warn:gossip=warn:grpc=warn:ledger=info:msp=warn:policies=warn:peer.gossip=warn:endorser=warn:sidetree_peer=debug:sidetree_context=debug:info
-      ## the following setting redirects chaincode container logs to the peer container logs
-      - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_PEER_LOCALMSPID=Org1MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
       - CORE_PEER_ADDRESS=peer1.org1.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.org1.example.com:7051
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      - CORE_PEER_TLS_CLIENTAUTHREQUIRED=true
-      - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/etc/hyperledger/fabric/tls/ca.crt /etc/hyperledger/mutual_tls/peer/ca.crt
-      # override chaincode images
-      - CORE_CHAINCODE_BUILDER=${TRUSTBLOCK_NS}/${FABRIC_BUILDER_FIXTURE_IMAGE}:${ARCH}-${FABRIC_BUILDER_FIXTURE_TAG}
-      - CORE_CHAINCODE_GOLANG_RUNTIME=${FABRIC_NS}/${FABRIC_BASEOS_FIXTURE_IMAGE}:${FABRIC_BASEOS_FIXTURE_TAG}
-      # metrics config
-      - CORE_METRICS_PROVIDER=prometheus
-      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
-      - CORE_LEDGER_ROLES=endorser,committer,sidetree-resolver,sidetree-observer
-      # # the following setting starts chaincode containers on the same
-      # # bridge network as the peers
-      # # https://docs.docker.com/compose/networking/
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fixtures_default
-      # CouchDB Settings
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_TRANSIENTDATA_CACHESIZE=1000
-      - CORE_LEDGER_TRANSIENTDATA_CLEANUPEXPIRED_INTERVAL=5s
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
-      - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
-      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
-      - CORE_SIDETREE_PORT=48326
-      - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    tty: true
+      - CORE_LEDGER_ROLES=endorser,sidetree-batch-writer,sidetree-resolver
     ports:
       - 7151:7051
-      - 48426:48326
+      - 48327:48326
     volumes:
-      - /var/run/:/host/var/run/
       - ./fabric/crypto-config/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/msp:/etc/hyperledger/msp/peer
       - ./fabric/crypto-config/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls:/etc/hyperledger/fabric/tls
-      # Give Snap the orderer CA
-      - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca-cert.pem
-      - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls:/etc/hyperledger/mutual_tls/peer
-      - ${COMPOSE_DIR}/config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
+    depends_on:
+      - builder
+      - orderer.example.com
+
+  peer2.org1.example.com:
+    extends:
+      file: docker-compose-base.yml
+      service: peer
+    container_name: peer2.org1.example.com
+    environment:
+      - CORE_PEER_ID=peer2.org1.example.com
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_ADDRESS=peer2.org1.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer2.org1.example.com:7051
+      - CORE_LEDGER_ROLES=endorser,sidetree-batch-writer,sidetree-resolver
+    ports:
+      - 7251:7051
+      - 48328:48326
+    volumes:
+      - ./fabric/crypto-config/peerOrganizations/org1.example.com/peers/peer2.org1.example.com/msp:/etc/hyperledger/msp/peer
+      - ./fabric/crypto-config/peerOrganizations/org1.example.com/peers/peer2.org1.example.com/tls:/etc/hyperledger/fabric/tls
     depends_on:
       - builder
       - orderer.example.com
 
   peer0.org2.example.com:
+    extends:
+      file: docker-compose-base.yml
+      service: peer
     container_name: peer0.org2.example.com
-    image: ${FABRIC_PEER_FIXTURE_IMAGE}:latest
     environment:
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_ID=peer0.org2.example.com
-      - FABRIC_LOGGING_SPEC=comm.grpc.server=error:cauthdsl=warn:gossip=warn:grpc=warn:ledger=info:msp=warn:policies=warn:peer.gossip=warn:endorser=warn:sidetree_peer=debug:sidetree_context=debug:info
-      ## the following setting redirects chaincode container logs to the peer container logs
-      - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_PEER_LOCALMSPID=Org2MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
       - CORE_PEER_ADDRESS=peer0.org2.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:7051
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      - CORE_PEER_TLS_CLIENTAUTHREQUIRED=true
-      - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/etc/hyperledger/fabric/tls/ca.crt /etc/hyperledger/mutual_tls/peer/ca.crt
-      # override chaincode images
-      - CORE_CHAINCODE_BUILDER=${TRUSTBLOCK_NS}/${FABRIC_BUILDER_FIXTURE_IMAGE}:${ARCH}-${FABRIC_BUILDER_FIXTURE_TAG}
-      - CORE_CHAINCODE_GOLANG_RUNTIME=${FABRIC_NS}/${FABRIC_BASEOS_FIXTURE_IMAGE}:${FABRIC_BASEOS_FIXTURE_TAG}
-      # metrics config
-      - CORE_METRICS_PROVIDER=prometheus
-      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
-      - CORE_LEDGER_ROLES=endorser,committer,sidetree-resolver,sidetree-batch-writer,sidetree-monitor
-      # # the following setting starts chaincode containers on the same
-      # # bridge network as the peers
-      # # https://docs.docker.com/compose/networking/
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fixtures_default
-      # CouchDB Settings
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_TRANSIENTDATA_CACHESIZE=1000
-      - CORE_LEDGER_TRANSIENTDATA_CLEANUPEXPIRED_INTERVAL=5s
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
-      - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
-      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
-      - CORE_SIDETREE_PORT=48326
-      - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    tty: true
+      - CORE_LEDGER_ROLES=committer,sidetree-batch-writer,sidetree-resolver,sidetree-observer,sidetree-monitor
     ports:
       - 8051:7051
-      - 48526:48326
+      - 48426:48326
     volumes:
-      - /var/run/:/host/var/run/
       - ./fabric/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/msp/peer
       - ./fabric/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca-cert.pem
-      - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls:/etc/hyperledger/mutual_tls/peer
-      - ${COMPOSE_DIR}/config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
     depends_on:
       - builder
       - orderer.example.com
 
   peer1.org2.example.com:
+    extends:
+      file: docker-compose-base.yml
+      service: peer
     container_name: peer1.org2.example.com
-    image: ${FABRIC_PEER_FIXTURE_IMAGE}:latest
     environment:
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_PEER_ID=peer1.org2.example.com
-      - FABRIC_LOGGING_SPEC=comm.grpc.server=error:cauthdsl=warn:gossip=warn:grpc=warn:ledger=info:msp=warn:policies=warn:peer.gossip=warn:endorser=warn:sidetree_peer=debug:sidetree_context=debug:info
-      ## the following setting redirects chaincode container logs to the peer container logs
-      - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_PEER_LOCALMSPID=Org2MSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
       - CORE_PEER_ADDRESS=peer1.org2.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.org2.example.com:7051
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      - CORE_PEER_TLS_CLIENTAUTHREQUIRED=true
-      - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/etc/hyperledger/fabric/tls/ca.crt /etc/hyperledger/mutual_tls/peer/ca.crt
-      # override chaincode images
-      - CORE_CHAINCODE_BUILDER=${TRUSTBLOCK_NS}/${FABRIC_BUILDER_FIXTURE_IMAGE}:${ARCH}-${FABRIC_BUILDER_FIXTURE_TAG}
-      - CORE_CHAINCODE_GOLANG_RUNTIME=${FABRIC_NS}/${FABRIC_BASEOS_FIXTURE_IMAGE}:${FABRIC_BASEOS_FIXTURE_TAG}
-      # metrics config
-      - CORE_METRICS_PROVIDER=prometheus
-      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:8080
-      - CORE_LEDGER_ROLES=endorser,committer,sidetree-resolver,sidetree-observer
-      # # the following setting starts chaincode containers on the same
-      # # bridge network as the peers
-      # # https://docs.docker.com/compose/networking/
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fixtures_default
-      # CouchDB Settings
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_TRANSIENTDATA_CACHESIZE=1000
-      - CORE_LEDGER_TRANSIENTDATA_CLEANUPEXPIRED_INTERVAL=5s
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
-      - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=PEER
-      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=true
-      - CORE_SIDETREE_PORT=48326
-      - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    tty: true
+      - CORE_LEDGER_ROLES=endorser,sidetree-batch-writer,sidetree-resolver
     ports:
       - 8151:7051
-      - 48626:48326
+      - 48427:48326
     volumes:
-      - /var/run/:/host/var/run/
       - ./fabric/crypto-config/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/msp:/etc/hyperledger/msp/peer
       - ./fabric/crypto-config/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls:/etc/hyperledger/fabric/tls
-      - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca-cert.pem
-      - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls:/etc/hyperledger/mutual_tls/peer
-      - ${COMPOSE_DIR}/config/fabric/core.yaml:/etc/hyperledger/fabric/core.yaml
+    depends_on:
+      - builder
+      - orderer.example.com
+
+  peer2.org2.example.com:
+    extends:
+      file: docker-compose-base.yml
+      service: peer
+    container_name: peer2.org2.example.com
+    environment:
+      - CORE_PEER_ID=peer2.org2.example.com
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_PEER_ADDRESS=peer2.org2.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer2.org2.example.com:7051
+      - CORE_LEDGER_ROLES=endorser,sidetree-batch-writer,sidetree-resolver
+    ports:
+      - 8251:7051
+      - 48428:48326
+    volumes:
+      - ./fabric/crypto-config/peerOrganizations/org2.example.com/peers/peer2.org2.example.com/msp:/etc/hyperledger/msp/peer
+      - ./fabric/crypto-config/peerOrganizations/org2.example.com/peers/peer2.org2.example.com/tls:/etc/hyperledger/fabric/tls
     depends_on:
       - builder
       - orderer.example.com

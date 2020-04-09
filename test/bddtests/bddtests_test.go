@@ -84,8 +84,10 @@ func FeatureContext(s *godog.Suite) {
 	peersMspID := make(map[string]string)
 	peersMspID["peer0.org1.example.com"] = "Org1MSP"
 	peersMspID["peer1.org1.example.com"] = "Org1MSP"
+	peersMspID["peer2.org1.example.com"] = "Org1MSP"
 	peersMspID["peer0.org2.example.com"] = "Org2MSP"
 	peersMspID["peer1.org2.example.com"] = "Org2MSP"
+	peersMspID["peer2.org2.example.com"] = "Org2MSP"
 
 	var err error
 	context, err = bddtests.NewBDDContext([]string{"peerorg1", "peerorg2"}, "orderer.example.com", "./fixtures/config/sdk-client/",

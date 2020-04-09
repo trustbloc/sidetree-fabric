@@ -89,6 +89,8 @@ Organizations:
               Port: 7051
             - Host: peer1.org1.example.com
               Port: 7051
+            - Host: peer2.org1.example.com
+              Port: 7051
 
     - &Org2
         # DefaultOrg defines the organization which is used in the sampleconfig
@@ -127,6 +129,8 @@ Organizations:
             - Host: peer0.org2.example.com
               Port: 7051
             - Host: peer1.org2.example.com
+              Port: 7051
+            - Host: peer2.org2.example.com
               Port: 7051
 
 

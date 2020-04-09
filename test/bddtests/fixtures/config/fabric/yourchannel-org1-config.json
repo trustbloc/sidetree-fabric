@@ -58,6 +58,35 @@
           "Format": "json"
         }
       ]
+    },
+    {
+      "PeerID": "peer2.org1.example.com",
+      "Apps": [
+        {
+          "AppName": "txn",
+          "Version": "1",
+          "Components": [
+            {
+              "Name": "general",
+              "Version": "1",
+              "Config": "file://./txn-config.json",
+              "Format": "json"
+            },
+            {
+              "Name": "sdk",
+              "Version": "1",
+              "Config": "file://./sdk-config-org1.yaml",
+              "Format": "yaml"
+            }
+          ]
+        },
+        {
+          "AppName": "sidetree",
+          "Version": "1",
+          "Config": "file://./yourchannel-sidetree-config-org1.json",
+          "Format": "json"
+        }
+      ]
     }
   ]
 }
