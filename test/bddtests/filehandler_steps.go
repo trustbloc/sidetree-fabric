@@ -7,7 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 package bddtests
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -21,18 +25,33 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
+	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
+	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
 
 	"github.com/trustbloc/sidetree-fabric/test/bddtests/restclient"
 )
 
+const publicKeyTemplate = `[
+	{
+  		"id": "%s",
+  		"type": "JwsVerificationKey2020",
+		"usage": ["ops"],
+  		"publicKeyJwk": %s
+	}
+  ]`
+
 // FileHandlerSteps
 type FileHandlerSteps struct {
-	encodedCreatePayload string
-	reqNamespace         string
-	resp                 *restclient.HttpResponse
-	bddContext           *bddtests.BDDContext
+	reqNamespace      string
+	recoveryKeySigner helper.Signer
+	recoveryPublicKey *jws.JWK
+	updateKeySigner   helper.Signer
+	updatePublicKey   *jws.JWK
+	resp              *restclient.HttpResponse
+	bddContext        *bddtests.BDDContext
 }
 
 // NewFileHandlerSteps
@@ -52,14 +71,18 @@ func (d *FileHandlerSteps) createDocument(url, content, namespace string) error 
 
 	content = resolved[0]
 
-	logger.Infof("Creating document at [%s] in namespace [%s] with content %s", url, namespace, content)
-
-	req, err := getCreateRequest(d.getOpaqueDocument(content))
+	opaque, err := d.getOpaqueDocument(content)
 	if err != nil {
 		return err
 	}
 
-	d.encodedCreatePayload = docutil.EncodeToString(req)
+	logger.Infof("Creating document at [%s] in namespace [%s] with content %s", url, namespace, opaque)
+
+	req, err := d.getCreateRequest(opaque)
+	if err != nil {
+		return err
+	}
+
 	d.reqNamespace = namespace
 
 	logger.Infof("Sending document to [%s]: %s", url, req)
@@ -104,7 +127,7 @@ func (d *FileHandlerSteps) updateDocument(url, docID, jsonPatch string) error {
 
 	logger.Infof("Sending update payload to [%s]: %s", url, req)
 
-	d.resp, err = restclient.SendRequest(url, []byte(req))
+	d.resp, err = restclient.SendRequest(url, req)
 
 	logger.Infof("... got response from [%s] - Status code: %d, Payload: %s", url, d.resp.StatusCode, d.resp.Payload)
 
@@ -154,6 +177,33 @@ func (d *FileHandlerSteps) resolveFile(url string) error {
 
 		return nil
 	}
+}
+
+func (d *FileHandlerSteps) getCreateRequest(doc []byte) ([]byte, error) {
+	if d.recoveryKeySigner == nil {
+		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+
+		d.recoveryKeySigner = ecsigner.New(privateKey, "ES256", "recovery")
+		if err != nil {
+			return nil, err
+		}
+
+		d.recoveryPublicKey, err = pubkey.GetPublicKeyJWK(&privateKey.PublicKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return helper.NewCreateRequest(&helper.CreateRequestInfo{
+		OpaqueDocument:          string(doc),
+		RecoveryKey:             d.recoveryPublicKey,
+		NextRecoveryRevealValue: []byte(recoveryOTP),
+		NextUpdateRevealValue:   []byte(updateOTP),
+		MultihashCode:           sha2_256,
+	})
 }
 
 func (d *FileHandlerSteps) checkErrorResp(errorMsg string) error {
@@ -244,10 +294,46 @@ func (d *FileHandlerSteps) setJSONPatchVar(varName, patch string) error {
 	return nil
 }
 
-func (d *FileHandlerSteps) getOpaqueDocument(content string) string {
-	doc, _ := document.FromBytes([]byte(content))
-	bytes, _ := doc.Bytes()
-	return string(bytes)
+func (d *FileHandlerSteps) getOpaqueDocument(content string) ([]byte, error) {
+	// generate private key that will be used for document updates and
+	// insert public key that correspond to this private key into document (JWK format)
+	const updateKeyID = "#updateKey"
+	if d.updateKeySigner == nil {
+		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+
+		d.updatePublicKey, err = pubkey.GetPublicKeyJWK(&privateKey.PublicKey)
+		if err != nil {
+			return nil, err
+		}
+
+		// this signer will be used in subsequent update requests
+		d.updateKeySigner = ecsigner.New(privateKey, "ES256", updateKeyID)
+	}
+
+	publicKeyBytes, err := json.Marshal(d.updatePublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKeysStr := fmt.Sprintf(publicKeyTemplate, updateKeyID, string(publicKeyBytes))
+
+	var publicKeys []map[string]interface{}
+	err = json.Unmarshal([]byte(publicKeysStr), &publicKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := document.FromBytes([]byte(content))
+	if err != nil {
+		return nil, err
+	}
+	doc["publicKey"] = publicKeys
+
+	return doc.Bytes()
+
 }
 
 func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch string) ([]byte, error) {
@@ -257,10 +343,12 @@ func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch strin
 	}
 
 	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
-		DidUniqueSuffix:   uniqueSuffix,
-		Patch:             updatePatch,
-		UpdateRevealValue: []byte(updateOTP),
-		MultihashCode:     sha2_256,
+		DidUniqueSuffix:       uniqueSuffix,
+		Patch:                 updatePatch,
+		UpdateRevealValue:     []byte(updateOTP),
+		NextUpdateRevealValue: []byte(updateOTP),
+		MultihashCode:         sha2_256,
+		Signer:                d.updateKeySigner,
 	})
 }
 
