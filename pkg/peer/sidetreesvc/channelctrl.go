@@ -51,6 +51,31 @@ func (h *fileHandlers) HTTPHandlers() []common.HTTPHandler {
 	return handlers
 }
 
+type dcasHandlers struct {
+	readHandler    common.HTTPHandler
+	writeHandler   common.HTTPHandler
+	versionHandler common.HTTPHandler
+}
+
+// HTTPHandlers returns the HTTP handlers
+func (h *dcasHandlers) HTTPHandlers() []common.HTTPHandler {
+	var handlers []common.HTTPHandler
+
+	if h.readHandler != nil {
+		handlers = append(handlers, h.readHandler)
+	}
+
+	if h.writeHandler != nil {
+		handlers = append(handlers, h.writeHandler)
+	}
+
+	if h.versionHandler != nil {
+		handlers = append(handlers, h.versionHandler)
+	}
+
+	return handlers
+}
+
 type channelController struct {
 	*providers
 	restServiceController
@@ -63,6 +88,7 @@ type channelController struct {
 	monitor      *monitorController
 	contexts     map[string]*context
 	fileHandlers map[string]*fileHandlers
+	dcasHandlers map[string]*dcasHandlers
 	cfgTxID      string
 }
 
@@ -119,6 +145,10 @@ func (c *channelController) RESTHandlers() []common.HTTPHandler {
 	}
 
 	for _, h := range c.fileHandlers {
+		restHandlers = append(restHandlers, h.HTTPHandlers()...)
+	}
+
+	for _, h := range c.dcasHandlers {
 		restHandlers = append(restHandlers, h.HTTPHandlers()...)
 	}
 
@@ -438,7 +468,29 @@ func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandle
 }
 
 func (c *channelController) loadDCASHandlers(handlerCfg []dcashandler.Config) {
-	// TODO: Implement
+	c.dcasHandlers = make(map[string]*dcasHandlers)
+
+	for _, cfg := range handlerCfg {
+		c.dcasHandlers[cfg.BasePath] = c.loadDCASHandler(cfg)
+	}
+}
+
+func (c *channelController) loadDCASHandler(cfg dcashandler.Config) *dcasHandlers {
+	handlers := &dcasHandlers{}
+
+	logger.Debugf("Adding DCAS read handler for base path [%s]", cfg.BasePath)
+
+	handlers.readHandler = dcashandler.NewRetrieveHandler(c.channelID, cfg, c.DCASProvider)
+
+	logger.Debugf("Adding DCAS upload handler for base path [%s]", cfg.BasePath)
+
+	handlers.writeHandler = dcashandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider)
+
+	logger.Debugf("Adding DCAS version handler for base path [%s]", cfg.BasePath)
+
+	handlers.versionHandler = dcashandler.NewVersionHandler(c.channelID, cfg)
+
+	return handlers
 }
 
 func (c *channelController) getDocHandler(ns string) (*dochandler.DocumentHandler, error) {
