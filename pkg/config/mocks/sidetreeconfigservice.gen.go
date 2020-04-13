@@ -7,6 +7,7 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 )
 
 type SidetreeConfigService struct {
@@ -62,6 +63,20 @@ type SidetreeConfigService struct {
 	}
 	loadFileHandlersReturnsOnCall map[int]struct {
 		result1 []filehandler.Config
+		result2 error
+	}
+	LoadDCASHandlersStub        func(mspID, peerID string) ([]dcashandler.Config, error)
+	loadDCASHandlersMutex       sync.RWMutex
+	loadDCASHandlersArgsForCall []struct {
+		mspID  string
+		peerID string
+	}
+	loadDCASHandlersReturns struct {
+		result1 []dcashandler.Config
+		result2 error
+	}
+	loadDCASHandlersReturnsOnCall map[int]struct {
+		result1 []dcashandler.Config
 		result2 error
 	}
 	LoadDCASStub        func() (config.DCAS, error)
@@ -285,6 +300,58 @@ func (fake *SidetreeConfigService) LoadFileHandlersReturnsOnCall(i int, result1 
 	}{result1, result2}
 }
 
+func (fake *SidetreeConfigService) LoadDCASHandlers(mspID string, peerID string) ([]dcashandler.Config, error) {
+	fake.loadDCASHandlersMutex.Lock()
+	ret, specificReturn := fake.loadDCASHandlersReturnsOnCall[len(fake.loadDCASHandlersArgsForCall)]
+	fake.loadDCASHandlersArgsForCall = append(fake.loadDCASHandlersArgsForCall, struct {
+		mspID  string
+		peerID string
+	}{mspID, peerID})
+	fake.recordInvocation("LoadDCASHandlers", []interface{}{mspID, peerID})
+	fake.loadDCASHandlersMutex.Unlock()
+	if fake.LoadDCASHandlersStub != nil {
+		return fake.LoadDCASHandlersStub(mspID, peerID)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.loadDCASHandlersReturns.result1, fake.loadDCASHandlersReturns.result2
+}
+
+func (fake *SidetreeConfigService) LoadDCASHandlersCallCount() int {
+	fake.loadDCASHandlersMutex.RLock()
+	defer fake.loadDCASHandlersMutex.RUnlock()
+	return len(fake.loadDCASHandlersArgsForCall)
+}
+
+func (fake *SidetreeConfigService) LoadDCASHandlersArgsForCall(i int) (string, string) {
+	fake.loadDCASHandlersMutex.RLock()
+	defer fake.loadDCASHandlersMutex.RUnlock()
+	return fake.loadDCASHandlersArgsForCall[i].mspID, fake.loadDCASHandlersArgsForCall[i].peerID
+}
+
+func (fake *SidetreeConfigService) LoadDCASHandlersReturns(result1 []dcashandler.Config, result2 error) {
+	fake.LoadDCASHandlersStub = nil
+	fake.loadDCASHandlersReturns = struct {
+		result1 []dcashandler.Config
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *SidetreeConfigService) LoadDCASHandlersReturnsOnCall(i int, result1 []dcashandler.Config, result2 error) {
+	fake.LoadDCASHandlersStub = nil
+	if fake.loadDCASHandlersReturnsOnCall == nil {
+		fake.loadDCASHandlersReturnsOnCall = make(map[int]struct {
+			result1 []dcashandler.Config
+			result2 error
+		})
+	}
+	fake.loadDCASHandlersReturnsOnCall[i] = struct {
+		result1 []dcashandler.Config
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *SidetreeConfigService) LoadDCAS() (config.DCAS, error) {
 	fake.loadDCASMutex.Lock()
 	ret, specificReturn := fake.loadDCASReturnsOnCall[len(fake.loadDCASArgsForCall)]
@@ -339,6 +406,8 @@ func (fake *SidetreeConfigService) Invocations() map[string][][]interface{} {
 	defer fake.loadSidetreePeerMutex.RUnlock()
 	fake.loadFileHandlersMutex.RLock()
 	defer fake.loadFileHandlersMutex.RUnlock()
+	fake.loadDCASHandlersMutex.RLock()
+	defer fake.loadDCASHandlersMutex.RUnlock()
 	fake.loadDCASMutex.RLock()
 	defer fake.loadDCASMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

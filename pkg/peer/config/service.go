@@ -18,6 +18,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")
@@ -43,6 +44,7 @@ func NewSidetreeProvider(configProvider configServiceProvider, registry validato
 	registry.Register(&sidetreePeerValidator{})
 	registry.Register(&fileHandlerValidator{})
 	registry.Register(&dcasValidator{})
+	registry.Register(&dcasHandlerValidator{})
 
 	return &SidetreeProvider{
 		configProvider: configProvider,
@@ -136,6 +138,35 @@ func (c *sidetreeService) LoadFileHandlers(mspID, peerID string) ([]filehandler.
 		}
 
 		handlers = append(handlers, h)
+	}
+
+	return handlers, nil
+}
+
+// LoadDCASHandlers loads the file handler configuration
+func (c *sidetreeService) LoadDCASHandlers(mspID, peerID string) ([]dcashandler.Config, error) {
+	criteria := &ledgerconfig.Criteria{
+		MspID:      mspID,
+		PeerID:     peerID,
+		AppName:    DCASHandlerAppName,
+		AppVersion: DCASHandlerAppVersion,
+	}
+
+	results, err := c.service.Query(criteria)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "error loading DCAS handler config for criteria %s", criteria)
+	}
+
+	var handlers []dcashandler.Config
+	for _, kv := range results {
+		cfg := dcashandler.Config{}
+		if err := unmarshal(kv.Value, &cfg); err != nil {
+			return nil, err
+		}
+
+		cfg.Version = kv.ComponentVersion
+
+		handlers = append(handlers, cfg)
 	}
 
 	return handlers, nil
