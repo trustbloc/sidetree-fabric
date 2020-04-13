@@ -23,6 +23,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -121,6 +122,8 @@ func (c *channelController) RESTHandlers() []common.HTTPHandler {
 		restHandlers = append(restHandlers, h.HTTPHandlers()...)
 	}
 
+	// TODO: Add DCAS handlers
+
 	return restHandlers
 }
 
@@ -129,17 +132,14 @@ func (c *channelController) load() error {
 
 	cfg, err := c.sidetreeCfgService.LoadSidetreePeer(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
 	if err != nil {
-		if errors.Cause(err) == service.ErrConfigNotFound {
-			// No Sidetree components defined for this peer. Stop all running channelController.
-			logger.Info("No Sidetree configuration found for this peer.")
-			c.Close()
-			return nil
+		if errors.Cause(err) != service.ErrConfigNotFound {
+			return err
 		}
 
-		return err
+		logger.Info("No Sidetree configuration found for this peer.")
 	}
 
-	fileHandlerCfg, err := c.loadFileHandlerConfig()
+	restHandlerCfg, err := c.loadRESTHandlerConfig()
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func (c *channelController) load() error {
 		return err
 	}
 
-	if err := c.loadFileHandlers(fileHandlerCfg); err != nil {
+	if err := c.loadRESTHandlers(restHandlerCfg); err != nil {
 		return err
 	}
 
@@ -237,6 +237,29 @@ func (c *channelController) loadNewContexts(namespaces []config.Namespace, dcasC
 	return contexts, nil
 }
 
+type restHandlerConfig struct {
+	file []filehandler.Config
+	dcas []dcashandler.Config
+}
+
+func (c *channelController) loadRESTHandlerConfig() (*restHandlerConfig, error) {
+	cfg := &restHandlerConfig{}
+
+	var err error
+
+	cfg.file, err = c.loadFileHandlerConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.dcas, err = c.loadDCASHandlerConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
 func (c *channelController) loadFileHandlerConfig() ([]filehandler.Config, error) {
 	fileHandlerCfg, err := c.sidetreeCfgService.LoadFileHandlers(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
 	if err == nil {
@@ -245,6 +268,21 @@ func (c *channelController) loadFileHandlerConfig() ([]filehandler.Config, error
 
 	if errors.Cause(err) == service.ErrConfigNotFound {
 		logger.Info("No file handler configuration found for this peer.")
+		return nil, nil
+	}
+
+	return nil, err
+}
+
+func (c *channelController) loadDCASHandlerConfig() ([]dcashandler.Config, error) {
+	dcasHandlerCfg, err := c.sidetreeCfgService.LoadDCASHandlers(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
+	if err == nil {
+		return dcasHandlerCfg, nil
+	}
+
+	if errors.Cause(err) == service.ErrConfigNotFound {
+		logger.Info("No DCAS handler configuration found for this peer.")
+
 		return nil, nil
 	}
 
@@ -334,7 +372,8 @@ func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
 	if kv.MspID == c.PeerConfig.MSPID() && kv.PeerID == c.PeerConfig.PeerID() &&
 		(kv.AppName == peerconfig.SidetreePeerAppName ||
 			kv.AppName == peerconfig.FileHandlerAppName ||
-			kv.AppName == peerconfig.DCASAppName) {
+			kv.AppName == peerconfig.DCASAppName ||
+			kv.AppName == peerconfig.DCASHandlerAppName) {
 		return true
 	}
 
@@ -343,6 +382,16 @@ func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
 	}
 
 	return false
+}
+
+func (c *channelController) loadRESTHandlers(cfg *restHandlerConfig) error {
+	if err := c.loadFileHandlers(cfg.file); err != nil {
+		return err
+	}
+
+	c.loadDCASHandlers(cfg.dcas)
+
+	return nil
 }
 
 func (c *channelController) loadFileHandlers(handlerCfg []filehandler.Config) error {
@@ -386,6 +435,10 @@ func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandle
 	}
 
 	return handlers, nil
+}
+
+func (c *channelController) loadDCASHandlers(handlerCfg []dcashandler.Config) {
+	// TODO: Implement
 }
 
 func (c *channelController) getDocHandler(ns string) (*dochandler.DocumentHandler, error) {

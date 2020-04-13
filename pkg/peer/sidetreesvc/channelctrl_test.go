@@ -16,7 +16,6 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
-
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
@@ -26,6 +25,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -89,6 +89,14 @@ func TestChannelManager(t *testing.T) {
 		},
 	}
 
+	dcasHandlers := []dcashandler.Config{
+		{
+			BasePath:      "/cas",
+			ChaincodeName: "cascc",
+			Collection:    "cas",
+		},
+	}
+
 	peerConfig := &peermocks.PeerConfig{}
 	peerConfig.MSPIDReturns(msp1)
 	peerConfig.PeerIDReturns(peer1)
@@ -118,6 +126,7 @@ func TestChannelManager(t *testing.T) {
 	stConfigService := &cfgmocks.SidetreeConfigService{}
 	stConfigService.LoadProtocolsReturns(protocolVersions, nil)
 	stConfigService.LoadFileHandlersReturns(fileHandlers, nil)
+	stConfigService.LoadDCASHandlersReturns(dcasHandlers, nil)
 
 	ctrl := &peermocks.RESTServerController{}
 

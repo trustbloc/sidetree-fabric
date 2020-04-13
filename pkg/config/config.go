@@ -12,6 +12,7 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 )
 
 // DocumentType specifies the type of the Sidetree document
@@ -62,5 +63,6 @@ type SidetreeService interface {
 	LoadSidetree(namespace string) (Sidetree, error)
 	LoadSidetreePeer(mspID, peerID string) (SidetreePeer, error)
 	LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error)
+	LoadDCASHandlers(mspID, peerID string) ([]dcashandler.Config, error)
 	LoadDCAS() (DCAS, error)
 }
