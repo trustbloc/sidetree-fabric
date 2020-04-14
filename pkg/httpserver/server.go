@@ -15,14 +15,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/util/retry"
 	"github.com/pkg/errors"
 	"github.com/rs/cors"
-	"github.com/sirupsen/logrus"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 )
 
-var logger = logrus.New()
+var logger = flogging.MustGetLogger("sidetree_peer")
 
 // Server implements an HTTP server
 type Server struct {
@@ -37,7 +37,10 @@ func New(url, certFile, keyFile string, handlers ...common.HTTPHandler) *Server 
 	router := mux.NewRouter()
 	for _, handler := range handlers {
 		logger.Infof("Registering handler for [%s]", handler.Path())
-		router.HandleFunc(handler.Path(), handler.Handler()).Methods(handler.Method())
+
+		router.HandleFunc(handler.Path(), handler.Handler()).
+			Methods(handler.Method()).
+			Queries(params(handler)...)
 	}
 
 	// TODO configure cors
@@ -100,4 +103,20 @@ func (s *Server) startWithRetry() error {
 		}),
 	)
 	return err
+}
+
+type paramHolder interface {
+	Params() map[string]string
+}
+
+func params(handler common.HTTPHandler) []string {
+	var queries []string
+
+	if p, ok := handler.(paramHolder); ok {
+		for name, value := range p.Params() {
+			queries = append(queries, name, value)
+		}
+	}
+
+	return queries
 }

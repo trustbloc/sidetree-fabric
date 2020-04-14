@@ -46,16 +46,9 @@ const (
 	tx2 = "tx2"
 )
 
-func TestChannelManager(t *testing.T) {
-	rolesValue := make(map[extroles.Role]struct{})
-	rolesValue[extroles.EndorserRole] = struct{}{}
-	rolesValue[role.Resolver] = struct{}{}
-	rolesValue[role.BatchWriter] = struct{}{}
-	rolesValue[role.Observer] = struct{}{}
-	extroles.SetRoles(rolesValue)
-	defer func() {
-		extroles.SetRoles(nil)
-	}()
+func TestChannelController_Update(t *testing.T) {
+	restoreRoles := setRoles(role.Resolver, role.BatchWriter, role.Observer)
+	defer restoreRoles()
 
 	sidetreePeerCfg := config.SidetreePeer{}
 	sidetreePeerCfg.Namespaces = []config.Namespace{
@@ -141,7 +134,7 @@ func TestChannelManager(t *testing.T) {
 
 	time.Sleep(20 * time.Millisecond)
 	require.Len(t, ctrl.Invocations()[eventMethod], count+1)
-	require.Len(t, m.RESTHandlers(), 6)
+	require.Len(t, m.RESTHandlers(), 9)
 
 	t.Run("Update peer config -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
@@ -223,4 +216,73 @@ func TestChannelManager(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		require.Len(t, ctrl.Invocations()[eventMethod], count+1)
 	})
+}
+
+func TestChannelController_LoadDCASHandlers(t *testing.T) {
+	peerConfig := &peermocks.PeerConfig{}
+	peerConfig.MSPIDReturns(msp1)
+	peerConfig.PeerIDReturns(peer1)
+
+	configSvc := &peermocks.ConfigService{}
+	configProvider := &peermocks.ConfigServiceProvider{}
+	configProvider.ForChannelReturns(configSvc)
+
+	opQueue := &opqueue.MemQueue{}
+	opQueueProvider := &mocks.OperationQueueProvider{}
+	opQueueProvider.CreateReturns(opQueue, nil)
+
+	dcas := &mocks.DCASClient{}
+	dcasProvider := &mocks.DCASClientProvider{}
+	dcasProvider.ForChannelReturns(dcas, nil)
+
+	providers := &providers{
+		ContextProviders: &ContextProviders{
+			DCASProvider:           dcasProvider,
+			OperationQueueProvider: opQueueProvider,
+		},
+		PeerConfig:     peerConfig,
+		ConfigProvider: configProvider,
+		BlockPublisher: extmocks.NewBlockPublisherProvider(),
+	}
+
+	stConfigService := &cfgmocks.SidetreeConfigService{}
+
+	ctrl := &peermocks.RESTServerController{}
+
+	c := newChannelController(channel1, providers, stConfigService, ctrl)
+	require.NotNil(t, c)
+
+	defer c.Close()
+
+	// No config
+	stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, service.ErrConfigNotFound)
+	require.NoError(t, c.load())
+	require.Empty(t, c.RESTHandlers())
+
+	// Just DCAS handlers
+	dcasHandlers := []dcashandler.Config{
+		{
+			BasePath:      "/cas",
+			ChaincodeName: "cascc",
+			Collection:    "cas",
+		},
+	}
+
+	stConfigService.LoadDCASHandlersReturns(dcasHandlers, nil)
+	require.NoError(t, c.load())
+	require.Len(t, c.RESTHandlers(), 3)
+}
+
+func setRoles(roles ...extroles.Role) func() {
+	rolesValue := make(map[extroles.Role]struct{})
+
+	for _, r := range roles {
+		rolesValue[r] = struct{}{}
+	}
+
+	extroles.SetRoles(rolesValue)
+
+	return func() {
+		extroles.SetRoles(nil)
+	}
 }
