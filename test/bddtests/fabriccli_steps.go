@@ -38,7 +38,7 @@ func (d *FabricCLISteps) installPlugin(path string) error {
 }
 
 func (d *FabricCLISteps) initNetwork() error {
-	logger.Infof("Initializing fabric-cli network. Network name [%s], SDK COnfig Path [%s]", networkName, sdkConfigPath)
+	logger.Infof("Initializing fabric-cli network. Network name [%s], SDK Config Path [%s]", networkName, sdkConfigPath)
 
 	err := os.RemoveAll(homeDir)
 	if err != nil {
