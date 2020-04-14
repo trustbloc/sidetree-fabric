@@ -20,6 +20,7 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	"github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
@@ -288,7 +289,7 @@ func getID(code uint, content []byte) (string, error) {
 func getCreateRequest() ([]byte, error) {
 	info := &helper.CreateRequestInfo{
 		OpaqueDocument: validDoc,
-		RecoveryKey:    "recoveryKey",
+		RecoveryKey:    &jws.JWK{},
 		MultihashCode:  sha2_256,
 	}
 	return helper.NewCreateRequest(info)

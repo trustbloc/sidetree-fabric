@@ -7,17 +7,23 @@ SPDX-License-Identifier: Apache-2.0
 package filehandler
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
+	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
@@ -229,10 +235,16 @@ func getUpdateRequest(patches string) ([]byte, error) {
 		return nil, err
 	}
 
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+
 	return helper.NewUpdateRequest(
 		&helper.UpdateRequestInfo{
 			DidUniqueSuffix: "1234",
 			Patch:           updatePatch,
 			MultihashCode:   sha2_256,
+			Signer:          ecsigner.New(privateKey, "ES256", "update-key"),
 		})
 }

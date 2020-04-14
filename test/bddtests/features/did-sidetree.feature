@@ -57,7 +57,7 @@ Feature:
 
   @create_did_doc
   Scenario: create valid did doc
-    When client sends request to "https://localhost:48426/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
     When client sends request to "https://localhost:48327/document" to resolve DID document with initial value
@@ -68,7 +68,7 @@ Feature:
     When client sends request to "https://localhost:48327/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48426/trustbloc.dev" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:bloc:trustbloc.dev"
+    When client sends request to "https://localhost:48426/trustbloc.dev" to create DID document in namespace "did:bloc:trustbloc.dev"
     Then check success response contains "#didDocumentHash"
 
     When client sends request to "https://localhost:48327/trustbloc.dev" to resolve DID document with initial value
@@ -79,7 +79,7 @@ Feature:
     When client sends request to "https://localhost:48327/trustbloc.dev" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48426/yourdomain.com" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:bloc:yourdomain.com"
+    When client sends request to "https://localhost:48426/yourdomain.com" to create DID document in namespace "did:bloc:yourdomain.com"
     Then check success response contains "#didDocumentHash"
 
     When client sends request to "https://localhost:48327/yourdomain.com" to resolve DID document with initial value
@@ -99,7 +99,7 @@ Feature:
     And we wait 2 seconds
 
     # Send the operation to peer0.org1.
-    When client sends request to "https://localhost:48326/document" to create DID document "fixtures/testdata/didDocument2.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48326/document" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
     # Stop peer0.org1 after sending it an operation. The operation should have
@@ -131,7 +131,7 @@ Feature:
 
   @create_revoke_did_doc
   Scenario: create and revoke valid did doc
-    When client sends request to "https://localhost:48426/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
@@ -145,14 +145,14 @@ Feature:
 
   @create_recover_did_doc
   Scenario: create and recover did doc
-    When client sends request to "https://localhost:48426/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
     When client sends request to "https://localhost:48426/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48426/document" to recover DID document "fixtures/testdata/recover.json"
+    When client sends request to "https://localhost:48426/document" to recover DID document
     And we wait 10 seconds
 
     When client sends request to "https://localhost:48426/document" to resolve DID document
@@ -160,7 +160,7 @@ Feature:
 
   @create_update_did_doc
   Scenario: create and update valid did doc
-    When client sends request to "https://localhost:48426/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
@@ -174,7 +174,7 @@ Feature:
 
   @create_add_remove_public_key
   Scenario: add and remove public keys
-    When client sends request to "https://localhost:48426/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
@@ -195,7 +195,7 @@ Feature:
 
   @create_add_remove_services
   Scenario: add and remove service endpoints
-    When client sends request to "https://localhost:48426/document" to create DID document "fixtures/testdata/didDocument.json" in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 

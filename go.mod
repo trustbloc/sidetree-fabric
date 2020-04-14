@@ -8,7 +8,7 @@ require (
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/Shopify/sarama v1.22.1 // indirect
 	github.com/bluele/gcache v0.0.0-20190301044115-79ae3b2d8680
-	github.com/btcsuite/btcutil v0.0.0-20170419141449-a5ecb5d9547a
+	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/gorilla/mux v1.7.3
@@ -26,7 +26,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/syndtr/goleveldb v1.0.1-0.20190625010220-02440ea7a285
 	github.com/trustbloc/fabric-peer-ext v0.0.0
-	github.com/trustbloc/sidetree-core-go v0.1.3-0.20200402233141-19376f5cd0ec
+	github.com/trustbloc/sidetree-core-go v0.1.3-0.20200413003843-9b61fc7e397b
 )
 
 replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.3-0.20200331030958-8bc4d7fd6230
