@@ -109,7 +109,7 @@ Feature:
     Then the ID of the returned document is saved to variable "contentIdxID"
     Then we wait 10 seconds
 
-    When an HTTP request is sent to "https://localhost:48326/file/${contentIdxID}"
+    When an HTTP GET is sent to "https://localhost:48326/file/${contentIdxID}"
     Then the JSON path "id" of the response equals "${contentIdxID}"
 
     # Attempt to create the /content file index Sidetree document again
@@ -117,5 +117,5 @@ Feature:
     Then we wait 10 seconds
 
     # The Observer should have rejected the second create and the document resolver will not error out because of an invalid operation in the store
-    When an HTTP request is sent to "https://localhost:48326/file/${contentIdxID}"
+    When an HTTP GET is sent to "https://localhost:48326/file/${contentIdxID}"
     Then the JSON path "id" of the response equals "${contentIdxID}"
