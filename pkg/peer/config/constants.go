@@ -37,6 +37,15 @@ const (
 	// DCASHandlerComponentVersion is the supported version of the DCAS handler config application
 	DCASHandlerComponentVersion = "0.1.3"
 
+	// BlockchainHandlerAppName is the name of the blockchain handler config application
+	BlockchainHandlerAppName = "blockchain-handler"
+
+	// BlockchainHandlerAppVersion is the version of the blockchain handler config application
+	BlockchainHandlerAppVersion = "1"
+
+	// BlockchainHandlerComponentVersion is the supported version of the blockchain handler config application
+	BlockchainHandlerComponentVersion = "0.1.3"
+
 	// DCASAppName is the name of the DCAS config application
 	DCASAppName = "sidetree-dcas"
 

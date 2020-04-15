@@ -13,6 +13,7 @@ import (
 
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
@@ -23,6 +24,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -31,65 +33,19 @@ type restServiceController interface {
 	RestartRESTService()
 }
 
-type fileHandlers struct {
-	readHandler  common.HTTPHandler
-	writeHandler common.HTTPHandler
-}
-
-// HTTPHandlers returns the HTTP handlers
-func (h *fileHandlers) HTTPHandlers() []common.HTTPHandler {
-	var handlers []common.HTTPHandler
-
-	if h.readHandler != nil {
-		handlers = append(handlers, h.readHandler)
-	}
-
-	if h.writeHandler != nil {
-		handlers = append(handlers, h.writeHandler)
-	}
-
-	return handlers
-}
-
-type dcasHandlers struct {
-	readHandler    common.HTTPHandler
-	writeHandler   common.HTTPHandler
-	versionHandler common.HTTPHandler
-}
-
-// HTTPHandlers returns the HTTP handlers
-func (h *dcasHandlers) HTTPHandlers() []common.HTTPHandler {
-	var handlers []common.HTTPHandler
-
-	if h.readHandler != nil {
-		handlers = append(handlers, h.readHandler)
-	}
-
-	if h.writeHandler != nil {
-		handlers = append(handlers, h.writeHandler)
-	}
-
-	if h.versionHandler != nil {
-		handlers = append(handlers, h.versionHandler)
-	}
-
-	return handlers
-}
-
 type channelController struct {
 	*providers
 	restServiceController
 	sidetreeCfgService config.SidetreeService
 
-	mutex        sync.RWMutex
-	channelID    string
-	notifier     observer.Ledger
-	observer     *observerController
-	monitor      *monitorController
-	contexts     map[string]*context
-	fileHandlers map[string]*fileHandlers
-	dcasHandlers map[string]*dcasHandlers
-	cfgTxID      string
+	mutex     sync.RWMutex
+	channelID string
+	notifier  observer.Ledger
+	observer  *observerController
+	monitor   *monitorController
+	contexts  map[string]*context
+	handlers  map[string][]common.HTTPHandler
+	cfgTxID   string
 }
 
 func newChannelController(channelID string, providers *providers, configService config.SidetreeService, listener restServiceController) *channelController {
@@ -99,7 +55,7 @@ func newChannelController(channelID string, providers *providers, configService 
 		channelID:             channelID,
 		contexts:              make(map[string]*context),
 		sidetreeCfgService:    configService,
-		fileHandlers:          make(map[string]*fileHandlers),
+		handlers:              make(map[string][]common.HTTPHandler),
 		notifier:              notifier.New(providers.BlockPublisher.ForChannel(channelID)),
 	}
 
@@ -144,15 +100,9 @@ func (c *channelController) RESTHandlers() []common.HTTPHandler {
 		}
 	}
 
-	for _, h := range c.fileHandlers {
-		restHandlers = append(restHandlers, h.HTTPHandlers()...)
+	for _, h := range c.handlers {
+		restHandlers = append(restHandlers, h...)
 	}
-
-	for _, h := range c.dcasHandlers {
-		restHandlers = append(restHandlers, h.HTTPHandlers()...)
-	}
-
-	// TODO: Add DCAS handlers
 
 	return restHandlers
 }
@@ -268,8 +218,9 @@ func (c *channelController) loadNewContexts(namespaces []config.Namespace, dcasC
 }
 
 type restHandlerConfig struct {
-	file []filehandler.Config
-	dcas []dcashandler.Config
+	file       []filehandler.Config
+	dcas       []dcashandler.Config
+	blockchain []blockchainhandler.Config
 }
 
 func (c *channelController) loadRESTHandlerConfig() (*restHandlerConfig, error) {
@@ -283,6 +234,11 @@ func (c *channelController) loadRESTHandlerConfig() (*restHandlerConfig, error) 
 	}
 
 	cfg.dcas, err = c.loadDCASHandlerConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.blockchain, err = c.loadBlockchainHandlerConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -312,6 +268,21 @@ func (c *channelController) loadDCASHandlerConfig() ([]dcashandler.Config, error
 
 	if errors.Cause(err) == service.ErrConfigNotFound {
 		logger.Info("No DCAS handler configuration found for this peer.")
+
+		return nil, nil
+	}
+
+	return nil, err
+}
+
+func (c *channelController) loadBlockchainHandlerConfig() ([]blockchainhandler.Config, error) {
+	blockchainHandlerCfg, err := c.sidetreeCfgService.LoadBlockchainHandlers(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
+	if err == nil {
+		return blockchainHandlerCfg, nil
+	}
+
+	if errors.Cause(err) == service.ErrConfigNotFound {
+		logger.Info("No blockchain handler configuration found for this peer.")
 
 		return nil, nil
 	}
@@ -403,6 +374,7 @@ func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
 		(kv.AppName == peerconfig.SidetreePeerAppName ||
 			kv.AppName == peerconfig.FileHandlerAppName ||
 			kv.AppName == peerconfig.DCASAppName ||
+			kv.AppName == peerconfig.BlockchainHandlerAppName ||
 			kv.AppName == peerconfig.DCASHandlerAppName) {
 		return true
 	}
@@ -421,12 +393,12 @@ func (c *channelController) loadRESTHandlers(cfg *restHandlerConfig) error {
 
 	c.loadDCASHandlers(cfg.dcas)
 
+	c.loadBlockchainHandlers(cfg.blockchain)
+
 	return nil
 }
 
 func (c *channelController) loadFileHandlers(handlerCfg []filehandler.Config) error {
-	c.fileHandlers = make(map[string]*fileHandlers)
-
 	for _, cfg := range handlerCfg {
 		h, err := c.loadFileHandler(cfg)
 		if err != nil {
@@ -434,7 +406,7 @@ func (c *channelController) loadFileHandlers(handlerCfg []filehandler.Config) er
 		}
 
 		if h != nil {
-			c.fileHandlers[cfg.BasePath] = h
+			c.handlers[cfg.BasePath] = h.HTTPHandlers()
 		}
 	}
 
@@ -468,10 +440,8 @@ func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandle
 }
 
 func (c *channelController) loadDCASHandlers(handlerCfg []dcashandler.Config) {
-	c.dcasHandlers = make(map[string]*dcasHandlers)
-
 	for _, cfg := range handlerCfg {
-		c.dcasHandlers[cfg.BasePath] = c.loadDCASHandler(cfg)
+		c.handlers[cfg.BasePath] = c.loadDCASHandler(cfg).HTTPHandlers()
 	}
 }
 
@@ -489,6 +459,22 @@ func (c *channelController) loadDCASHandler(cfg dcashandler.Config) *dcasHandler
 	logger.Debugf("Adding DCAS version handler for base path [%s]", cfg.BasePath)
 
 	handlers.versionHandler = dcashandler.NewVersionHandler(c.channelID, cfg)
+
+	return handlers
+}
+
+func (c *channelController) loadBlockchainHandlers(handlerCfg []blockchainhandler.Config) {
+	for _, cfg := range handlerCfg {
+		c.handlers[cfg.BasePath] = c.loadBlockchainHandler(cfg).HTTPHandlers()
+	}
+}
+
+func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) *blockchainHandlers {
+	handlers := &blockchainHandlers{}
+
+	logger.Debugf("Adding blockchain time handler for base path [%s]", cfg.BasePath)
+
+	handlers.timeHandler = blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider)
 
 	return handlers
 }

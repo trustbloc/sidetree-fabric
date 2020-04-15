@@ -11,6 +11,7 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 
+	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
@@ -50,11 +51,16 @@ func (c *context) Stop() {
 	c.batchWriter.Stop()
 }
 
+type blockchainClientProvider interface {
+	ForChannel(channelID string) (bcclient.Blockchain, error)
+}
+
 // ContextProviders defines the providers required by the context
 type ContextProviders struct {
 	TxnProvider            txnServiceProvider
 	DCASProvider           dcasClientProvider
 	OperationQueueProvider operationQueueProvider
+	BlockchainProvider     blockchainClientProvider
 }
 
 func newContext(channelID string, nsCfg config.Namespace, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider common.OperationStoreProvider) (*context, error) {

@@ -18,6 +18,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 )
 
@@ -143,7 +144,7 @@ func (c *sidetreeService) LoadFileHandlers(mspID, peerID string) ([]filehandler.
 	return handlers, nil
 }
 
-// LoadDCASHandlers loads the file handler configuration
+// LoadDCASHandlers loads the DCAS handler configuration
 func (c *sidetreeService) LoadDCASHandlers(mspID, peerID string) ([]dcashandler.Config, error) {
 	criteria := &ledgerconfig.Criteria{
 		MspID:      mspID,
@@ -160,6 +161,35 @@ func (c *sidetreeService) LoadDCASHandlers(mspID, peerID string) ([]dcashandler.
 	var handlers []dcashandler.Config
 	for _, kv := range results {
 		cfg := dcashandler.Config{}
+		if err := unmarshal(kv.Value, &cfg); err != nil {
+			return nil, err
+		}
+
+		cfg.Version = kv.ComponentVersion
+
+		handlers = append(handlers, cfg)
+	}
+
+	return handlers, nil
+}
+
+// LoadBlockchainHandlers loads the blockchain handler configuration
+func (c *sidetreeService) LoadBlockchainHandlers(mspID, peerID string) ([]blockchainhandler.Config, error) {
+	criteria := &ledgerconfig.Criteria{
+		MspID:      mspID,
+		PeerID:     peerID,
+		AppName:    BlockchainHandlerAppName,
+		AppVersion: BlockchainHandlerAppVersion,
+	}
+
+	results, err := c.service.Query(criteria)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "error loading blockchain handler config for criteria %s", criteria)
+	}
+
+	var handlers []blockchainhandler.Config
+	for _, kv := range results {
+		cfg := blockchainhandler.Config{}
 		if err := unmarshal(kv.Value, &cfg); err != nil {
 			return nil, err
 		}

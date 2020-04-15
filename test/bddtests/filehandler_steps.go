@@ -187,9 +187,6 @@ func (d *FileHandlerSteps) getCreateRequest(doc []byte) ([]byte, error) {
 		}
 
 		d.recoveryKeySigner = ecsigner.New(privateKey, "ES256", "recovery")
-		if err != nil {
-			return nil, err
-		}
 
 		d.recoveryPublicKey, err = pubkey.GetPublicKeyJWK(&privateKey.PublicKey)
 		if err != nil {

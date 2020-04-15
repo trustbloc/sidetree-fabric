@@ -7,6 +7,7 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 )
 
@@ -77,6 +78,20 @@ type SidetreeConfigService struct {
 	}
 	loadDCASHandlersReturnsOnCall map[int]struct {
 		result1 []dcashandler.Config
+		result2 error
+	}
+	LoadBlockchainHandlersStub        func(mspID, peerID string) ([]blockchainhandler.Config, error)
+	loadBlockchainHandlersMutex       sync.RWMutex
+	loadBlockchainHandlersArgsForCall []struct {
+		mspID  string
+		peerID string
+	}
+	loadBlockchainHandlersReturns struct {
+		result1 []blockchainhandler.Config
+		result2 error
+	}
+	loadBlockchainHandlersReturnsOnCall map[int]struct {
+		result1 []blockchainhandler.Config
 		result2 error
 	}
 	LoadDCASStub        func() (config.DCAS, error)
@@ -352,6 +367,58 @@ func (fake *SidetreeConfigService) LoadDCASHandlersReturnsOnCall(i int, result1 
 	}{result1, result2}
 }
 
+func (fake *SidetreeConfigService) LoadBlockchainHandlers(mspID string, peerID string) ([]blockchainhandler.Config, error) {
+	fake.loadBlockchainHandlersMutex.Lock()
+	ret, specificReturn := fake.loadBlockchainHandlersReturnsOnCall[len(fake.loadBlockchainHandlersArgsForCall)]
+	fake.loadBlockchainHandlersArgsForCall = append(fake.loadBlockchainHandlersArgsForCall, struct {
+		mspID  string
+		peerID string
+	}{mspID, peerID})
+	fake.recordInvocation("LoadBlockchainHandlers", []interface{}{mspID, peerID})
+	fake.loadBlockchainHandlersMutex.Unlock()
+	if fake.LoadBlockchainHandlersStub != nil {
+		return fake.LoadBlockchainHandlersStub(mspID, peerID)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.loadBlockchainHandlersReturns.result1, fake.loadBlockchainHandlersReturns.result2
+}
+
+func (fake *SidetreeConfigService) LoadBlockchainHandlersCallCount() int {
+	fake.loadBlockchainHandlersMutex.RLock()
+	defer fake.loadBlockchainHandlersMutex.RUnlock()
+	return len(fake.loadBlockchainHandlersArgsForCall)
+}
+
+func (fake *SidetreeConfigService) LoadBlockchainHandlersArgsForCall(i int) (string, string) {
+	fake.loadBlockchainHandlersMutex.RLock()
+	defer fake.loadBlockchainHandlersMutex.RUnlock()
+	return fake.loadBlockchainHandlersArgsForCall[i].mspID, fake.loadBlockchainHandlersArgsForCall[i].peerID
+}
+
+func (fake *SidetreeConfigService) LoadBlockchainHandlersReturns(result1 []blockchainhandler.Config, result2 error) {
+	fake.LoadBlockchainHandlersStub = nil
+	fake.loadBlockchainHandlersReturns = struct {
+		result1 []blockchainhandler.Config
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *SidetreeConfigService) LoadBlockchainHandlersReturnsOnCall(i int, result1 []blockchainhandler.Config, result2 error) {
+	fake.LoadBlockchainHandlersStub = nil
+	if fake.loadBlockchainHandlersReturnsOnCall == nil {
+		fake.loadBlockchainHandlersReturnsOnCall = make(map[int]struct {
+			result1 []blockchainhandler.Config
+			result2 error
+		})
+	}
+	fake.loadBlockchainHandlersReturnsOnCall[i] = struct {
+		result1 []blockchainhandler.Config
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *SidetreeConfigService) LoadDCAS() (config.DCAS, error) {
 	fake.loadDCASMutex.Lock()
 	ret, specificReturn := fake.loadDCASReturnsOnCall[len(fake.loadDCASArgsForCall)]
@@ -408,6 +475,8 @@ func (fake *SidetreeConfigService) Invocations() map[string][][]interface{} {
 	defer fake.loadFileHandlersMutex.RUnlock()
 	fake.loadDCASHandlersMutex.RLock()
 	defer fake.loadDCASHandlersMutex.RUnlock()
+	fake.loadBlockchainHandlersMutex.RLock()
+	defer fake.loadBlockchainHandlersMutex.RUnlock()
 	fake.loadDCASMutex.RLock()
 	defer fake.loadDCASMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
