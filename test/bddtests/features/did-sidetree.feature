@@ -129,15 +129,15 @@ Feature:
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-config.json --noprompt" then the error response should contain "field 'BatchWriterTimeout' must contain a value greater than 0"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-peer-config.json --noprompt" then the error response should contain "field 'BasePath' must begin with '/'"
 
-  @create_revoke_did_doc
-  Scenario: create and revoke valid did doc
+  @create_deactivate_did_doc
+  Scenario: create and deactivate valid did doc
     When client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
     When client sends request to "https://localhost:48426/document" to resolve DID document
     Then check success response contains "#didDocumentHash"
-    When client sends request to "https://localhost:48426/document" to revoke DID document
+    When client sends request to "https://localhost:48426/document" to deactivate DID document
     And we wait 10 seconds
 
     When client sends request to "https://localhost:48426/document" to resolve DID document
