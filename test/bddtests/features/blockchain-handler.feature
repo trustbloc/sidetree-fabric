@@ -34,3 +34,15 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/time"
     Then the JSON path "time" of the response is not empty
     And the JSON path "hash" of the response is not empty
+    And the JSON path "time" of the response is saved to variable "time"
+    And the JSON path "hash" of the response is saved to variable "hash"
+
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/time/${hash}"
+    And the JSON path "hash" of the response equals "${hash}"
+    And the JSON path "time" of the response equals "${time}"
+
+    # Invalid hash - Bad Request (400)
+    Then an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/time/xxx_xxx" and the returned status code is 400
+
+    # Hash not found - Not Found (404)
+    Then an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/time/AQIDBAUGBwgJCgsM" and the returned status code is 404

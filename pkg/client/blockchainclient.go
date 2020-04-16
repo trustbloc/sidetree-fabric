@@ -23,6 +23,7 @@ var ErrNoLedger = errors.New("no ledger")
 type Blockchain interface {
 	GetBlockchainInfo() (*cb.BlockchainInfo, error)
 	GetBlockByNumber(blockNumber uint64) (*cb.Block, error)
+	GetBlockByHash(blockHash []byte) (*cb.Block, error)
 }
 
 // BlockchainProvider manages multiple blockchain clients - one per channel

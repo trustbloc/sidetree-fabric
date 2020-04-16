@@ -4,40 +4,53 @@ package mocks
 import (
 	"sync"
 
-	"github.com/hyperledger/fabric-protos-go/common"
+	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
 )
 
 type BlockchainClient struct {
-	GetBlockchainInfoStub        func() (*common.BlockchainInfo, error)
+	GetBlockchainInfoStub        func() (*cb.BlockchainInfo, error)
 	getBlockchainInfoMutex       sync.RWMutex
 	getBlockchainInfoArgsForCall []struct{}
 	getBlockchainInfoReturns     struct {
-		result1 *common.BlockchainInfo
+		result1 *cb.BlockchainInfo
 		result2 error
 	}
 	getBlockchainInfoReturnsOnCall map[int]struct {
-		result1 *common.BlockchainInfo
+		result1 *cb.BlockchainInfo
 		result2 error
 	}
-	GetBlockByNumberStub        func(blockNumber uint64) (*common.Block, error)
+	GetBlockByNumberStub        func(blockNumber uint64) (*cb.Block, error)
 	getBlockByNumberMutex       sync.RWMutex
 	getBlockByNumberArgsForCall []struct {
 		blockNumber uint64
 	}
 	getBlockByNumberReturns struct {
-		result1 *common.Block
+		result1 *cb.Block
 		result2 error
 	}
 	getBlockByNumberReturnsOnCall map[int]struct {
-		result1 *common.Block
+		result1 *cb.Block
+		result2 error
+	}
+	GetBlockByHashStub        func(blockHash []byte) (*cb.Block, error)
+	getBlockByHashMutex       sync.RWMutex
+	getBlockByHashArgsForCall []struct {
+		blockHash []byte
+	}
+	getBlockByHashReturns struct {
+		result1 *cb.Block
+		result2 error
+	}
+	getBlockByHashReturnsOnCall map[int]struct {
+		result1 *cb.Block
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *BlockchainClient) GetBlockchainInfo() (*common.BlockchainInfo, error) {
+func (fake *BlockchainClient) GetBlockchainInfo() (*cb.BlockchainInfo, error) {
 	fake.getBlockchainInfoMutex.Lock()
 	ret, specificReturn := fake.getBlockchainInfoReturnsOnCall[len(fake.getBlockchainInfoArgsForCall)]
 	fake.getBlockchainInfoArgsForCall = append(fake.getBlockchainInfoArgsForCall, struct{}{})
@@ -58,29 +71,29 @@ func (fake *BlockchainClient) GetBlockchainInfoCallCount() int {
 	return len(fake.getBlockchainInfoArgsForCall)
 }
 
-func (fake *BlockchainClient) GetBlockchainInfoReturns(result1 *common.BlockchainInfo, result2 error) {
+func (fake *BlockchainClient) GetBlockchainInfoReturns(result1 *cb.BlockchainInfo, result2 error) {
 	fake.GetBlockchainInfoStub = nil
 	fake.getBlockchainInfoReturns = struct {
-		result1 *common.BlockchainInfo
+		result1 *cb.BlockchainInfo
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *BlockchainClient) GetBlockchainInfoReturnsOnCall(i int, result1 *common.BlockchainInfo, result2 error) {
+func (fake *BlockchainClient) GetBlockchainInfoReturnsOnCall(i int, result1 *cb.BlockchainInfo, result2 error) {
 	fake.GetBlockchainInfoStub = nil
 	if fake.getBlockchainInfoReturnsOnCall == nil {
 		fake.getBlockchainInfoReturnsOnCall = make(map[int]struct {
-			result1 *common.BlockchainInfo
+			result1 *cb.BlockchainInfo
 			result2 error
 		})
 	}
 	fake.getBlockchainInfoReturnsOnCall[i] = struct {
-		result1 *common.BlockchainInfo
+		result1 *cb.BlockchainInfo
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *BlockchainClient) GetBlockByNumber(blockNumber uint64) (*common.Block, error) {
+func (fake *BlockchainClient) GetBlockByNumber(blockNumber uint64) (*cb.Block, error) {
 	fake.getBlockByNumberMutex.Lock()
 	ret, specificReturn := fake.getBlockByNumberReturnsOnCall[len(fake.getBlockByNumberArgsForCall)]
 	fake.getBlockByNumberArgsForCall = append(fake.getBlockByNumberArgsForCall, struct {
@@ -109,24 +122,80 @@ func (fake *BlockchainClient) GetBlockByNumberArgsForCall(i int) uint64 {
 	return fake.getBlockByNumberArgsForCall[i].blockNumber
 }
 
-func (fake *BlockchainClient) GetBlockByNumberReturns(result1 *common.Block, result2 error) {
+func (fake *BlockchainClient) GetBlockByNumberReturns(result1 *cb.Block, result2 error) {
 	fake.GetBlockByNumberStub = nil
 	fake.getBlockByNumberReturns = struct {
-		result1 *common.Block
+		result1 *cb.Block
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *BlockchainClient) GetBlockByNumberReturnsOnCall(i int, result1 *common.Block, result2 error) {
+func (fake *BlockchainClient) GetBlockByNumberReturnsOnCall(i int, result1 *cb.Block, result2 error) {
 	fake.GetBlockByNumberStub = nil
 	if fake.getBlockByNumberReturnsOnCall == nil {
 		fake.getBlockByNumberReturnsOnCall = make(map[int]struct {
-			result1 *common.Block
+			result1 *cb.Block
 			result2 error
 		})
 	}
 	fake.getBlockByNumberReturnsOnCall[i] = struct {
-		result1 *common.Block
+		result1 *cb.Block
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *BlockchainClient) GetBlockByHash(blockHash []byte) (*cb.Block, error) {
+	var blockHashCopy []byte
+	if blockHash != nil {
+		blockHashCopy = make([]byte, len(blockHash))
+		copy(blockHashCopy, blockHash)
+	}
+	fake.getBlockByHashMutex.Lock()
+	ret, specificReturn := fake.getBlockByHashReturnsOnCall[len(fake.getBlockByHashArgsForCall)]
+	fake.getBlockByHashArgsForCall = append(fake.getBlockByHashArgsForCall, struct {
+		blockHash []byte
+	}{blockHashCopy})
+	fake.recordInvocation("GetBlockByHash", []interface{}{blockHashCopy})
+	fake.getBlockByHashMutex.Unlock()
+	if fake.GetBlockByHashStub != nil {
+		return fake.GetBlockByHashStub(blockHash)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.getBlockByHashReturns.result1, fake.getBlockByHashReturns.result2
+}
+
+func (fake *BlockchainClient) GetBlockByHashCallCount() int {
+	fake.getBlockByHashMutex.RLock()
+	defer fake.getBlockByHashMutex.RUnlock()
+	return len(fake.getBlockByHashArgsForCall)
+}
+
+func (fake *BlockchainClient) GetBlockByHashArgsForCall(i int) []byte {
+	fake.getBlockByHashMutex.RLock()
+	defer fake.getBlockByHashMutex.RUnlock()
+	return fake.getBlockByHashArgsForCall[i].blockHash
+}
+
+func (fake *BlockchainClient) GetBlockByHashReturns(result1 *cb.Block, result2 error) {
+	fake.GetBlockByHashStub = nil
+	fake.getBlockByHashReturns = struct {
+		result1 *cb.Block
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *BlockchainClient) GetBlockByHashReturnsOnCall(i int, result1 *cb.Block, result2 error) {
+	fake.GetBlockByHashStub = nil
+	if fake.getBlockByHashReturnsOnCall == nil {
+		fake.getBlockByHashReturnsOnCall = make(map[int]struct {
+			result1 *cb.Block
+			result2 error
+		})
+	}
+	fake.getBlockByHashReturnsOnCall[i] = struct {
+		result1 *cb.Block
 		result2 error
 	}{result1, result2}
 }
@@ -138,6 +207,8 @@ func (fake *BlockchainClient) Invocations() map[string][][]interface{} {
 	defer fake.getBlockchainInfoMutex.RUnlock()
 	fake.getBlockByNumberMutex.RLock()
 	defer fake.getBlockByNumberMutex.RUnlock()
+	fake.getBlockByHashMutex.RLock()
+	defer fake.getBlockByHashMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

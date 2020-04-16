@@ -472,9 +472,10 @@ func (c *channelController) loadBlockchainHandlers(handlerCfg []blockchainhandle
 func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) *blockchainHandlers {
 	handlers := &blockchainHandlers{}
 
-	logger.Debugf("Adding blockchain time handler for base path [%s]", cfg.BasePath)
+	logger.Debugf("Adding blockchain time handlers for base path [%s]", cfg.BasePath)
 
 	handlers.timeHandler = blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider)
+	handlers.timeByHashHandler = blockchainhandler.NewTimeByHashHandler(c.channelID, cfg, c.BlockchainProvider)
 
 	return handlers
 }
