@@ -25,9 +25,12 @@ GO_CMD     ?= go
 ALPINE_VER ?= 3.10
 DBUILD_CMD ?= docker build
 
+# defined in github.com/hyperledger/fabric/common/metadata/metadata.go
+FABRIC_METADATA_VAR = Version=2.0.0
+
 # Build flags
 GO_TAGS    ?=
-GO_LDFLAGS ?=
+GO_LDFLAGS ?= $(FABRIC_METADATA_VAR:%=-X github.com/hyperledger/fabric/common/metadata.%)
 
 # Local variables used by makefile
 PROJECT_NAME       = sidetree-fabric

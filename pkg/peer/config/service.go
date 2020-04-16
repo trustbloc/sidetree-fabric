@@ -194,8 +194,6 @@ func (c *sidetreeService) LoadBlockchainHandlers(mspID, peerID string) ([]blockc
 			return nil, err
 		}
 
-		cfg.Version = kv.ComponentVersion
-
 		handlers = append(handlers, cfg)
 	}
 

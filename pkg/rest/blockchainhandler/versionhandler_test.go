@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package dcashandler
+package blockchainhandler
 
 import (
 	"encoding/json"
@@ -22,25 +22,22 @@ func TestNewVersionHandler(t *testing.T) {
 	h := NewVersionHandler(channel1, handlerCfg)
 	require.NotNil(t, h)
 
-	require.Equal(t, "/cas/version", h.Path())
+	require.Equal(t, "/blockchain/version", h.Path())
 	require.Equal(t, http.MethodGet, h.Method())
 }
 
 func TestVersion_Handler(t *testing.T) {
-	const v1 = "1.0.1"
+	const fabricVersion = "latest"
 
 	cfg := Config{
-		BasePath:      "/cas",
-		ChaincodeName: cc1,
-		Collection:    coll1,
-		Version:       v1,
+		BasePath: "/blockchain",
 	}
 
 	h := NewVersionHandler(channel1, cfg)
 	require.NotNil(t, h)
 
 	rw := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/cas/version", nil)
+	req := httptest.NewRequest(http.MethodGet, "/blockchain/version", nil)
 
 	h.Handler()(rw, req)
 
@@ -50,5 +47,5 @@ func TestVersion_Handler(t *testing.T) {
 	resp := &versionhandler.Response{}
 	require.NoError(t, json.Unmarshal(rw.Body.Bytes(), resp))
 	require.Equal(t, moduleName, resp.Name)
-	require.Equal(t, v1, resp.Version)
+	require.Equal(t, fabricVersion, resp.Version)
 }

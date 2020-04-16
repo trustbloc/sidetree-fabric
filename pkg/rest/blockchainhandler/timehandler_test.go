@@ -31,7 +31,6 @@ const (
 var (
 	handlerCfg = Config{
 		BasePath: "/blockchain",
-		Version:  v1,
 	}
 )
 
