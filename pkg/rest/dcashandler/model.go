@@ -26,9 +26,3 @@ const (
 type UploadResponse struct {
 	Hash string `json:"hash"`
 }
-
-// VersionResponse contains the response from a CAS version request
-type VersionResponse struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-}

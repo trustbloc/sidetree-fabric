@@ -31,6 +31,10 @@ Feature:
 
   @blockchain_s1
   Scenario: Blockchain functions
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/version"
+    Then the JSON path "name" of the response equals "Hyperledger Fabric"
+    And the JSON path "version" of the response equals "2.0.0"
+
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/time"
     Then the JSON path "time" of the response is not empty
     And the JSON path "hash" of the response is not empty

@@ -465,17 +465,21 @@ func (c *channelController) loadDCASHandler(cfg dcashandler.Config) *dcasHandler
 
 func (c *channelController) loadBlockchainHandlers(handlerCfg []blockchainhandler.Config) {
 	for _, cfg := range handlerCfg {
-		c.handlers[cfg.BasePath] = c.loadBlockchainHandler(cfg).HTTPHandlers()
+		c.handlers[cfg.BasePath] = c.loadBlockchainHandler(cfg)
 	}
 }
 
-func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) *blockchainHandlers {
-	handlers := &blockchainHandlers{}
+func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) []common.HTTPHandler {
+	var handlers []common.HTTPHandler
 
 	logger.Debugf("Adding blockchain time handlers for base path [%s]", cfg.BasePath)
 
-	handlers.timeHandler = blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider)
-	handlers.timeByHashHandler = blockchainhandler.NewTimeByHashHandler(c.channelID, cfg, c.BlockchainProvider)
+	handlers = append(handlers, blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider))
+	handlers = append(handlers, blockchainhandler.NewTimeByHashHandler(c.channelID, cfg, c.BlockchainProvider))
+
+	logger.Debugf("Adding blockchain version handler for base path [%s]", cfg.BasePath)
+
+	handlers = append(handlers, blockchainhandler.NewVersionHandler(c.channelID, cfg))
 
 	return handlers
 }
