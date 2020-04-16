@@ -16,7 +16,7 @@ import (
 //go:generate counterfeiter -o ./../../mocks/dcasprovider.gen.go --fake-name DCASClientProvider . DCASClientProvider
 //go:generate counterfeiter -o ./../mocks/offledgerprovider.gen.go --fake-name OffLedgerClientProvider . OffLedgerClientProvider
 //go:generate counterfeiter -o ./../mocks/bcclientprovider.gen.go --fake-name BlockchainClientProvider . BlockchainClientProvider
-//go:generate counterfeiter -o ./../mocks/bcclient.gen.go --fake-name BlockchainClient ../../client blockchain
+//go:generate counterfeiter -o ./../mocks/bcclient.gen.go --fake-name BlockchainClient ../../client Blockchain
 
 // DCASClientProvider is a DCAS client provider
 type DCASClientProvider interface {

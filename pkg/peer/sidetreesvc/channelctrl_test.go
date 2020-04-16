@@ -331,7 +331,7 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 
 	stConfigService.LoadBlockchainHandlersReturns(blockchainHandlers, nil)
 	require.NoError(t, c.load())
-	require.Len(t, c.RESTHandlers(), 1)
+	require.Len(t, c.RESTHandlers(), 2)
 }
 
 func setRoles(roles ...extroles.Role) func() {

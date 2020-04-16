@@ -56,7 +56,8 @@ func (h *dcasHandlers) HTTPHandlers() []common.HTTPHandler {
 }
 
 type blockchainHandlers struct {
-	timeHandler common.HTTPHandler
+	timeHandler       common.HTTPHandler
+	timeByHashHandler common.HTTPHandler
 }
 
 func (h *blockchainHandlers) HTTPHandlers() []common.HTTPHandler {
@@ -64,6 +65,10 @@ func (h *blockchainHandlers) HTTPHandlers() []common.HTTPHandler {
 
 	if h.timeHandler != nil {
 		handlers = append(handlers, h.timeHandler)
+	}
+
+	if h.timeByHashHandler != nil {
+		handlers = append(handlers, h.timeByHashHandler)
 	}
 
 	return handlers
