@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package sidetreesvc
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
@@ -23,8 +25,10 @@ import (
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
+	mocks2 "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -271,6 +275,63 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 	stConfigService.LoadDCASHandlersReturns(dcasHandlers, nil)
 	require.NoError(t, c.load())
 	require.Len(t, c.RESTHandlers(), 3)
+}
+
+func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
+	peerConfig := &peermocks.PeerConfig{}
+	peerConfig.MSPIDReturns(msp1)
+	peerConfig.PeerIDReturns(peer1)
+
+	configSvc := &peermocks.ConfigService{}
+	configProvider := &peermocks.ConfigServiceProvider{}
+	configProvider.ForChannelReturns(configSvc)
+
+	opQueue := &opqueue.MemQueue{}
+	opQueueProvider := &mocks.OperationQueueProvider{}
+	opQueueProvider.CreateReturns(opQueue, nil)
+
+	blockchainProvider := &mocks2.BlockchainClientProvider{}
+
+	providers := &providers{
+		ContextProviders: &ContextProviders{
+			OperationQueueProvider: opQueueProvider,
+			BlockchainProvider:     blockchainProvider,
+		},
+		PeerConfig:     peerConfig,
+		ConfigProvider: configProvider,
+		BlockPublisher: extmocks.NewBlockPublisherProvider(),
+	}
+
+	stConfigService := &cfgmocks.SidetreeConfigService{}
+
+	ctrl := &peermocks.RESTServerController{}
+
+	c := newChannelController(channel1, providers, stConfigService, ctrl)
+	require.NotNil(t, c)
+
+	defer c.Close()
+
+	// No config
+	stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, service.ErrConfigNotFound)
+	require.NoError(t, c.load())
+	require.Empty(t, c.RESTHandlers())
+
+	// Just blockchain handlers
+	blockchainHandlers := []blockchainhandler.Config{
+		{
+			BasePath: "/blockchain",
+		},
+	}
+
+	stConfigService.LoadBlockchainHandlersReturns(nil, errors.New("injected error"))
+	require.Error(t, c.load())
+
+	stConfigService.LoadBlockchainHandlersReturns(nil, service.ErrConfigNotFound)
+	require.NoError(t, c.load())
+
+	stConfigService.LoadBlockchainHandlersReturns(blockchainHandlers, nil)
+	require.NoError(t, c.load())
+	require.Len(t, c.RESTHandlers(), 1)
 }
 
 func setRoles(roles ...extroles.Role) func() {
