@@ -45,7 +45,7 @@ const (
 const addPublicKeysTemplate = `[
 	{
       "id": "%s",
-      "usage": ["ops"],
+      "usage": ["ops", "general"],
       "type": "Secp256k1VerificationKey2018",
       "publicKeyHex": "02b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71"
     }
@@ -68,9 +68,20 @@ const docTemplate = `{
 	{
   		"id": "%s",
   		"type": "JwsVerificationKey2020",
-		"usage": ["ops"],
+		"usage": ["ops", "general"],
   		"publicKeyJwk": %s
-	}
+	},
+    {
+      "id": "dual-key",
+      "type": "JwsVerificationKey2020",
+      "usage": ["auth", "general"],
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "P-256K",
+        "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
+        "y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
+      }
+    }
   ],
   "service": [
 	{
@@ -85,6 +96,7 @@ const docTemplate = `{
 	}
   ]
 }`
+
 
 // DIDSideSteps
 type DIDSideSteps struct {
@@ -104,7 +116,7 @@ func NewDIDSideSteps(context *bddtests.BDDContext) *DIDSideSteps {
 func (d *DIDSideSteps) sendDIDDocument(url, namespace string) error {
 	logger.Infof("Creating DID document at %s", url)
 
-	opaqueDoc, err := d.getOpaqueDocument("#key1")
+	opaqueDoc, err := d.getOpaqueDocument("key1")
 	if err != nil {
 		return err
 	}
@@ -222,22 +234,22 @@ func (d *DIDSideSteps) resolveDIDDocument(url string) error {
 	}
 }
 
-func (d *DIDSideSteps) revokeDIDDocument(url string) error {
+func (d *DIDSideSteps) deactivateDIDDocument(url string) error {
 	uniqueSuffix, err := d.getUniqueSuffix()
 	if err != nil {
 		return err
 	}
 
-	logger.Infof("revoke did document [%s]from %s", uniqueSuffix, url)
+	logger.Infof("deactivate did document [%s]from %s", uniqueSuffix, url)
 
-	req, err := d.getRevokeRequest(uniqueSuffix)
+	req, err := d.getDeactivateRequest(uniqueSuffix)
 	if err != nil {
 		return err
 	}
 
 	d.resp, err = restclient.SendRequest(url, req)
 
-	logger.Infof("revoke status %d, error '%s:'", d.resp.StatusCode, d.resp.ErrorMsg)
+	logger.Infof("deactivate status %d, error '%s:'", d.resp.StatusCode, d.resp.ErrorMsg)
 
 	return err
 }
@@ -250,7 +262,7 @@ func (d *DIDSideSteps) recoverDIDDocument(url string) error {
 
 	logger.Infof("recover did document [%s]", uniqueSuffix)
 
-	opaqueDoc, err := d.getOpaqueDocument("#recoveryKey")
+	opaqueDoc, err := d.getOpaqueDocument("recoveryKey")
 	if err != nil {
 		return err
 	}
@@ -417,8 +429,8 @@ func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byt
 	return recoverRequest, nil
 }
 
-func (d *DIDSideSteps) getRevokeRequest(did string) ([]byte, error) {
-	return helper.NewRevokeRequest(&helper.RevokeRequestInfo{
+func (d *DIDSideSteps) getDeactivateRequest(did string) ([]byte, error) {
+	return helper.NewDeactivateRequest(&helper.DeactivateRequestInfo{
 		DidUniqueSuffix:     did,
 		RecoveryRevealValue: []byte(recoveryOTP),
 		Signer:              d.recoveryKeySigner,
@@ -476,7 +488,7 @@ func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^client sends request to "([^"]*)" to add service endpoint with ID "([^"]*)" to DID document$`, d.addServiceEndpointToDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to remove service endpoint with ID "([^"]*)" from DID document$`, d.removeServiceEndpointsFromDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to recover DID document$`, d.recoverDIDDocument)
-	s.Step(`^client sends request to "([^"]*)" to revoke DID document$`, d.revokeDIDDocument)
+	s.Step(`^client sends request to "([^"]*)" to deactivate DID document$`, d.deactivateDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial value$`, d.resolveDIDDocumentWithInitialValue)
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessRespContains)
 	s.Step(`^check success response does NOT contain "([^"]*)"$`, d.checkSuccessRespDoesNotContain)
