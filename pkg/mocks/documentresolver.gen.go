@@ -8,38 +8,39 @@ import (
 )
 
 type DocumentResolver struct {
-	ResolveDocumentStub        func(idOrDocument string) (document.Document, error)
+	ResolveDocumentStub        func(string) (*document.ResolutionResult, error)
 	resolveDocumentMutex       sync.RWMutex
 	resolveDocumentArgsForCall []struct {
-		idOrDocument string
+		arg1 string
 	}
 	resolveDocumentReturns struct {
-		result1 document.Document
+		result1 *document.ResolutionResult
 		result2 error
 	}
 	resolveDocumentReturnsOnCall map[int]struct {
-		result1 document.Document
+		result1 *document.ResolutionResult
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *DocumentResolver) ResolveDocument(idOrDocument string) (document.Document, error) {
+func (fake *DocumentResolver) ResolveDocument(arg1 string) (*document.ResolutionResult, error) {
 	fake.resolveDocumentMutex.Lock()
 	ret, specificReturn := fake.resolveDocumentReturnsOnCall[len(fake.resolveDocumentArgsForCall)]
 	fake.resolveDocumentArgsForCall = append(fake.resolveDocumentArgsForCall, struct {
-		idOrDocument string
-	}{idOrDocument})
-	fake.recordInvocation("ResolveDocument", []interface{}{idOrDocument})
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("ResolveDocument", []interface{}{arg1})
 	fake.resolveDocumentMutex.Unlock()
 	if fake.ResolveDocumentStub != nil {
-		return fake.ResolveDocumentStub(idOrDocument)
+		return fake.ResolveDocumentStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.resolveDocumentReturns.result1, fake.resolveDocumentReturns.result2
+	fakeReturns := fake.resolveDocumentReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *DocumentResolver) ResolveDocumentCallCount() int {
@@ -48,30 +49,41 @@ func (fake *DocumentResolver) ResolveDocumentCallCount() int {
 	return len(fake.resolveDocumentArgsForCall)
 }
 
+func (fake *DocumentResolver) ResolveDocumentCalls(stub func(string) (*document.ResolutionResult, error)) {
+	fake.resolveDocumentMutex.Lock()
+	defer fake.resolveDocumentMutex.Unlock()
+	fake.ResolveDocumentStub = stub
+}
+
 func (fake *DocumentResolver) ResolveDocumentArgsForCall(i int) string {
 	fake.resolveDocumentMutex.RLock()
 	defer fake.resolveDocumentMutex.RUnlock()
-	return fake.resolveDocumentArgsForCall[i].idOrDocument
+	argsForCall := fake.resolveDocumentArgsForCall[i]
+	return argsForCall.arg1
 }
 
-func (fake *DocumentResolver) ResolveDocumentReturns(result1 document.Document, result2 error) {
+func (fake *DocumentResolver) ResolveDocumentReturns(result1 *document.ResolutionResult, result2 error) {
+	fake.resolveDocumentMutex.Lock()
+	defer fake.resolveDocumentMutex.Unlock()
 	fake.ResolveDocumentStub = nil
 	fake.resolveDocumentReturns = struct {
-		result1 document.Document
+		result1 *document.ResolutionResult
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *DocumentResolver) ResolveDocumentReturnsOnCall(i int, result1 document.Document, result2 error) {
+func (fake *DocumentResolver) ResolveDocumentReturnsOnCall(i int, result1 *document.ResolutionResult, result2 error) {
+	fake.resolveDocumentMutex.Lock()
+	defer fake.resolveDocumentMutex.Unlock()
 	fake.ResolveDocumentStub = nil
 	if fake.resolveDocumentReturnsOnCall == nil {
 		fake.resolveDocumentReturnsOnCall = make(map[int]struct {
-			result1 document.Document
+			result1 *document.ResolutionResult
 			result2 error
 		})
 	}
 	fake.resolveDocumentReturnsOnCall[i] = struct {
-		result1 document.Document
+		result1 *document.ResolutionResult
 		result2 error
 	}{result1, result2}
 }

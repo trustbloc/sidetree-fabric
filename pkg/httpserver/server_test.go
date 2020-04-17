@@ -77,34 +77,34 @@ func TestServer_Start(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
-		var createdDoc document.Document
+		var createdDoc document.ResolutionResult
 		require.NoError(t, json.Unmarshal(resp, &createdDoc))
-		require.Equal(t, didID, createdDoc["id"])
+		require.Equal(t, didID, createdDoc.Document["id"])
 
 		resp, err = httpGet(t, clientURL+didDocPath+"/"+didID)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
-		var resolvedDoc document.Document
+		var resolvedDoc document.ResolutionResult
 		require.NoError(t, json.Unmarshal(resp, &resolvedDoc))
-		require.Equal(t, didID, resolvedDoc["id"])
+		require.Equal(t, didID, resolvedDoc.Document["id"])
 	})
 	t.Run("Sample doc", func(t *testing.T) {
 		resp, err := httpPut(t, clientURL+samplePath, request)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
-		var createdDoc document.Document
+		var createdDoc document.ResolutionResult
 		require.NoError(t, json.Unmarshal(resp, &createdDoc))
-		require.Equal(t, sampleID, createdDoc["id"])
+		require.Equal(t, sampleID, createdDoc.Document["id"])
 
 		resp, err = httpGet(t, clientURL+samplePath+"/"+sampleID+"?max-size=1024")
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
-		var resolvedDoc document.Document
+		var resolvedDoc document.ResolutionResult
 		require.NoError(t, json.Unmarshal(resp, &resolvedDoc))
-		require.Equal(t, sampleID, resolvedDoc["id"])
+		require.Equal(t, sampleID, resolvedDoc.Document["id"])
 	})
 	t.Run("Stop", func(t *testing.T) {
 		require.NoError(t, s.Stop(context.Background()))

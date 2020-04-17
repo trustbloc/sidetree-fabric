@@ -20,7 +20,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
-//go:generate counterfeiter -o ../../mocks/documentresolver.gen.go --fake-name DocumentResolver . documentResolver
+//go:generate counterfeiter -o ../mocks/documentresolver.gen.go --fake-name DocumentResolver . documentResolver
 
 const (
 	channelID = "channel1"
@@ -78,7 +78,7 @@ func TestFileRetrieveHandler(t *testing.T) {
 	})
 
 	t.Run("Invalid file index document", func(t *testing.T) {
-		docResolver.ResolveDocumentReturns(make(document.Document), nil)
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{}, nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()
@@ -94,7 +94,7 @@ func TestFileRetrieveHandler(t *testing.T) {
 		doc, err := getDocument(fileIndexDoc)
 		require.NoError(t, err)
 
-		docResolver.ResolveDocumentReturns(doc, nil)
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()
@@ -112,7 +112,7 @@ func TestFileRetrieveHandler(t *testing.T) {
 		doc, err := getDocument(fileIndexDoc)
 		require.NoError(t, err)
 
-		docResolver.ResolveDocumentReturns(doc, nil)
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()
@@ -134,7 +134,7 @@ func TestFileRetrieveHandler(t *testing.T) {
 		doc, err := getDocument(fileIndexDoc)
 		require.NoError(t, err)
 
-		docResolver.ResolveDocumentReturns(doc, nil)
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()
@@ -158,7 +158,7 @@ func TestFileRetrieveHandler(t *testing.T) {
 		doc, err := getDocument(fileIndexDoc)
 		require.NoError(t, err)
 
-		docResolver.ResolveDocumentReturns(doc, nil)
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
 		dcasClient.GetReturns(nil, nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
@@ -186,7 +186,7 @@ func TestFileRetrieveHandler(t *testing.T) {
 		doc, err := getDocument(fileIndexDoc)
 		require.NoError(t, err)
 
-		docResolver.ResolveDocumentReturns(doc, nil)
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
 		dcasClient.GetReturns(nil, errors.New("injected DCAS error"))
 
 		getResourceName = func(req *http.Request) string { return schema1 }
@@ -211,7 +211,7 @@ func TestFileRetrieveHandler(t *testing.T) {
 		doc, err := getDocument(fileIndexDoc)
 		require.NoError(t, err)
 
-		docResolver.ResolveDocumentReturns(doc, nil)
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
 		dcasClient.GetReturns(nil, errors.New("injected DCAS error"))
 
 		getResourceName = func(req *http.Request) string { return schema1 }
@@ -236,7 +236,7 @@ func TestFileRetrieveHandler(t *testing.T) {
 		doc, err := getDocument(fileIndexDoc)
 		require.NoError(t, err)
 
-		docResolver.ResolveDocumentReturns(doc, nil)
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
 		getResourceName = func(req *http.Request) string { return schema1 }
 
 		t.Run("Invalid file", func(t *testing.T) {
