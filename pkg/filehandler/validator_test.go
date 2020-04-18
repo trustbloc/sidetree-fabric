@@ -155,10 +155,43 @@ func TestDocumentValidator_TransformDocument(t *testing.T) {
 	v := NewValidator(&mocks.OperationStore{})
 	require.NotNil(t, v)
 
-	doc := make(document.Document)
-	transformed, err := v.TransformDocument(doc)
-	require.NoError(t, err)
-	require.Equal(t, doc, transformed)
+	t.Run("empty document - success", func(t *testing.T) {
+		doc := make(document.Document)
+		transformed, err := v.TransformDocument(doc)
+		require.NoError(t, err)
+		require.Equal(t, doc, transformed.Document)
+	})
+
+	t.Run("document with operation keys", func(t *testing.T) {
+		doc, err := document.FromBytes([]byte(validDocWithOpsKeysOnly))
+		require.NoError(t, err)
+
+		result, err := v.TransformDocument(doc)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(result.MethodMetadata.OperationPublicKeys))
+
+		jsonTransformed, err := json.Marshal(result.Document)
+		require.NoError(t, err)
+		didDoc, err := document.DidDocumentFromBytes(jsonTransformed)
+		require.NoError(t, err)
+		require.Equal(t, 0, len(didDoc.PublicKeys()))
+	})
+
+	t.Run("document with mixed operation and general keys", func(t *testing.T) {
+		// most likely this scenario will not be used
+		doc, err := document.FromBytes([]byte(validDocWithMixedKeys))
+		require.NoError(t, err)
+
+		result, err := v.TransformDocument(doc)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(result.MethodMetadata.OperationPublicKeys))
+
+		jsonTransformed, err := json.Marshal(result.Document)
+		require.NoError(t, err)
+		didDoc, err := document.DidDocumentFromBytes(jsonTransformed)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(didDoc.PublicKeys()))
+	})
 }
 
 func TestUnmarshalUpdateOperation(t *testing.T) {
@@ -248,3 +281,60 @@ func getUpdateRequest(patches string) ([]byte, error) {
 			Signer:          ecsigner.New(privateKey, "ES256", "update-key"),
 		})
 }
+
+const validDocWithOpsKeysOnly = `
+{
+  "id" : "doc:method:abc",
+  "publicKey": [
+    {
+      "id": "update-key",
+      "type": "JwsVerificationKey2020",
+      "usage": ["ops"],
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "P-256K",
+        "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
+        "y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
+      }
+    }
+  ],
+  "other": [
+    {
+      "name": "name"
+    }
+  ]
+}`
+
+const validDocWithMixedKeys = `
+{
+  "id" : "doc:method:abc",
+  "publicKey": [
+    {
+      "id": "update-key",
+      "type": "JwsVerificationKey2020",
+      "usage": ["ops"],
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "P-256K",
+        "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
+        "y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
+      }
+    },
+    {
+      "id": "general-key",
+      "type": "JwsVerificationKey2020",
+      "usage": ["general"],
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "P-256K",
+        "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
+        "y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
+      }
+    }
+  ],
+  "other": [
+    {
+      "name": "name"
+    }
+  ]
+}`

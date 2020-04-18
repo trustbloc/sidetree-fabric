@@ -29,7 +29,7 @@ const (
 )
 
 type documentResolver interface {
-	ResolveDocument(idOrDocument string) (document.Document, error)
+	ResolveDocument(idOrDocument string) (*document.ResolutionResult, error)
 }
 
 // Retrieve manages file retrievals from a DCAS store
@@ -123,7 +123,7 @@ func (h *Retrieve) doRetrieve(resourceName string) ([]byte, string, error) {
 func (h *Retrieve) retrieveIndexDoc() (*FileIndex, error) {
 	logger.Debugf("Retrieving index document [%s]", h.IndexDocID)
 
-	indexDoc, err := h.resolver.ResolveDocument(h.IndexDocID)
+	result, err := h.resolver.ResolveDocument(h.IndexDocID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			logger.Warnf("File index document not found in document store: [%s]", h.IndexDocID)
@@ -137,7 +137,7 @@ func (h *Retrieve) retrieveIndexDoc() (*FileIndex, error) {
 		return nil, common.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	docBytes, err := json.Marshal(indexDoc)
+	docBytes, err := json.Marshal(result.Document)
 	if err != nil {
 		logger.Errorf("Error marshalling file index document [%s]: %s", h.IndexDocID, err)
 		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))

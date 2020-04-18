@@ -25,7 +25,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/syndtr/goleveldb v1.0.1-0.20190625010220-02440ea7a285
 	github.com/trustbloc/fabric-peer-ext v0.0.0
-	github.com/trustbloc/sidetree-core-go v0.1.3-0.20200415231404-4172c0d0a620
+	github.com/trustbloc/sidetree-core-go v0.1.3-0.20200417183451-e93b6f4e7bdc
 )
 
 replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.3-0.20200331030958-8bc4d7fd6230

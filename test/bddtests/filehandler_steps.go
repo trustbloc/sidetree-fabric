@@ -255,15 +255,15 @@ func (d *FileHandlerSteps) saveDocIDToVariable(varName string) error {
 		return errors.Errorf("error resp: [%s]", d.resp.ErrorMsg)
 	}
 
-	doc := document.Document{}
-	if err := json.Unmarshal(d.resp.Payload, &doc); err != nil {
+	var result document.ResolutionResult
+	if err := json.Unmarshal(d.resp.Payload, &result); err != nil {
 		return err
 	}
 
-	logger.Infof("Got doc %v", doc)
-	logger.Infof("Saving ID [%s] to variable [%s]", doc["id"], varName)
+	logger.Infof("Got doc %v", result.Document)
+	logger.Infof("Saving ID [%s] to variable [%s]", result.Document["id"], varName)
 
-	bddtests.SetVar(varName, doc["id"].(string))
+	bddtests.SetVar(varName, result.Document["id"].(string))
 	return nil
 }
 
@@ -294,7 +294,7 @@ func (d *FileHandlerSteps) setJSONPatchVar(varName, patch string) error {
 func (d *FileHandlerSteps) getOpaqueDocument(content string) ([]byte, error) {
 	// generate private key that will be used for document updates and
 	// insert public key that correspond to this private key into document (JWK format)
-	const updateKeyID = "#updateKey"
+	const updateKeyID = "updateKey"
 	if d.updateKeySigner == nil {
 		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		if err != nil {
@@ -330,7 +330,6 @@ func (d *FileHandlerSteps) getOpaqueDocument(content string) ([]byte, error) {
 	doc["publicKey"] = publicKeys
 
 	return doc.Bytes()
-
 }
 
 func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch string) ([]byte, error) {
