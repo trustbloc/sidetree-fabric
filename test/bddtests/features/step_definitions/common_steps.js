@@ -67,10 +67,22 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
     Then(/^the JSON path "([^"]*)" of the response equals "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
+    Then(/^the JSON path "([^"]*)" of the numeric response equals "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    Then(/^the JSON path "([^"]*)" of the boolean response equals "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
     Then(/^the JSON path "([^"]*)" of the response contains "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
     Then(/^the JSON path "([^"]*)" of the response is saved to variable "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    Then(/^the JSON path "([^"]*)" of the numeric response is saved to variable "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    Then(/^the JSON path "([^"]*)" of the boolean response is saved to variable "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
     Then(/^the JSON path "([^"]*)" of the response is not empty$/, function (arg1, callback) {

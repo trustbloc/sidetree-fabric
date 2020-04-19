@@ -8,5 +8,5 @@ set -e
 
 echo "Running sidetree-fabric integration tests..."
 cd test/bddtests/
-go test -count=1 -v -cover . -p 1 -timeout=20m
+go test -count=1 -v -cover . -p 1 -timeout=30m
 cd $PWD
