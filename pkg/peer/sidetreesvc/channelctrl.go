@@ -481,6 +481,10 @@ func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) 
 
 	handlers = append(handlers, blockchainhandler.NewVersionHandler(c.channelID, cfg))
 
+	logger.Debugf("Adding blockchain transactions handler for base path [%s]", cfg.BasePath)
+
+	handlers = append(handlers, blockchainhandler.NewTransactionsHandler(c.channelID, cfg, c.BlockchainProvider))
+
 	return handlers
 }
 

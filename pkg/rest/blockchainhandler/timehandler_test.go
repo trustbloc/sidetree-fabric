@@ -30,7 +30,8 @@ const (
 
 var (
 	handlerCfg = Config{
-		BasePath: "/blockchain",
+		BasePath:                  "/blockchain",
+		MaxTransactionsInResponse: 2,
 	}
 )
 

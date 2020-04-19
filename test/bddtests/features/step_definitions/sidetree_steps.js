@@ -6,7 +6,7 @@
 
 var {When} = require('cucumber');
 var myStepDefinitionsWrapper = function () {
-    this.When(/^client sends request to "([^"]*)" to create DID document "([^"]*)" in namespace "([^"]*)"$/, function (arg1, arg2, arg3, callback) {
+    this.When(/^client sends request to "([^"]*)" to create DID document in namespace "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
     this.When(/^client sends request to "([^"]*)" to resolve DID document with initial value$/, function (arg1, callback) {
@@ -42,10 +42,13 @@ var myStepDefinitionsWrapper = function () {
     this.When(/^client sends request to "([^"]*)" to delete DID document$/, function (arg1, callback) {
         callback.pending();
     });
-    this.When(/^client sends request to "([^"]*)" to revoke DID document$/, function (arg1, callback) {
+    this.When(/^client sends request to "([^"]*)" to deactivate DID document$/, function (arg1, callback) {
         callback.pending();
     });
     this.When(/^client sends request to "([^"]*)" to update DID document path "([^"]*)" with value "([^"]*)"$/, function (arg1, aeg2, arg3, callback) {
+        callback.pending();
+    });
+    this.When(/^client sends request to "([^"]*)" to recover DID document$/, function (arg1, callback) {
         callback.pending();
     });
 };

@@ -10,4 +10,6 @@ package blockchainhandler
 type Config struct {
 	// BasePath is the base context path of the REST endpoint
 	BasePath string
+	// MaxTransactionsInResponse is the maximum number of transactions to return for the /blockchain/transactions request
+	MaxTransactionsInResponse int
 }
