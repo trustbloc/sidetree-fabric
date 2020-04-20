@@ -32,7 +32,7 @@ func TestBlockScanner(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
 		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
 
-		p := newBlockScanner(channel1, bb.Build(), maxTxns)
+		p := newBlockScanner(channel1, bb.Build(), 0, maxTxns)
 		require.NotNil(t, p)
 
 		txns, err := p.scan()
@@ -47,7 +47,7 @@ func TestBlockScanner(t *testing.T) {
 		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor2))
 		bb.Transaction(txn3, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor3))
 
-		p := newBlockScanner(channel1, bb.Build(), maxTxns)
+		p := newBlockScanner(channel1, bb.Build(), 0, maxTxns)
 		require.NotNil(t, p)
 
 		txns, err := p.scan()
@@ -59,7 +59,7 @@ func TestBlockScanner(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
 		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write("xxx", []byte("xxx"))
 
-		p := newBlockScanner(channel1, bb.Build(), maxTxns)
+		p := newBlockScanner(channel1, bb.Build(), 1, maxTxns)
 		require.NotNil(t, p)
 
 		txns, err := p.scan()
@@ -79,7 +79,7 @@ func TestBlockScanner(t *testing.T) {
 			},
 		}
 
-		p := newBlockScanner(channel1, block, maxTxns)
+		p := newBlockScanner(channel1, block, 1, maxTxns)
 		require.NotNil(t, p)
 
 		txns, err := p.scan()

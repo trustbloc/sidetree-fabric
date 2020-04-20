@@ -14,16 +14,20 @@ import (
 )
 
 type blockchainScanner struct {
-	channelID string
-	maxTxns   int
-	bcClient  bcclient.Blockchain
+	channelID     string
+	maxTxns       int
+	sinceBlockNum uint64
+	sinceTxnNum   uint64
+	bcClient      bcclient.Blockchain
 }
 
-func newBlockchainScanner(channelID string, maxTxns int, bcClient bcclient.Blockchain) *blockchainScanner {
+func newBlockchainScanner(channelID string, sinceBlockNum, sinceTxnNum uint64, maxTxns int, bcClient bcclient.Blockchain) *blockchainScanner {
 	return &blockchainScanner{
-		channelID: channelID,
-		maxTxns:   maxTxns,
-		bcClient:  bcClient,
+		channelID:     channelID,
+		maxTxns:       maxTxns,
+		sinceBlockNum: sinceBlockNum,
+		sinceTxnNum:   sinceTxnNum,
+		bcClient:      bcClient,
 	}
 }
 
@@ -35,9 +39,10 @@ func (h *blockchainScanner) scan() (*TransactionsResponse, error) {
 
 	resp := &TransactionsResponse{}
 
-	// Start at block 1 since block 0 is the genesis block
-	for blockNum := uint64(1); blockNum < bcInfo.Height; blockNum++ {
-		txns, err := h.getSidetreeTransactions(blockNum, h.maxTxns-len(resp.Transactions))
+	sinceTxnNum := h.sinceTxnNum
+
+	for blockNum := h.sinceBlockNum; blockNum < bcInfo.Height; blockNum++ {
+		txns, err := h.getSidetreeTransactions(blockNum, sinceTxnNum, h.maxTxns-len(resp.Transactions))
 		if err != nil {
 			if strings.Contains(err.Error(), errReachedMaxTxns.Error()) {
 				resp.Transactions = append(resp.Transactions, txns...)
@@ -51,6 +56,8 @@ func (h *blockchainScanner) scan() (*TransactionsResponse, error) {
 			return nil, errors.WithMessagef(err, "failed to get transactions in block %d", blockNum)
 		}
 
+		// Reset sinceTxnNum to 0 since it only applies to the first block
+		sinceTxnNum = 0
 		resp.Transactions = append(resp.Transactions, txns...)
 	}
 
@@ -59,11 +66,11 @@ func (h *blockchainScanner) scan() (*TransactionsResponse, error) {
 	return resp, nil
 }
 
-func (h *blockchainScanner) getSidetreeTransactions(blockNum uint64, maxTxns int) ([]Transaction, error) {
+func (h *blockchainScanner) getSidetreeTransactions(blockNum uint64, sinceTxnNum uint64, maxTxns int) ([]Transaction, error) {
 	block, err := h.bcClient.GetBlockByNumber(blockNum)
 	if err != nil {
 		return nil, err
 	}
 
-	return newBlockScanner(h.channelID, block, maxTxns).scan()
+	return newBlockScanner(h.channelID, block, sinceTxnNum, maxTxns).scan()
 }

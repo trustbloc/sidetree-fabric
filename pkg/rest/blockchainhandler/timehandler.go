@@ -15,9 +15,11 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
+
 	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 )
@@ -138,27 +140,14 @@ func (h *Time) getTimeForHash(req *http.Request) (*TimeResponse, error) {
 		return nil, httpserver.BadRequestError
 	}
 
-	hash, err := base64.URLEncoding.DecodeString(strHash)
-	if err != nil {
-		logger.Debugf("[%s] Invalid base64 encoded hash [%s]: %s", h.channelID, strHash, err)
-
-		return nil, httpserver.BadRequestError
-	}
-
 	bcClient, err := h.blockchainClient()
 	if err != nil {
 		return nil, err
 	}
 
-	block, err := bcClient.GetBlockByHash(hash)
+	block, err := h.getBlockByHash(strHash, bcClient)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil, httpserver.NotFoundError
-		}
-
-		logger.Errorf("[%s] Failed to get block for hash [%s]: %s", h.channelID, strHash, err)
-
-		return nil, httpserver.ServerError
+		return nil, err
 	}
 
 	header := block.Header
@@ -185,6 +174,28 @@ func (h *Time) blockchainClient() (bcclient.Blockchain, error) {
 	}
 
 	return bcClient, nil
+}
+
+func (h *Time) getBlockByHash(strHash string, bcClient bcclient.Blockchain) (*cb.Block, error) {
+	hash, err := base64.URLEncoding.DecodeString(strHash)
+	if err != nil {
+		logger.Debugf("Invalid base64 encoded hash [%s]: %s", strHash, err)
+
+		return nil, httpserver.NewError(http.StatusBadRequest, httpserver.StatusBadRequest)
+	}
+
+	block, err := bcClient.GetBlockByHash(hash)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, httpserver.NotFoundError
+		}
+
+		logger.Errorf("Failed to get block for hash [%s]: %s", strHash, err)
+
+		return nil, httpserver.ServerError
+	}
+
+	return block, nil
 }
 
 var getHash = func(req *http.Request) string {
