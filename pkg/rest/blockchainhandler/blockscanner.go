@@ -23,16 +23,18 @@ var errReachedMaxTxns = errors.New("maximum transactions reached")
 type blockScanner struct {
 	channelID           string
 	block               *cb.Block
+	sinceTxNum          uint64
 	maxTxns             int
 	transactionTimeHash string
 	transactions        []Transaction
 }
 
-func newBlockScanner(channelID string, block *cb.Block, maxTxns int) *blockScanner {
+func newBlockScanner(channelID string, block *cb.Block, sinceTxNum uint64, maxTxns int) *blockScanner {
 	return &blockScanner{
-		channelID: channelID,
-		block:     block,
-		maxTxns:   maxTxns,
+		channelID:  channelID,
+		block:      block,
+		sinceTxNum: sinceTxNum,
+		maxTxns:    maxTxns,
 	}
 }
 
@@ -51,6 +53,12 @@ func (h *blockScanner) scan() ([]Transaction, error) {
 func (h *blockScanner) handleWrite(w *blockvisitor.Write) error {
 	if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
 		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", h.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
+
+		return nil
+	}
+
+	if w.TxNum < h.sinceTxNum {
+		logger.Debugf("[%s] Ignoring write in block [%d] and TxNum [%d] since the transaction number is less than the 'sinceTxNum' %d", h.channelID, w.BlockNum, w.TxNum, h.sinceTxNum)
 
 		return nil
 	}

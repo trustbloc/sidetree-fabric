@@ -38,30 +38,30 @@ func TestBlockchainScanner(t *testing.T) {
 		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
-		v := newBlockchainScanner(channel1, 1, bcClient)
+		v := newBlockchainScanner(channel1, 1, 0, 10, bcClient)
 		require.NotNil(t, v)
 		resp, err := v.scan()
 		require.NoError(t, err)
-		require.Len(t, resp.Transactions, 1)
+		require.Len(t, resp.Transactions, 2)
 	})
 
 	t.Run("Maximum reached", func(t *testing.T) {
 		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
-		v := newBlockchainScanner(channel1, 1, bcClient)
+		v := newBlockchainScanner(channel1, 1, 0, 0, bcClient)
 		require.NotNil(t, v)
 		resp, err := v.scan()
 		require.NoError(t, err)
 		require.True(t, resp.More)
-		require.Len(t, resp.Transactions, 1)
+		require.Empty(t, resp.Transactions)
 	})
 
 	t.Run("Blockchain client error", func(t *testing.T) {
 		errExpected := errors.New("injected blockchain client error")
 		bcClient.GetBlockchainInfoReturns(nil, errExpected)
 
-		v := newBlockchainScanner(channel1, 1, bcClient)
+		v := newBlockchainScanner(channel1, 1, 0, 10, bcClient)
 		require.NotNil(t, v)
 		resp, err := v.scan()
 		require.Error(t, err)
@@ -74,7 +74,7 @@ func TestBlockchainScanner(t *testing.T) {
 		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 		bcClient.GetBlockByNumberReturns(nil, errExpected)
 
-		v := newBlockchainScanner(channel1, 1, bcClient)
+		v := newBlockchainScanner(channel1, 1, 0, 0, bcClient)
 		require.NotNil(t, v)
 		resp, err := v.scan()
 		require.Error(t, err)

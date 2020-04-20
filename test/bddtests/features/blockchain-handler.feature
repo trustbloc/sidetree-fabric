@@ -88,3 +88,25 @@ Feature:
     And the JSON path "moreTransactions" of the boolean response equals "true"
     And the JSON path "transactions.9.transactionTimeHash" of the response is not empty
     And the JSON path "transactions.9.anchorString" of the response is not empty
+    And the JSON path "transactions.9.transactionTime" of the numeric response is saved to variable "time_9"
+    And the JSON path "transactions.9.transactionTimeHash" of the response is saved to variable "timeHash_9"
+    And the JSON path "transactions.9.transactionNumber" of the numeric response is saved to variable "txnNum_9"
+    And the JSON path "transactions.9.anchorString" of the response is saved to variable "anchor_9"
+
+    # Get more transactions from where we left off
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=${txnNum_9}&transaction-time-hash=${timeHash_9}"
+    And the JSON path "transactions.0.transactionTime" of the numeric response equals "${time_9}"
+    And the JSON path "transactions.0.transactionTimeHash" of the response equals "${timeHash_9}"
+    And the JSON path "transactions.0.transactionNumber" of the numeric response equals "${txnNum_9}"
+    And the JSON path "transactions.0.anchorString" of the response equals "${anchor_9}"
+
+    # Invalid since
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=xxx&transaction-time-hash=${timeHash_9}" and the returned status code is 400
+    And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
+
+    # Invalid time hash
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=0&transaction-time-hash=xxx_xxx" and the returned status code is 400
+    And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
+
+    # Hash not found
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=0&transaction-time-hash=AQIDBAUGBwgJCgsM" and the returned status code is 404

@@ -54,7 +54,7 @@ func (h *Retrieve) Path() string {
 	return h.path
 }
 
-// Params returns the context path
+// Params returns the accepted parameters
 func (h *Retrieve) Params() map[string]string {
 	return h.params
 }
