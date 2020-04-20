@@ -56,7 +56,10 @@ func newChannelController(channelID string, providers *providers, configService 
 		contexts:              make(map[string]*context),
 		sidetreeCfgService:    configService,
 		handlers:              make(map[string][]common.HTTPHandler),
-		notifier:              notifier.New(providers.BlockPublisher.ForChannel(channelID)),
+	}
+
+	if role.IsObserver() {
+		ctrl.notifier = notifier.New(channelID, providers.BlockPublisher)
 	}
 
 	providers.ConfigProvider.ForChannel(channelID).AddUpdateHandler(ctrl.handleUpdate)
