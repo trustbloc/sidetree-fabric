@@ -134,17 +134,17 @@ type Operation struct {
 	//The full ID of the document (including namespace)
 	ID string
 	//Operation patch data
-	PatchData *model.PatchDataModel
+	PatchData *model.DeltaModel
 }
 
 func getDefaultOperations(did string) []string {
 	id := namespace + docutil.NamespaceDelimiter + uniqueSuffix
 
 	return []string{
-		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "create", PatchData: &model.PatchDataModel{
+		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "create", PatchData: &model.DeltaModel{
 			Patches: []patch.Patch{},
 		}}),
-		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "update", PatchData: &model.PatchDataModel{
+		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "update", PatchData: &model.DeltaModel{
 			Patches: []patch.Patch{},
 		}}),
 	}

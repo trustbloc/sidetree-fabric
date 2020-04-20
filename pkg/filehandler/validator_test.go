@@ -112,7 +112,7 @@ func TestDocumentValidator_IsValidPayload(t *testing.T) {
 		errExpected := errors.New("injected unmarshal op error")
 
 		restore := unmarshalUpdateOperation
-		unmarshalUpdateOperation = func([]byte) (s string, data *model.PatchDataModel, err error) { return "", nil, errExpected }
+		unmarshalUpdateOperation = func([]byte) (s string, data *model.DeltaModel, err error) { return "", nil, errExpected }
 		defer func() { unmarshalUpdateOperation = restore }()
 
 		req, err := getUpdateRequest(`[{"op": "add", "path": "/fileIndex/mappings/schema1.json", "value": "ew3e23w3"}]`)
@@ -204,7 +204,7 @@ func TestUnmarshalUpdateOperation(t *testing.T) {
 
 	t.Run("Invalid base64 encoding", func(t *testing.T) {
 		req := &model.UpdateRequest{
-			PatchData: `{"%sde3":"-+"}`,
+			Delta: `{"%sde3":"-+"}`,
 		}
 
 		reqBytes, err := json.Marshal(req)
@@ -220,7 +220,7 @@ func TestUnmarshalUpdateOperation(t *testing.T) {
 		encodedOp := docutil.EncodeToString([]byte("{"))
 
 		req := &model.UpdateRequest{
-			PatchData: encodedOp,
+			Delta: encodedOp,
 		}
 
 		reqBytes, err := json.Marshal(req)
@@ -258,7 +258,7 @@ func TestValidatePatch(t *testing.T) {
 
 		err = validatePatch(p)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid character 'i'")
+		require.Contains(t, err.Error(), "cannot unmarshal string into Go value of type jsonpatch.Patch")
 	})
 }
 
@@ -275,10 +275,10 @@ func getUpdateRequest(patches string) ([]byte, error) {
 
 	return helper.NewUpdateRequest(
 		&helper.UpdateRequestInfo{
-			DidUniqueSuffix: "1234",
-			Patch:           updatePatch,
-			MultihashCode:   sha2_256,
-			Signer:          ecsigner.New(privateKey, "ES256", "update-key"),
+			DidSuffix:     "1234",
+			Patch:         updatePatch,
+			MultihashCode: sha2_256,
+			Signer:        ecsigner.New(privateKey, "ES256", "update-key"),
 		})
 }
 
@@ -290,7 +290,7 @@ const validDocWithOpsKeysOnly = `
       "id": "update-key",
       "type": "JwsVerificationKey2020",
       "usage": ["ops"],
-      "publicKeyJwk": {
+      "jwk": {
         "kty": "EC",
         "crv": "P-256K",
         "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
@@ -313,7 +313,7 @@ const validDocWithMixedKeys = `
       "id": "update-key",
       "type": "JwsVerificationKey2020",
       "usage": ["ops"],
-      "publicKeyJwk": {
+      "jwk": {
         "kty": "EC",
         "crv": "P-256K",
         "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
@@ -324,7 +324,7 @@ const validDocWithMixedKeys = `
       "id": "general-key",
       "type": "JwsVerificationKey2020",
       "usage": ["general"],
-      "publicKeyJwk": {
+      "jwk": {
         "kty": "EC",
         "crv": "P-256K",
         "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",

@@ -12,6 +12,7 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/pkg/errors"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler/docvalidator"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
@@ -108,17 +109,19 @@ func processKeys(internal document.Document, resolutionResult *document.Resoluti
 
 	var nonOperationsKeys []document.PublicKey
 	for _, pk := range internal.PublicKeys() {
-		pk[document.ControllerProperty] = internal[document.IDProperty]
-		// add did to key id
-		pk[document.IDProperty] = internal.ID() + "#" + pk.ID()
+		externalPK := make(document.PublicKey)
+		externalPK[document.IDProperty] = internal.ID() + "#" + pk.ID()
+		externalPK[document.TypeProperty] = pk.Type()
+		externalPK[document.ControllerProperty] = internal[document.IDProperty]
+		externalPK[document.PublicKeyJwkProperty] = pk.JWK()
 
 		usages := pk.Usage()
 		delete(pk, document.UsageProperty)
 
 		if document.IsOperationsKey(usages) {
-			operationPublicKeys = append(operationPublicKeys, pk)
+			operationPublicKeys = append(operationPublicKeys, externalPK)
 		} else {
-			nonOperationsKeys = append(nonOperationsKeys, pk)
+			nonOperationsKeys = append(nonOperationsKeys, externalPK)
 		}
 	}
 
@@ -136,12 +139,17 @@ func validatePatch(p patch.Patch) error {
 		return errors.Errorf("patch action '%s' not supported", p.GetAction())
 	}
 
-	patches := p.GetStringValue(patch.PatchesKey)
+	patches := p.GetValue(patch.PatchesKey)
 	if patches == "" {
 		return errors.New("missing patches string value")
 	}
 
-	jsonPatches, err := jsonpatch.DecodePatch([]byte(patches))
+	bytes, err := json.Marshal(patches)
+	if err != nil {
+		return err
+	}
+
+	jsonPatches, err := jsonpatch.DecodePatch(bytes)
 	if err != nil {
 		return err
 	}
@@ -167,28 +175,28 @@ func validatePatch(p patch.Patch) error {
 	return nil
 }
 
-var unmarshalUpdateOperation = func(reqPayload []byte) (string, *model.PatchDataModel, error) {
+var unmarshalUpdateOperation = func(reqPayload []byte) (string, *model.DeltaModel, error) {
 	req := &model.UpdateRequest{}
 	if err := json.Unmarshal(reqPayload, req); err != nil {
 		logger.Infof("Error unmarshalling update request: %s", err)
 		return "", nil, errors.New("invalid update request")
 	}
 
-	patchDataBytes, err := docutil.DecodeString(req.PatchData)
+	patchDataBytes, err := docutil.DecodeString(req.Delta)
 	if err != nil {
-		logger.Infof("Error decoding patch data for [%s]: %s", req.DidUniqueSuffix, err)
-		return req.DidUniqueSuffix, nil, errors.New("invalid patch data")
+		logger.Infof("Error decoding patch data for [%s]: %s", req.DidSuffix, err)
+		return req.DidSuffix, nil, errors.New("invalid patch data")
 	}
 
-	logger.Debugf("Validating patch data for [%s]: %s", req.DidUniqueSuffix, patchDataBytes)
+	logger.Debugf("Validating patch data for [%s]: %s", req.DidSuffix, patchDataBytes)
 
-	op := &model.PatchDataModel{}
+	op := &model.DeltaModel{}
 	if err := json.Unmarshal(patchDataBytes, op); err != nil {
-		logger.Infof("Error unmarshalling patch data for [%s]: %s", req.DidUniqueSuffix, err)
-		return req.DidUniqueSuffix, nil, errors.New("invalid patch data")
+		logger.Infof("Error unmarshalling patch data for [%s]: %s", req.DidSuffix, err)
+		return req.DidSuffix, nil, errors.New("invalid patch data")
 	}
 
-	return req.DidUniqueSuffix, op, nil
+	return req.DidSuffix, op, nil
 }
 
 var jsonUnmarshal = func(bytes []byte, obj interface{}) error {

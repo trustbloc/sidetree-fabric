@@ -42,12 +42,16 @@ const (
 	updateOTP   = "updateOTP"
 )
 
-const addPublicKeysTemplate = `[
-	{
+const addPublicKeysTemplate = `[{
       "id": "%s",
+      "type": "JwsVerificationKey2020",
       "usage": ["general"],
-      "type": "EcdsaSecp256k1VerificationKey2019",
-      "publicKeyHex": "02b97c30de767f084ce3080168ee293053ba33b235d7116a3263d29f1450936b71"
+      "jwk": {
+        	"kty": "EC",
+        	"crv": "P-256K",
+        	"x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
+        	"y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
+      }
     }
   ]`
 
@@ -55,9 +59,9 @@ const removePublicKeysTemplate = `["%s"]`
 
 const addServicesTemplate = `[
     {
-      "id": "%s",
-      "type": "SecureDataStore",
-      "serviceEndpoint": "http://hub.my-personal-server.com"
+       	"id": "%s",
+       	"type": "SecureDataStore",
+		"serviceEndpoint": "http://hub.my-personal-server.com"
     }
   ]`
 
@@ -69,13 +73,13 @@ const docTemplate = `{
   		"id": "%s",
   		"type": "JwsVerificationKey2020",
 		"usage": ["ops"],
-  		"publicKeyJwk": %s
+  		"jwk": %s
 	},
     {
       "id": "dual-key",
       "type": "JwsVerificationKey2020",
       "usage": ["auth", "general"],
-      "publicKeyJwk": {
+      "jwk": {
         "kty": "EC",
         "crv": "P-256K",
         "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
@@ -422,7 +426,7 @@ func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byt
 	}
 
 	recoverRequest, err := helper.NewRecoverRequest(&helper.RecoverRequestInfo{
-		DidUniqueSuffix:         uniqueSuffix,
+		DidSuffix:               uniqueSuffix,
 		OpaqueDocument:          string(doc),
 		RecoveryKey:             newRecoveryPublicKey,
 		RecoveryRevealValue:     []byte(recoveryOTP),
@@ -444,7 +448,7 @@ func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byt
 
 func (d *DIDSideSteps) getDeactivateRequest(did string) ([]byte, error) {
 	return helper.NewDeactivateRequest(&helper.DeactivateRequestInfo{
-		DidUniqueSuffix:     did,
+		DidSuffix:           did,
 		RecoveryRevealValue: []byte(recoveryOTP),
 		Signer:              d.recoveryKeySigner,
 	})
@@ -452,7 +456,7 @@ func (d *DIDSideSteps) getDeactivateRequest(did string) ([]byte, error) {
 
 func (d *DIDSideSteps) getUpdateRequest(did string, updatePatch patch.Patch) ([]byte, error) {
 	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
-		DidUniqueSuffix:       did,
+		DidSuffix:             did,
 		UpdateRevealValue:     []byte(updateOTP),
 		NextUpdateRevealValue: []byte(updateOTP),
 		Patch:                 updatePatch,
