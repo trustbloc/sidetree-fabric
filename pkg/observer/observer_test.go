@@ -55,6 +55,7 @@ func TestObserver(t *testing.T) {
 	}()
 
 	p := mocks.NewBlockPublisher()
+	bpp := mocks.NewBlockPublisherProvider().WithBlockPublisher(p)
 
 	dcasCfg := config.DCAS{
 		ChaincodeName: sideTreeTxnCCName,
@@ -73,7 +74,7 @@ func TestObserver(t *testing.T) {
 		&Providers{
 			DCAS:           dcasProvider,
 			OperationStore: opStoreProvider,
-			Ledger:         notifier.New(p),
+			Ledger:         notifier.New(channel, bpp),
 			Filter:         &sidetreeobserver.NoopOperationFilterProvider{},
 		},
 	)

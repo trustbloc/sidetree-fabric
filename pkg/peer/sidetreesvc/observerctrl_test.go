@@ -22,7 +22,9 @@ import (
 
 func TestObserverController(t *testing.T) {
 	bp := extmocks.NewBlockPublisher()
-	n := notifier.New(bp)
+	bpp := extmocks.NewBlockPublisherProvider().WithBlockPublisher(bp)
+
+	n := notifier.New(channel1, bpp)
 
 	t.Run("Observer role", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})
