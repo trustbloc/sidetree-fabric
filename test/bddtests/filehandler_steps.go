@@ -39,7 +39,7 @@ const publicKeyTemplate = `[
   		"id": "%s",
   		"type": "JwsVerificationKey2020",
 		"usage": ["ops"],
-  		"publicKeyJwk": %s
+  		"jwk": %s
 	}
   ]`
 
@@ -339,7 +339,7 @@ func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch strin
 	}
 
 	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
-		DidUniqueSuffix:       uniqueSuffix,
+		DidSuffix:       uniqueSuffix,
 		Patch:                 updatePatch,
 		UpdateRevealValue:     []byte(updateOTP),
 		NextUpdateRevealValue: []byte(updateOTP),

@@ -297,9 +297,14 @@ func getCreateRequest() ([]byte, error) {
 
 const validDoc = `{
 	"publicKey": [{
-		"controller": "controller",
-		"id": "#key-1",
-		"publicKeyBase58": "GY4GunSXBPBfhLCzDL7iGmP5dR3sBDCJZkkaGK8VgYQf",
-		"type": "Ed25519VerificationKey2018"
+      	"id": "dual-key",
+      	"type": "JwsVerificationKey2020",
+      	"usage": ["auth", "general"],
+      	"jwk": {
+        	"kty": "EC",
+        	"crv": "P-256K",
+        	"x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
+        	"y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
+      	}
 	}]
 }`
