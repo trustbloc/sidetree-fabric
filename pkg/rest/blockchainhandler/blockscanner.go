@@ -15,30 +15,52 @@ import (
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
 
+	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
 var errReachedMaxTxns = errors.New("maximum transactions reached")
 
 type blockScanner struct {
+	channelID string
+	bcClient  bcclient.Blockchain
+}
+
+func newBlockScanner(channelID string, bcClient bcclient.Blockchain) *blockScanner {
+	return &blockScanner{
+		channelID: channelID,
+		bcClient:  bcClient,
+	}
+}
+
+func (p *blockScanner) Scan(desc BlockDescriptor, maxTxns int) ([]Transaction, bool, error) {
+	block, err := p.bcClient.GetBlockByNumber(desc.BlockNum())
+	if err != nil {
+		return nil, false, err
+	}
+
+	return newTxnBlockScanner(p.channelID, block, desc.TxnNum(), maxTxns).scan()
+}
+
+type txnBlockScanner struct {
 	channelID           string
 	block               *cb.Block
-	sinceTxNum          uint64
+	sinceTxnNum         uint64
 	maxTxns             int
 	transactionTimeHash string
 	transactions        []Transaction
 }
 
-func newBlockScanner(channelID string, block *cb.Block, sinceTxNum uint64, maxTxns int) *blockScanner {
-	return &blockScanner{
-		channelID:  channelID,
-		block:      block,
-		sinceTxNum: sinceTxNum,
-		maxTxns:    maxTxns,
+func newTxnBlockScanner(channelID string, block *cb.Block, sinceTxnNum uint64, maxTxns int) *txnBlockScanner {
+	return &txnBlockScanner{
+		channelID:   channelID,
+		block:       block,
+		sinceTxnNum: sinceTxnNum,
+		maxTxns:     maxTxns,
 	}
 }
 
-func (h *blockScanner) scan() ([]Transaction, error) {
+func (h *txnBlockScanner) scan() ([]Transaction, bool, error) {
 	blockHash := protoutil.BlockHeaderHash(h.block.Header)
 	h.transactionTimeHash = base64.URLEncoding.EncodeToString(blockHash)
 
@@ -47,18 +69,27 @@ func (h *blockScanner) scan() ([]Transaction, error) {
 		blockvisitor.WithErrorHandler(h.handleError),
 	)
 
-	return h.transactions, visitor.Visit(h.block)
+	err := visitor.Visit(h.block)
+	if err != nil {
+		if errors.Cause(err) == errReachedMaxTxns {
+			return h.transactions, true, nil
+		}
+
+		return nil, false, err
+	}
+
+	return h.transactions, false, nil
 }
 
-func (h *blockScanner) handleWrite(w *blockvisitor.Write) error {
+func (h *txnBlockScanner) handleWrite(w *blockvisitor.Write) error {
 	if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
 		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", h.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
 
 		return nil
 	}
 
-	if w.TxNum < h.sinceTxNum {
-		logger.Debugf("[%s] Ignoring write in block [%d] and TxNum [%d] since the transaction number is less than the 'sinceTxNum' %d", h.channelID, w.BlockNum, w.TxNum, h.sinceTxNum)
+	if w.TxNum < h.sinceTxnNum {
+		logger.Debugf("[%s] Ignoring write in block [%d] and TxNum [%d] since the transaction number is less than the 'sinceTxnNum' %d", h.channelID, w.BlockNum, w.TxNum, h.sinceTxnNum)
 
 		return nil
 	}
@@ -81,7 +112,7 @@ func (h *blockScanner) handleWrite(w *blockvisitor.Write) error {
 	return nil
 }
 
-func (h *blockScanner) handleError(err error, ctx *blockvisitor.Context) error {
+func (h *txnBlockScanner) handleError(err error, ctx *blockvisitor.Context) error {
 	if err == errReachedMaxTxns {
 		logger.Debugf("[%s] Reached the maximum number of transactions", h.channelID)
 

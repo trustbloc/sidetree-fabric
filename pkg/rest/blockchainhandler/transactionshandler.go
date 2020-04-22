@@ -16,6 +16,7 @@ import (
 
 	"github.com/gorilla/mux"
 	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/pkg/errors"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
 	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
@@ -123,7 +124,12 @@ func (h *Transactions) allTransactions(req *http.Request) (*TransactionsResponse
 
 	logger.Debugf("[%s] Returning all transactions since inception (max=%d) ...", h.channelID, h.MaxTransactionsInResponse)
 
-	resp, err := newBlockchainScanner(h.channelID, 1, 0, h.MaxTransactionsInResponse, bcClient).scan()
+	bcInfo, err := bcClient.GetBlockchainInfo()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get blockchain info")
+	}
+
+	resp, err := scanBlockchain(h.channelID, h.MaxTransactionsInResponse, newBlockScanner(h.channelID, bcClient), newBlockIterator(bcInfo, 1, 0))
 	if err != nil {
 		logger.Errorf("[%s] Failed to process blocks: %s", h.channelID, err)
 
@@ -156,9 +162,14 @@ func (h *Transactions) transactionsSince(req *http.Request) (*TransactionsRespon
 
 	logger.Debugf("[%s] Returning transactions since block %d and TxNum %d (max=%d)...", h.channelID, block.Header.Number, sinceTxnNum, h.MaxTransactionsInResponse)
 
-	resp, err := newBlockchainScanner(h.channelID, block.Header.Number, sinceTxnNum, h.MaxTransactionsInResponse, bcClient).scan()
+	bcInfo, err := bcClient.GetBlockchainInfo()
 	if err != nil {
-		logger.Errorf("[%s] Failed to scan blocks: %s", h.channelID, err)
+		return nil, errors.WithMessage(err, "failed to get blockchain info")
+	}
+
+	resp, err := scanBlockchain(h.channelID, h.MaxTransactionsInResponse, newBlockScanner(h.channelID, bcClient), newBlockIterator(bcInfo, block.Header.Number, sinceTxnNum))
+	if err != nil {
+		logger.Errorf("[%s] Failed to Scan blocks: %s", h.channelID, err)
 
 		return nil, httpserver.ServerError
 	}
