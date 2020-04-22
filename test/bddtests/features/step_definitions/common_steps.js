@@ -85,6 +85,9 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
     Then(/^the JSON path "([^"]*)" of the boolean response is saved to variable "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
+    Then(/^the JSON path "([^"]*)" of the raw response is saved to variable "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
     Then(/^the JSON path "([^"]*)" of the response is not empty$/, function (arg1, callback) {
         callback.pending();
     });
@@ -98,6 +101,12 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
         callback.pending();
     });
     And(/^an HTTP POST is sent to "([^"]*)" with content from file "([^"]*)" and the returned status code is (\d+)$/, function (arg1, arg2, arg3, callback) {
+        callback.pending();
+    });
+    And(/^an HTTP POST is sent to "([^"]*)" with content "([^"]*)" of type "([^"]*)"$/, function (arg1, arg2, arg3, callback) {
+        callback.pending();
+    });
+    And(/^an HTTP POST is sent to "([^"]*)" with content "([^"]*)" of type "([^"]*)" and the returned status code is (\d+)$/, function (arg1, arg2, arg3, arg4, callback) {
         callback.pending();
     });
     Then(/^the response equals "([^"]*)"$/, function (arg1, callback) {
