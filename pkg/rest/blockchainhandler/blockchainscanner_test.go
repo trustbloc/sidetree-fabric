@@ -14,6 +14,7 @@ import (
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
@@ -35,38 +36,20 @@ func TestBlockchainScanner(t *testing.T) {
 	bcClient := &obmocks.BlockchainClient{}
 
 	t.Run("Success", func(t *testing.T) {
-		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
-		v := newBlockchainScanner(channel1, 1, 0, 10, bcClient)
-		require.NotNil(t, v)
-		resp, err := v.scan()
+		resp, err := scanBlockchain(channel1, 10, newBlockScanner(channel1, bcClient), newBlockIterator(bcInfo, 1, 0))
 		require.NoError(t, err)
 		require.Len(t, resp.Transactions, 2)
 	})
 
 	t.Run("Maximum reached", func(t *testing.T) {
-		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
-		v := newBlockchainScanner(channel1, 1, 0, 0, bcClient)
-		require.NotNil(t, v)
-		resp, err := v.scan()
+		resp, err := scanBlockchain(channel1, 0, newBlockScanner(channel1, bcClient), newBlockIterator(bcInfo, 1, 0))
 		require.NoError(t, err)
 		require.True(t, resp.More)
 		require.Empty(t, resp.Transactions)
-	})
-
-	t.Run("Blockchain client error", func(t *testing.T) {
-		errExpected := errors.New("injected blockchain client error")
-		bcClient.GetBlockchainInfoReturns(nil, errExpected)
-
-		v := newBlockchainScanner(channel1, 1, 0, 10, bcClient)
-		require.NotNil(t, v)
-		resp, err := v.scan()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), errExpected.Error())
-		require.Nil(t, resp)
 	})
 
 	t.Run("GetBlockByNumber error", func(t *testing.T) {
@@ -74,9 +57,7 @@ func TestBlockchainScanner(t *testing.T) {
 		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 		bcClient.GetBlockByNumberReturns(nil, errExpected)
 
-		v := newBlockchainScanner(channel1, 1, 0, 0, bcClient)
-		require.NotNil(t, v)
-		resp, err := v.scan()
+		resp, err := scanBlockchain(channel1, 0, newBlockScanner(channel1, bcClient), newBlockIterator(bcInfo, 1, 0))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), errExpected.Error())
 		require.Nil(t, resp)

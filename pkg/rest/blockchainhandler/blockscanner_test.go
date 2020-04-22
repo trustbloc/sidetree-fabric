@@ -13,7 +13,9 @@ import (
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
 
 func TestBlockScanner(t *testing.T) {
@@ -31,14 +33,24 @@ func TestBlockScanner(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
 		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor2))
 
-		p := newBlockScanner(channel1, bb.Build(), 0, maxTxns)
-		require.NotNil(t, p)
+		bcClient := &obmocks.BlockchainClient{}
+		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
-		txns, err := p.scan()
+		scanner := newBlockScanner(channel1, bcClient)
+		require.NotNil(t, scanner)
+
+		desc := &blockDesc{
+			blockNum: blockNum,
+			txnNum:   1,
+		}
+
+		txns, reachedMax, err := scanner.Scan(desc, maxTxns)
 		require.NoError(t, err)
 		require.Len(t, txns, 1)
-		require.Equal(t, anchor1, txns[0].AnchorString)
+		require.Equal(t, anchor2, txns[0].AnchorString)
+		require.False(t, reachedMax)
 	})
 
 	t.Run("Maximum reached", func(t *testing.T) {
@@ -47,24 +59,42 @@ func TestBlockScanner(t *testing.T) {
 		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor2))
 		bb.Transaction(txn3, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor3))
 
-		p := newBlockScanner(channel1, bb.Build(), 0, maxTxns)
-		require.NotNil(t, p)
+		bcClient := &obmocks.BlockchainClient{}
+		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
-		txns, err := p.scan()
-		require.Error(t, err, errReachedMaxTxns.Error())
+		scanner := newBlockScanner(channel1, bcClient)
+		require.NotNil(t, scanner)
+
+		desc := &blockDesc{
+			blockNum: blockNum,
+			txnNum:   0,
+		}
+
+		txns, reachedMax, err := scanner.Scan(desc, maxTxns)
+		require.NoError(t, err)
 		require.Len(t, txns, maxTxns)
+		require.True(t, reachedMax)
 	})
 
 	t.Run("Irrelevant transaction", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
 		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write("xxx", []byte("xxx"))
 
-		p := newBlockScanner(channel1, bb.Build(), 1, maxTxns)
-		require.NotNil(t, p)
+		bcClient := &obmocks.BlockchainClient{}
+		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
-		txns, err := p.scan()
+		scanner := newBlockScanner(channel1, bcClient)
+		require.NotNil(t, scanner)
+
+		desc := &blockDesc{
+			blockNum: blockNum,
+			txnNum:   1,
+		}
+
+		txns, reachedMax, err := scanner.Scan(desc, maxTxns)
 		require.NoError(t, err)
 		require.Empty(t, txns)
+		require.False(t, reachedMax)
 	})
 
 	t.Run("Bad block -> ignore", func(t *testing.T) {
@@ -79,11 +109,20 @@ func TestBlockScanner(t *testing.T) {
 			},
 		}
 
-		p := newBlockScanner(channel1, block, 1, maxTxns)
-		require.NotNil(t, p)
+		bcClient := &obmocks.BlockchainClient{}
+		bcClient.GetBlockByNumberReturns(block, nil)
 
-		txns, err := p.scan()
+		scanner := newBlockScanner(channel1, bcClient)
+		require.NotNil(t, scanner)
+
+		desc := &blockDesc{
+			blockNum: blockNum,
+			txnNum:   1,
+		}
+
+		txns, reachedMax, err := scanner.Scan(desc, maxTxns)
 		require.NoError(t, err)
 		require.Empty(t, txns)
+		require.False(t, reachedMax)
 	})
 }
