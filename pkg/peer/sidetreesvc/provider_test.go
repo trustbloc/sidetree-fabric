@@ -19,9 +19,9 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 

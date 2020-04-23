@@ -13,7 +13,7 @@ import (
 
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 )
 
 // fileHandlerValidator validates the file handler configuration

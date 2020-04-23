@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package sidetreesvc
+package filehandler
 
 import (
 	"net/http"
@@ -13,29 +13,31 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 )
 
-type fileIdxResolveHandler struct {
+// ResolveIndex is a REST handler that retrieves a file index Sidetree documents by ID
+type ResolveIndex struct {
 	*dochandler.ResolveHandler
 	path string
 }
 
-func newFileIdxResolveHandler(path string, resolver dochandler.Resolver) *fileIdxResolveHandler {
-	return &fileIdxResolveHandler{
+// NewResolveIndexHandler returns a new resolve index handler
+func NewResolveIndexHandler(path string, resolver dochandler.Resolver) *ResolveIndex {
+	return &ResolveIndex{
 		ResolveHandler: dochandler.NewResolveHandler(resolver),
 		path:           path,
 	}
 }
 
 // Path returns the context path
-func (h *fileIdxResolveHandler) Path() string {
+func (h *ResolveIndex) Path() string {
 	return h.path + "/{id}"
 }
 
 // Method returns the HTTP method
-func (h *fileIdxResolveHandler) Method() string {
+func (h *ResolveIndex) Method() string {
 	return http.MethodGet
 }
 
 // Handler returns the handler
-func (h *fileIdxResolveHandler) Handler() common.HTTPRequestHandler {
+func (h *ResolveIndex) Handler() common.HTTPRequestHandler {
 	return h.Resolve
 }
