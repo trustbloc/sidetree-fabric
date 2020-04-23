@@ -101,6 +101,14 @@ Feature:
     And the JSON path "transactions.0.anchorString" of the response equals "${anchor_9}"
     And the JSON path "transactions" of the raw response is saved to variable "transactions"
 
+    # Ensure that the anchor hash resolves to a valid value stored in DCAS
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/cas/${anchor_9}?max-size=1024"
+    And the JSON path "batchFileHash" of the response is saved to variable "batchFileHash"
+
+    # Ensure that the batch file hash resolves to a valid value stored in DCAS
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/cas/${batchFileHash}?max-size=8192"
+    And the JSON path "operations" of the array response is not empty
+
     # Invalid since
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=xxx&transaction-time-hash=${timeHash_9}" and the returned status code is 400
     And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
