@@ -73,7 +73,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(time.Second)
 
 	t.Run("DID doc", func(t *testing.T) {
-		resp, err := httpPut(t, clientURL+didDocPath, request)
+		resp, err := httpPut(t, clientURL+didDocPath+"/operations", request)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 

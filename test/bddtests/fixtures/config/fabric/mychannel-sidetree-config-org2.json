@@ -6,7 +6,7 @@
   "Namespaces": [
     {
       "Namespace": "did:sidetree",
-      "BasePath": "/document"
+      "BasePath": "/sidetree/0.1.3/sidetree"
     },
     {
       "Namespace": "did:bloc:trustbloc.dev",

@@ -61,25 +61,25 @@ Feature:
     # Write a few Sidetree transactions. Scatter the requests across different endpoints to generate multiple
     # Sidetree transactions within the same block. The Orderer's batch timeout is set to 2s, so sleep 2s between
     # writes to guarantee that we generate a few blocks.
-    Then client sends request to "https://localhost:48326/document" to create DID document in namespace "did:sidetree"
+    Then client sends request to "https://localhost:48326/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
     And check success response contains "#didDocumentHash"
-    And client sends request to "https://localhost:48327/document" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48328/document" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48327/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48328/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48426/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
 
     Then we wait 2 seconds
 
-    Then client sends request to "https://localhost:48427/document" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48428/document" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48326/document" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48327/document" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48328/document" to create DID document in namespace "did:sidetree"
+    Then client sends request to "https://localhost:48427/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48428/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48326/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48327/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48328/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
 
     Then we wait 2 seconds
 
-    Then client sends request to "https://localhost:48426/document" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48427/document" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48428/document" to create DID document in namespace "did:sidetree"
+    Then client sends request to "https://localhost:48426/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48427/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48428/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
 
     Then we wait 15 seconds
 

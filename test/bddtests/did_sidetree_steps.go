@@ -186,6 +186,10 @@ func (d *DIDSideSteps) checkSuccessResp(msg string, contains bool) error {
 		return err
 	}
 
+	if d.resp.StatusCode != http.StatusOK {
+		return errors.Errorf("request failed with status code %d", d.resp.StatusCode)
+	}
+
 	if d.resp.ErrorMsg != "" {
 		return errors.Errorf("error resp: [%s] - DID ID [%s]", d.resp.ErrorMsg, documentHash)
 	}
