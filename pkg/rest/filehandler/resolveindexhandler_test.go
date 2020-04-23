@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package sidetreesvc
+package filehandler
 
 import (
 	"net/http"
@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFileIdxUpdateHandler(t *testing.T) {
+func TestResolveIndex(t *testing.T) {
 	path := "/file"
 
-	h := newFileIdxUpdateHandler(path, nil)
+	h := NewResolveIndexHandler(path, nil)
 	require.NotNil(t, h)
-	require.Equal(t, "/file", h.Path())
+	require.Equal(t, "/file/{id}", h.Path())
 	require.NotNil(t, h.Handler())
-	require.Equal(t, http.MethodPost, h.Method())
+	require.Equal(t, http.MethodGet, h.Method())
 }

@@ -21,8 +21,8 @@ import (
 	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -159,11 +159,11 @@ var (
 	}
 
 	fileResolveProvider = func(cfg config.Namespace, resolver resthandler.Resolver) common.HTTPHandler {
-		return newFileIdxResolveHandler(cfg.BasePath, resolver)
+		return filehandler.NewResolveIndexHandler(cfg.BasePath, resolver)
 	}
 
 	fileUpdateProvider = func(cfg config.Namespace, processor resthandler.Processor) common.HTTPHandler {
-		return newFileIdxUpdateHandler(cfg.BasePath, processor)
+		return filehandler.NewUpdateIndexHandler(cfg.BasePath, processor)
 	}
 )
 
