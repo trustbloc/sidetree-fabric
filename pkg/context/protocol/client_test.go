@@ -24,13 +24,13 @@ func TestCurrentProtocol(t *testing.T) {
 		"1.0": {
 			StartingBlockChainTime:       500000,
 			HashAlgorithmInMultiHashCode: 18,
-			MaxOperationByteSize:         2000,
+			MaxDeltaByteSize:             2000,
 			MaxOperationsPerBatch:        10000,
 		},
 		"0.1": {
 			StartingBlockChainTime:       0,
 			HashAlgorithmInMultiHashCode: 18,
-			MaxOperationByteSize:         500,
+			MaxDeltaByteSize:             500,
 			MaxOperationsPerBatch:        100,
 		},
 	}

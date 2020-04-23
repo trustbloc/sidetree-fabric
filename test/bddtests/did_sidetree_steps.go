@@ -8,6 +8,7 @@ package bddtests
 
 import (
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/json"
@@ -35,8 +36,9 @@ import (
 var logger = logrus.New()
 
 const (
-	sha2_256           = 18
-	initialValuesParam = ";initial-values="
+	sha2_256 = 18
+
+	initialStateParamTemplate = "?-%s-initial-state="
 
 	recoveryOTP = "recoveryOTP"
 	updateOTP   = "updateOTP"
@@ -75,17 +77,18 @@ const docTemplate = `{
 		"usage": ["ops"],
   		"jwk": %s
 	},
-    {
-      "id": "dual-key",
-      "type": "JwsVerificationKey2020",
-      "usage": ["auth", "general"],
-      "jwk": {
-        "kty": "EC",
-        "crv": "P-256K",
-        "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
-        "y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
-      }
-    }
+   {
+     "id": "dual-auth-general",
+     "type": "JwsVerificationKey2020",
+     "usage": ["auth", "general"],
+     "jwk": %s
+   },
+   {
+     "id": "dual-assertion-general",
+     "type": "Ed25519VerificationKey2018",
+     "usage": ["assertion", "general"],
+     "jwk": %s
+   }
   ],
   "service": [
 	{
@@ -103,7 +106,7 @@ const docTemplate = `{
 
 // DIDSideSteps
 type DIDSideSteps struct {
-	createRequest     []byte
+	createRequest     model.CreateRequest
 	reqNamespace      string
 	recoveryKeySigner helper.Signer
 	updateKeySigner   helper.Signer
@@ -129,7 +132,11 @@ func (d *DIDSideSteps) sendDIDDocument(url, namespace string) error {
 		return err
 	}
 
-	d.createRequest = req
+	err = json.Unmarshal(req, &d.createRequest)
+	if err != nil {
+		return err
+	}
+
 	d.reqNamespace = namespace
 
 	d.resp, err = restclient.SendRequest(url, req)
@@ -142,7 +149,16 @@ func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
 		return err
 	}
 
-	req := url + "/" + did + initialValuesParam + docutil.EncodeToString(d.createRequest)
+	initialState := d.createRequest.Delta + "." + d.createRequest.SuffixData
+
+	method, err := getMethod(d.reqNamespace)
+	if err != nil {
+		return err
+	}
+
+	initialStateParam := fmt.Sprintf(initialStateParamTemplate, method)
+
+	req := url + "/" + did + initialStateParam + initialState
 	logger.Infof("Sending request: %s", req)
 	d.resp, err = restclient.SendResolveRequest(req)
 	logger.Infof("... got response: %s", d.resp.Payload)
@@ -304,13 +320,7 @@ func (d *DIDSideSteps) getDID() (string, error) {
 }
 
 func (d *DIDSideSteps) getUniqueSuffix() (string, error) {
-	var createReq model.CreateRequest
-	err := json.Unmarshal(d.createRequest, &createReq)
-	if err != nil {
-		return "", err
-	}
-
-	return docutil.CalculateUniqueSuffix(createReq.SuffixData, sha2_256)
+	return docutil.CalculateUniqueSuffix(d.createRequest.SuffixData, sha2_256)
 }
 
 func (d *DIDSideSteps) updateDIDDocumentWithJSONPatch(url, path, value string) error {
@@ -466,33 +476,74 @@ func (d *DIDSideSteps) getUpdateRequest(did string, updatePatch patch.Patch) ([]
 }
 
 func (d *DIDSideSteps) getOpaqueDocument(keyID string) ([]byte, error) {
-	// generate private key that will be used for document updates and
-	// insert public key that correspond to this private key into document (JWK format)
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	// create operations key (used for document updates)
+	opsPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, err
 	}
 
-	publicKey, err := pubkey.GetPublicKeyJWK(&privateKey.PublicKey)
+	opsPubKey, err := getPubKey(&opsPrivateKey.PublicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	publicKeyBytes, err := json.Marshal(publicKey)
+	// create general + auth JWS verification key
+	jwsPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, err
 	}
 
-	data := fmt.Sprintf(docTemplate, keyID, string(publicKeyBytes))
+	jwsPubKey, err := getPubKey(&jwsPrivateKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// create general + assertion ed25519 verification key
+	ed25519PulicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+
+	ed25519PubKey, err := getPubKey(ed25519PulicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	data := fmt.Sprintf(docTemplate, keyID, opsPubKey, jwsPubKey, ed25519PubKey)
 
 	doc, err := document.FromBytes([]byte(data))
 	if err != nil {
 		return nil, err
 	}
 
-	d.updateKeySigner = ecsigner.New(privateKey, "ES256", keyID)
+	d.updateKeySigner = ecsigner.New(opsPrivateKey, "ES256", keyID)
 
 	return doc.Bytes()
+}
+
+// getMethod returns method from namespace
+func getMethod(namespace string) (string, error) {
+	const minPartsInNamespace = 2
+	parts := strings.Split(namespace, ":")
+	if len(parts) < minPartsInNamespace {
+		return "", fmt.Errorf("namespace '%s' should have at least two parts", namespace)
+	}
+
+	return parts[1], nil
+}
+
+func getPubKey(pubKey interface{}) (string, error) {
+	publicKey, err := pubkey.GetPublicKeyJWK(pubKey)
+	if err != nil {
+		return "", err
+	}
+
+	opsPubKeyBytes, err := json.Marshal(publicKey)
+	if err != nil {
+		return "", err
+	}
+
+	return string(opsPubKeyBytes), nil
 }
 
 func prettyPrint(result *document.ResolutionResult) error {
@@ -501,7 +552,7 @@ func prettyPrint(result *document.ResolutionResult) error {
 		return err
 	}
 
-	fmt.Println(string(b))
+	logger.Infof(string(b))
 
 	return nil
 }

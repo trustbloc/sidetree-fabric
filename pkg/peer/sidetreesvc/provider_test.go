@@ -66,7 +66,7 @@ func TestProvider(t *testing.T) {
 			StartingBlockChainTime:       100,
 			HashAlgorithmInMultiHashCode: 18,
 			MaxOperationsPerBatch:        100,
-			MaxOperationByteSize:         1000,
+			MaxDeltaByteSize:             1000,
 		},
 	}
 
