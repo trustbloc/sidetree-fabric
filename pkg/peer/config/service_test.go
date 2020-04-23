@@ -33,8 +33,8 @@ const (
 
 	didSidetreeNamespace             = "did:sidetree"
 	didSidetreeCfgJSON               = `{"batchWriterTimeout":"5s"}`
-	didSidetreeProtocol_V0_4_CfgJSON = `{"startingBlockchainTime":200000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":2000,"maxOperationsPerBatch":10}`
-	didSidetreeProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":10000,"maxOperationsPerBatch":100}`
+	didSidetreeProtocol_V0_4_CfgJSON = `{"startingBlockchainTime":200000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
+	didSidetreeProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":10000,"maxOperationsPerBatch":100}`
 	peerCfgJson                      = `{"Monitor":{"Period":"5s"},"Rest":{"Host":"0.0.0.0","Port":"48326"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"},{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev/document"}]}`
 	fileHandler1CfgJson              = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
 	fileHandler2CfgJson              = `{"BasePath":"/.well-known/trustbloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:5678"}`
@@ -90,14 +90,14 @@ func TestNewSidetreeProvider(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, uint(200000), protocol4.StartingBlockChainTime)
 		require.Equal(t, uint(18), protocol4.HashAlgorithmInMultiHashCode)
-		require.Equal(t, uint(2000), protocol4.MaxOperationByteSize)
+		require.Equal(t, uint(2000), protocol4.MaxDeltaByteSize)
 		require.Equal(t, uint(10), protocol4.MaxOperationsPerBatch)
 
 		protocol5, ok := protocols[v0_5]
 		require.True(t, ok)
 		require.Equal(t, uint(500000), protocol5.StartingBlockChainTime)
 		require.Equal(t, uint(18), protocol5.HashAlgorithmInMultiHashCode)
-		require.Equal(t, uint(10000), protocol5.MaxOperationByteSize)
+		require.Equal(t, uint(10000), protocol5.MaxDeltaByteSize)
 		require.Equal(t, uint(100), protocol5.MaxOperationsPerBatch)
 	})
 

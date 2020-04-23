@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	protocolCfg                       = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":2000,"maxOperationsPerBatch":10}`
-	protocolInvalidAlgoCfg            = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":2777,"maxOperationByteSize":2000,"maxOperationsPerBatch":10}`
-	protocolInvalidMaxOperPerBatchCfg = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationByteSize":2000}`
-	protocolInvalidMaxOperByteSizeCfg = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationsPerBatch":10}`
-	appCfg                            = `
+	protocolCfg                        = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
+	protocolInvalidAlgoCfg             = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":2777,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
+	protocolInvalidMaxOperPerBatchCfg  = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000}`
+	protocolInvalidMaxDeltaByteSizeCfg = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationsPerBatch":10}`
+	appCfg                             = `
 batchWriterTimeout: 1s
 chaincodeName: document
 collection: docs
@@ -119,9 +119,9 @@ func TestSidetreeValidator_ValidateProtocol(t *testing.T) {
 		require.Contains(t, err.Error(), "field 'MaxOperationsPerBatch' must contain a value greater than 0")
 	})
 
-	t.Run("Invalid MaxOperationsByteSize -> error", func(t *testing.T) {
-		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxOperByteSizeCfg, config.FormatJSON, sidetreeTag)))
+	t.Run("Invalid MaxDeltaByteSize -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxDeltaByteSizeCfg, config.FormatJSON, sidetreeTag)))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "field 'MaxOperationByteSize' must contain a value greater than 0")
+		require.Contains(t, err.Error(), "field 'MaxDeltaByteSize' must contain a value greater than 0")
 	})
 }

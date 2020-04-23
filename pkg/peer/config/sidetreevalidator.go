@@ -101,8 +101,8 @@ func (v *sidetreeValidator) validateProtocolV0(kv *config.KeyValue) error {
 		return errors.Errorf("field 'MaxOperationsPerBatch' must contain a value greater than 0 for %s", kv.Key)
 	}
 
-	if p.MaxOperationByteSize == 0 {
-		return errors.Errorf("field 'MaxOperationByteSize' must contain a value greater than 0 for %s", kv.Key)
+	if p.MaxDeltaByteSize == 0 {
+		return errors.Errorf("field 'MaxDeltaByteSize' must contain a value greater than 0 for %s", kv.Key)
 	}
 
 	return nil
