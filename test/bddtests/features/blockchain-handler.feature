@@ -36,7 +36,7 @@ Feature:
     # Wait for the Sidetree services to start up on mychannel
     And we wait 10 seconds
 
-  @blockchain_s1
+  @blockchain_handler
   Scenario: Blockchain functions
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/version"
     Then the JSON path "name" of the response equals "Hyperledger Fabric"
@@ -122,3 +122,8 @@ Feature:
     # Invalid transactions
     Given variable "invalidTransactions" is assigned the JSON value '[{"transactionNumber":3,"transactionTime":10,"transactionTimeHash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/firstValid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
+
+  @invalid_blockchain_config
+  Scenario: Invalid configuration
+    Given fabric-cli context "mychannel" is used
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-blockchainhandler-config.json --noprompt" then the error response should contain "component name must be set to the base path [/sidetree/0.1.3/blockchain]"
