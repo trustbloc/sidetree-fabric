@@ -51,5 +51,20 @@ var myStepDefinitionsWrapper = function () {
     this.When(/^client sends request to "([^"]*)" to recover DID document$/, function (arg1, callback) {
         callback.pending();
     });
+    this.When(/^client sends request to "([^"]*)" to add public key with ID "([^"]*)" to DID document$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    this.When(/^client sends request to "([^"]*)" to remove public key with ID "([^"]*)" from DID document$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    this.When(/^check success response does NOT contain "([^"]*)"$/, function (arg1, callback) {
+        callback.pending();
+    });
+    this.When(/^client sends request to "([^"]*)" to add service endpoint with ID "([^"]*)" to DID document$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    this.When(/^client sends request to "([^"]*)" to remove service endpoint with ID "([^"]*)" from DID document$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
 };
 module.exports = myStepDefinitionsWrapper;
