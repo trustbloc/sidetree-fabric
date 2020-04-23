@@ -50,6 +50,7 @@ func NewSidetreeProvider(configProvider configServiceProvider, registry validato
 	registry.Register(&fileHandlerValidator{})
 	registry.Register(&dcasValidator{})
 	registry.Register(&dcasHandlerValidator{})
+	registry.Register(&blockchainHandlerValidator{})
 
 	return &SidetreeProvider{
 		configProvider: configProvider,
