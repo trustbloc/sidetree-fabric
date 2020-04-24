@@ -9,7 +9,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.1.3/cas",
+              "Name": "/sidetree/0.0.1/cas",
               "Version": "0.1.3",
               "Config": "file://./mychannel-dcashandler-config.yaml",
               "Format": "yaml"
@@ -26,7 +26,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.1.3/cas",
+              "Name": "/sidetree/0.0.1/cas",
               "Version": "0.1.3",
               "Config": "file://./mychannel-dcashandler-config.yaml",
               "Format": "yaml"
@@ -43,7 +43,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.1.3/cas",
+              "Name": "/sidetree/0.0.1/cas",
               "Version": "0.1.3",
               "Config": "file://./mychannel-dcashandler-config.yaml",
               "Format": "yaml"
