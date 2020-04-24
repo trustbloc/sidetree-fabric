@@ -23,16 +23,16 @@ type TimeResponse struct {
 // TransactionsResponse contains a set of transactions and a boolean that indicates
 // whether or not there are more transactions available to return.
 type TransactionsResponse struct {
-	More         bool          `json:"moreTransactions"`
+	More         bool          `json:"more_transactions"`
 	Transactions []Transaction `json:"transactions"`
 }
 
 // Transaction contains data for a single Sidetree transaction
 type Transaction struct {
-	TransactionNumber   uint64 `json:"transactionNumber"`
-	TransactionTime     uint64 `json:"transactionTime"`
-	TransactionTimeHash string `json:"transactionTimeHash"`
-	AnchorString        string `json:"anchorString"`
+	TransactionNumber   uint64 `json:"transaction_number"`
+	TransactionTime     uint64 `json:"transaction_time"`
+	TransactionTimeHash string `json:"transaction_time_hash"`
+	AnchorString        string `json:"anchor_string"`
 }
 
 // ErrorResponse contains the error code for a failed response

@@ -85,50 +85,50 @@ Feature:
 
     # The config setting for maxTransactionsInResponse is 10 so we should expect 10 transactions in the query for all transactions
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions"
-    And the JSON path "moreTransactions" of the boolean response equals "true"
-    And the JSON path "transactions.9.transactionTimeHash" of the response is not empty
-    And the JSON path "transactions.9.anchorString" of the response is not empty
-    And the JSON path "transactions.9.transactionTime" of the numeric response is saved to variable "time_9"
-    And the JSON path "transactions.9.transactionTimeHash" of the response is saved to variable "timeHash_9"
-    And the JSON path "transactions.9.transactionNumber" of the numeric response is saved to variable "txnNum_9"
-    And the JSON path "transactions.9.anchorString" of the response is saved to variable "anchor_9"
+    And the JSON path "more_transactions" of the boolean response equals "true"
+    And the JSON path "transactions.9.transaction_time_hash" of the response is not empty
+    And the JSON path "transactions.9.anchor_string" of the response is not empty
+    And the JSON path "transactions.9.transaction_time" of the numeric response is saved to variable "time_9"
+    And the JSON path "transactions.9.transaction_time_hash" of the response is saved to variable "timeHash_9"
+    And the JSON path "transactions.9.transaction_number" of the numeric response is saved to variable "txnNum_9"
+    And the JSON path "transactions.9.anchor_string" of the response is saved to variable "anchor_9"
 
     # Get more transactions from where we left off
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=${txnNum_9}&transaction-time-hash=${timeHash_9}"
-    And the JSON path "transactions.0.transactionTime" of the numeric response equals "${time_9}"
-    And the JSON path "transactions.0.transactionTimeHash" of the response equals "${timeHash_9}"
-    And the JSON path "transactions.0.transactionNumber" of the numeric response equals "${txnNum_9}"
-    And the JSON path "transactions.0.anchorString" of the response equals "${anchor_9}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=${txnNum_9}&transaction_time_hash=${timeHash_9}"
+    And the JSON path "transactions.0.transaction_time" of the numeric response equals "${time_9}"
+    And the JSON path "transactions.0.transaction_time_hash" of the response equals "${timeHash_9}"
+    And the JSON path "transactions.0.transaction_number" of the numeric response equals "${txnNum_9}"
+    And the JSON path "transactions.0.anchor_string" of the response equals "${anchor_9}"
     And the JSON path "transactions" of the raw response is saved to variable "transactions"
 
     # Ensure that the anchor hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/cas/${anchor_9}?max-size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/cas/${anchor_9}?max_size=1024"
     And the JSON path "batchFileHash" of the response is saved to variable "batchFileHash"
 
     # Ensure that the batch file hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/cas/${batchFileHash}?max-size=8192"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/cas/${batchFileHash}?max_size=8192"
     And the JSON path "operations" of the array response is not empty
 
     # Invalid since
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=xxx&transaction-time-hash=${timeHash_9}" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=xxx&transaction_time_hash=${timeHash_9}" and the returned status code is 400
     And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
 
     # Invalid time hash
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=0&transaction-time-hash=xxx_xxx" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=0&transaction_time_hash=xxx_xxx" and the returned status code is 400
     And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
 
     # Hash not found
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=0&transaction-time-hash=AQIDBAUGBwgJCgsM" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/transactions?since=0&transaction_time_hash=AQIDBAUGBwgJCgsM" and the returned status code is 404
 
     # Valid transactions
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/firstValid" with content "${transactions}" of type "application/json"
-    Then the JSON path "transactionTime" of the numeric response equals "${time_9}"
-    And the JSON path "transactionTimeHash" of the response equals "${timeHash_9}"
-    And the JSON path "transactionNumber" of the numeric response equals "${txnNum_9}"
-    And the JSON path "anchorString" of the response equals "${anchor_9}"
+    Then the JSON path "transaction_time" of the numeric response equals "${time_9}"
+    And the JSON path "transaction_time_hash" of the response equals "${timeHash_9}"
+    And the JSON path "transaction_number" of the numeric response equals "${txnNum_9}"
+    And the JSON path "anchor_string" of the response equals "${anchor_9}"
 
     # Invalid transactions
-    Given variable "invalidTransactions" is assigned the JSON value '[{"transactionNumber":3,"transactionTime":10,"transactionTimeHash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
+    Given variable "invalidTransactions" is assigned the JSON value '[{"transaction_number":3,"transaction_time":10,"transaction_time_hash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.1.3/blockchain/firstValid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
 
   @invalid_blockchain_config
