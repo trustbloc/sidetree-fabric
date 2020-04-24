@@ -163,7 +163,7 @@ func TestTxnValidator_Scan(t *testing.T) {
 		require.False(t, foundValid)
 	})
 
-	t.Run("Invalid AnchorString", func(t *testing.T) {
+	t.Run("Invalid anchor_string", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum1)
 		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
 

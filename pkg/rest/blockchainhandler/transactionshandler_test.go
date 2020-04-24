@@ -39,7 +39,7 @@ func TestNewTransactionsSinceHandler(t *testing.T) {
 	h := NewTransactionsSinceHandler(channel1, handlerCfg, bcProvider)
 	require.NotNil(t, h)
 
-	params := map[string]string{"since": "{since}", "transaction-time-hash": "{transaction-time-hash}"}
+	params := map[string]string{"since": "{since}", "transaction_time_hash": "{transaction_time_hash}"}
 
 	require.Equal(t, "/blockchain/transactions", h.Path())
 	require.Equal(t, http.MethodGet, h.Method())

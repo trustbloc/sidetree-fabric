@@ -89,13 +89,13 @@ func (v *txnValidator) isValid() (bool, error) {
 	blockHash := protoutil.BlockHeaderHash(block.Header)
 	txnHash, err := base64.URLEncoding.DecodeString(v.desc.Transaction().TransactionTimeHash)
 	if err != nil {
-		logger.Debugf("[%s] Invalid base64 encoded TransactionTimeHash for TransactionTime: %s", v.channelID, v.desc.BlockNum(), err)
+		logger.Debugf("[%s] Invalid base64 encoded transaction_time_hash for transaction_time: %s", v.channelID, v.desc.BlockNum(), err)
 
 		return false, nil
 	}
 
 	if !bytes.Equal(blockHash, txnHash) {
-		logger.Debugf("[%s] TransactionTimeHash does not match the hash of the block header for block [%d]", v.channelID, v.desc.BlockNum())
+		logger.Debugf("[%s] transaction_time_hash does not match the hash of the block header for block [%d]", v.channelID, v.desc.BlockNum())
 
 		return false, nil
 	}
