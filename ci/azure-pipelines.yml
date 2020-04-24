@@ -14,6 +14,7 @@ variables:
 
 jobs:
   - job: UnitTest
+    condition: in(variables['test-type'],'','unit-test') # Run if test-type is not set or if test-type is 'unit-test'
     pool:
       vmImage: ubuntu-16.04
     timeoutInMinutes: 30
@@ -28,8 +29,11 @@ jobs:
       displayName: Upload coverage to Codecov
 
   - job: BDDTest
+    condition: in(variables['test-type'],'','bdd-test') # Run if test-type is not set or if test-type is 'bdd-test'
     pool:
       vmImage: ubuntu-16.04
+    strategy:
+      parallel: 4
     timeoutInMinutes: 30
     steps:
     - template: azp-dependencies.yml

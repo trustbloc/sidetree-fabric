@@ -27,7 +27,7 @@ coverage.txt
 
 test/bddtests/fixtures/fabric/crypto-config/
 test/bddtests/fixtures/fabric/channel/
-docker-compose.log
+docker-compose*.log
 
 .build
 

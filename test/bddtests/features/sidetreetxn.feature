@@ -44,3 +44,42 @@ Feature:
     # sidetree content test
     When client writes content "Hello World" using "sidetreetxn" and the "dcas" collection on the "mychannel" channel
     Then client verifies that written content at the returned address from "sidetreetxn" and the "dcas" collection matches original content on the "mychannel" channel
+
+  @batch_writer_recovery
+  Scenario: Batch writer recovers from peers down
+    # Stop all of the peers in org2 so that processing of the batch fails (since we need two orgs for endorsement).
+    Given container "peer0.org2.example.com" is stopped
+    And container "peer1.org2.example.com" is stopped
+    And container "peer2.org2.example.com" is stopped
+    And we wait 2 seconds
+
+    # Send the operation to peer0.org1.
+    When client sends request to "https://localhost:48326/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    Then check success response contains "#didDocumentHash"
+
+    # Stop peer0.org1 after sending it an operation. The operation should have
+    # been saved to a persistent queue so that when it comes up it will be able to process it.
+    Then container "peer0.org1.example.com" is stopped
+    Then container "peer0.org1.example.com" is started
+
+    # Upon starting up, peer0.org1 will try to process the operation but will fail since all peers in org2 are down.
+    Then we wait 30 seconds
+
+    Given container "peer0.org2.example.com" is started
+    And container "peer1.org2.example.com" is started
+    And container "peer2.org2.example.com" is started
+
+    # Wait for the peers to come up and the batch writer to cut the batch
+    And we wait 30 seconds
+
+    # Retrieve the document from another peer since, by this time, the operation should have
+    # been processed and distributed to all peers.
+    When client sends request to "https://localhost:48427/sidetree/0.1.3/sidetree" to resolve DID document
+    Then check success response contains "#didDocumentHash"
+
+  @invalid_config_update
+  Scenario: Invalid configuration
+    Given fabric-cli context "mychannel" is used
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-protocol-config.json --noprompt" then the error response should contain "algorithm not supported"
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-config.json --noprompt" then the error response should contain "field 'BatchWriterTimeout' must contain a value greater than 0"
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-peer-config.json --noprompt" then the error response should contain "field 'BasePath' must begin with '/'"
