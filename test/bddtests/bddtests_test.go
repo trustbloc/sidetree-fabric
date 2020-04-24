@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/gherkin"
 	"github.com/spf13/viper"
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
 )
@@ -64,6 +65,11 @@ func TestMain(m *testing.M) {
 			}
 		})
 
+		s.BeforeScenario(func(i interface{}) {
+			if s, ok := i.(*gherkin.Scenario); ok {
+				logger.Infof("\n\n********** Running scenario: %s **********", s.Name)
+			}
+		})
 		FeatureContext(s)
 	}, godog.Options{
 		Tags:          tags,

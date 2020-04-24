@@ -54,7 +54,7 @@ Feature:
     And we wait 2 seconds
 
     # Send the operation to peer0.org1.
-    When client sends request to "https://localhost:48326/sidetree/0.1.3/sidetree/operations" to create DID document in namespace "did:sidetree"
+    When client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
     # Stop peer0.org1 after sending it an operation. The operation should have
@@ -74,7 +74,7 @@ Feature:
 
     # Retrieve the document from another peer since, by this time, the operation should have
     # been processed and distributed to all peers.
-    When client sends request to "https://localhost:48427/sidetree/0.1.3/sidetree" to resolve DID document
+    When client sends request to "https://localhost:48427/sidetree/0.0.1/identifiers" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
   @invalid_config_update

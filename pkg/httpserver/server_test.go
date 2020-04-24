@@ -81,7 +81,7 @@ func TestServer_Start(t *testing.T) {
 		require.NoError(t, json.Unmarshal(resp, &createdDoc))
 		require.Equal(t, didID, createdDoc.Document["id"])
 
-		resp, err = httpGet(t, clientURL+didDocPath+"/"+didID)
+		resp, err = httpGet(t, clientURL+didDocPath+"/identifiers/"+didID)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 

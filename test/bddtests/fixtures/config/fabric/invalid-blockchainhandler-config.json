@@ -9,9 +9,9 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.1.3/invalid",
+              "Name": "/sidetree/0.0.1/invalid",
               "Version": "0.1.3",
-              "Config": "{\"BasePath\":\"/sidetree/0.1.3/blockchain\"}",
+              "Config": "{\"BasePath\":\"/sidetree/0.0.1/blockchain\"}",
               "Format": "json"
             }
           ]

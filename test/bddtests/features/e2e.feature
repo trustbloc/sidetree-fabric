@@ -11,8 +11,16 @@ Feature:
   @sanity_s1
   Scenario: sanity
     Given the channel "mychannel" is created and all peers have joined
+
+    # Give the peers some time to gossip their new channel membership
+    And we wait 10 seconds
+
     And "test" chaincode "e2e_cc" is installed from path "github.com/trustbloc/sidetree-fabric/test/chaincode/e2e_cc" to all peers
     And "test" chaincode "e2e_cc" is instantiated from path "github.com/trustbloc/sidetree-fabric/test/chaincode/e2e_cc" on the "mychannel" channel with args "" with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" with collection policy ""
+
+    # Give the peers some time to gossip their installed chaincode
+    And we wait 10 seconds
+
     And chaincode "e2e_cc" is warmed up on all peers on the "mychannel" channel
 
     # Test transactions
