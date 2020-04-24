@@ -289,8 +289,12 @@ func getID(code uint, content []byte) (string, error) {
 func getCreateRequest() ([]byte, error) {
 	info := &helper.CreateRequestInfo{
 		OpaqueDocument: validDoc,
-		RecoveryKey:    &jws.JWK{},
-		MultihashCode:  sha2_256,
+		RecoveryKey: &jws.JWK{
+			Kty: "kty",
+			Crv: "crv",
+			X:   "x",
+		},
+		MultihashCode: sha2_256,
 	}
 	return helper.NewCreateRequest(info)
 }

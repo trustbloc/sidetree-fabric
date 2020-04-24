@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"testing"
 	"time"
@@ -151,7 +150,7 @@ func getDefaultOperations(did string) []string {
 }
 
 func encode(op Operation) string {
-	return base64.URLEncoding.EncodeToString([]byte(getJSON(op)))
+	return docutil.EncodeToString([]byte(getJSON(op)))
 }
 
 func getJSON(op Operation) string {
