@@ -7,7 +7,7 @@
 set -e
 
 declare -a tests=(
-   "sanity,sidetreetxn"
+   "sidetreetxn"
    "blockchain-handler,dcas-handler"
    "did-sidetree"
    "file-handler"
