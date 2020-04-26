@@ -408,7 +408,7 @@ func (d *DIDSideSteps) getCreateRequest(doc []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	d.recoveryKeySigner = ecsigner.New(privateKey, "ES256", "recovery")
+	d.recoveryKeySigner = ecsigner.New(privateKey, "ES256", "")
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +455,7 @@ func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byt
 	}
 
 	// update recovery key singer for subsequent requests
-	d.recoveryKeySigner = ecsigner.New(newPrivateKey, "ES256", "recovery")
+	d.recoveryKeySigner = ecsigner.New(newPrivateKey, "ES256", "")
 
 	return recoverRequest, nil
 }
