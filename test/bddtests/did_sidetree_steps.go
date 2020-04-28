@@ -149,7 +149,7 @@ func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
 		return err
 	}
 
-	initialState := d.createRequest.Delta + "." + d.createRequest.SuffixData
+	initialState := d.createRequest.SuffixData + "." + d.createRequest.Delta
 
 	method, err := getMethod(d.reqNamespace)
 	if err != nil {
