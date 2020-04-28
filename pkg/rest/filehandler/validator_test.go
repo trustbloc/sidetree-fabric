@@ -263,7 +263,7 @@ func TestValidatePatch(t *testing.T) {
 }
 
 func getUpdateRequest(patches string) ([]byte, error) {
-	updatePatch, err := patch.NewJSONPatch(patches)
+	updatePatch, err := newJSONPatch(patches)
 	if err != nil {
 		return nil, err
 	}
@@ -280,6 +280,21 @@ func getUpdateRequest(patches string) ([]byte, error) {
 			MultihashCode: sha2_256,
 			Signer:        ecsigner.New(privateKey, "ES256", "update-key"),
 		})
+}
+
+// newJSONPatch creates new generic update patch without validation
+func newJSONPatch(patches string) (patch.Patch, error) {
+	var generic []interface{}
+	err := json.Unmarshal([]byte(patches), &generic)
+	if err != nil {
+		return nil, err
+	}
+
+	p := make(patch.Patch)
+	p[patch.ActionKey] = patch.JSONPatch
+	p[patch.PatchesKey] = generic
+
+	return p, nil
 }
 
 const validDocWithOpsKeysOnly = `
