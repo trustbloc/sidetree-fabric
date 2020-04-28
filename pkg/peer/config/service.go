@@ -26,6 +26,7 @@ var logger = flogging.MustGetLogger("sidetree_peer")
 
 const (
 	defaultMaxBlockchainTransactionsInResponse = 50
+	defaultMaxBlockchainBlocksInResponse       = 20
 )
 
 type configServiceProvider interface {
@@ -201,6 +202,10 @@ func (c *sidetreeService) LoadBlockchainHandlers(mspID, peerID string) ([]blockc
 
 		if cfg.MaxTransactionsInResponse == 0 {
 			cfg.MaxTransactionsInResponse = defaultMaxBlockchainTransactionsInResponse
+		}
+
+		if cfg.MaxBlocksInResponse == 0 {
+			cfg.MaxBlocksInResponse = defaultMaxBlockchainBlocksInResponse
 		}
 
 		handlers = append(handlers, cfg)

@@ -6,3 +6,4 @@
 
 basePath: /sidetree/0.0.1/blockchain
 maxTransactionsInResponse: 10
+maxBlocksInResponse: 5

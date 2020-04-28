@@ -115,4 +115,13 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
     Then(/^the response equals "([^"]*)"$/, function (arg1, callback) {
         callback.pending();
     });
+    And(/^the base64-encoded value "([^"]*)" is converted to base64URL-encoding and saved to variable "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    And(/^the base64-encoded value "([^"]*)" is decoded and saved to variable "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    And(/^the value "([^"]*)" equals "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
 });
