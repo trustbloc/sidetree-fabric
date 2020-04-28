@@ -235,12 +235,12 @@ func TestUnmarshalUpdateOperation(t *testing.T) {
 
 func TestValidatePatch(t *testing.T) {
 	t.Run("not ietf-json-patch", func(t *testing.T) {
-		p, err := patch.NewReplacePatch("{}")
+		p, err := patch.NewAddPublicKeysPatch("{}")
 		require.NoError(t, err)
 
 		err = validatePatch(p)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "patch action 'replace' not supported")
+		require.Contains(t, err.Error(), "patch action 'add-public-keys' not supported")
 	})
 	t.Run("missing patch value", func(t *testing.T) {
 		p, err := patch.NewJSONPatch(`[{"op": "add", "path": "path", "value": "value"}]`)
