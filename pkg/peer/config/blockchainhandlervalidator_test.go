@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	blockchainHandlerCfg                   = `{"BasePath":"/blockchain","MaxTransactionsInResponse":50}`
-	blockchainHandlerCfg_NoBasePath        = `{"MaxTransactionsInResponse":50}`
-	blockchainHandlerCfg_InvalidBasePath   = `{"BasePath":"blockchain","MaxTransactionsInResponse":50}`
+	blockchainHandlerCfg                   = `{"BasePath":"/blockchain","MaxTransactionsInResponse":50,"MaxBlocksInResponse":20}`
+	blockchainHandlerCfg_NoBasePath        = `{"MaxTransactionsInResponse":50,"MaxBlocksInResponse":20}`
+	blockchainHandlerCfg_InvalidBasePath   = `{"BasePath":"blockchain","MaxTransactionsInResponse":50,"MaxBlocksInResponse":20}`
 	blockchainHandlerCfg_NoMaxTransactions = `{"BasePath":"/blockchain"}`
 )
 

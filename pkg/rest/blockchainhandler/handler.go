@@ -13,7 +13,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/pkg/errors"
+
 	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 )
@@ -93,6 +96,22 @@ func (h *handler) getBlockByHash(strHash string) (*cb.Block, error) {
 	return block, nil
 }
 
+func (h *handler) getBlockByNum(num uint64) (*cb.Block, error) {
+	logger.Debugf("[%s] Getting block [%d] ...", h.channelID, num)
+
+	bcClient, err := h.blockchainClient()
+	if err != nil {
+		return nil, err
+	}
+
+	block, err := bcClient.GetBlockByNumber(num)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "failed to retrieve block [%d]", num)
+	}
+
+	return block, nil
+}
+
 func (h *handler) getBlockchainInfo() (*cb.BlockchainInfo, error) {
 	bcClient, err := h.blockchainClient()
 	if err != nil {
@@ -119,4 +138,8 @@ func (p paramsBuilder) build() map[string]string {
 	}
 
 	return m
+}
+
+var getDataEncoding = func(req *http.Request) DataEncoding {
+	return DataEncoding(mux.Vars(req)[dataEncodingParam])
 }

@@ -32,6 +32,7 @@ var (
 	handlerCfg = Config{
 		BasePath:                  "/blockchain",
 		MaxTransactionsInResponse: 2,
+		MaxBlocksInResponse:       2,
 	}
 )
 

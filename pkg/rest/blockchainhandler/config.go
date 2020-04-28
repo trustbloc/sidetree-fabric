@@ -12,4 +12,6 @@ type Config struct {
 	BasePath string
 	// MaxTransactionsInResponse is the maximum number of transactions to return for the /blockchain/transactions request
 	MaxTransactionsInResponse int
+	// MaxBlocksInResponse is the maximum number of blocks to return for the /blockchain/blocks request
+	MaxBlocksInResponse int
 }
