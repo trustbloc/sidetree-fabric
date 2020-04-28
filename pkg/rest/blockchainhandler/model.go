@@ -39,3 +39,15 @@ type Transaction struct {
 type ErrorResponse struct {
 	Code string `json:"code"`
 }
+
+// InfoResponse contains basic information about the blockchain.
+type InfoResponse struct {
+	// CurrentTime is the time (block number) of the current (latest) block in the chain.
+	CurrentTime uint64 `json:"current_time"`
+	// CurrentTimeHash is the base64 URL-encoded hash of the current (latest) block's header.
+	// (This value may be used to retrieve the latest block by hash.)
+	CurrentTimeHash string `json:"current_time_hash"`
+	// PreviousTimeHash is the base64 URL-encoded hash of the previous block's header.
+	// (This value may be used to retrieve the previous block by hash.)
+	PreviousTimeHash string `json:"previous_time_hash"`
+}

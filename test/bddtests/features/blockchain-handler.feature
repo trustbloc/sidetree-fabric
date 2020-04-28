@@ -131,6 +131,11 @@ Feature:
     Given variable "invalidTransactions" is assigned the JSON value '[{"transaction_number":3,"transaction_time":10,"transaction_time_hash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/firstValid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
 
+    # Blockchain info
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/info"
+    And the JSON path "current_time_hash" of the response is not empty
+    And the JSON path "previous_time_hash" of the response is not empty
+
   @invalid_blockchain_config
   Scenario: Invalid configuration
     Given fabric-cli context "mychannel" is used

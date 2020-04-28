@@ -8,7 +8,6 @@ package blockchainhandler
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -32,23 +31,19 @@ type getTransactionsFunc func(*http.Request) (*TransactionsResponse, error)
 
 // Transactions retrieves the Sidetree transactions from the ledger
 type Transactions struct {
-	Config
-	path               string
-	params             map[string]string
-	channelID          string
-	getTransactions    getTransactionsFunc
-	blockchainProvider blockchainClientProvider
-	jsonMarshal        func(v interface{}) ([]byte, error)
+	*handler
+	getTransactions getTransactionsFunc
 }
 
 // NewTransactionsHandler returns a new blockchain Transactions handler
 func NewTransactionsHandler(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *Transactions {
 	t := &Transactions{
-		Config:             cfg,
-		path:               fmt.Sprintf("%s/transactions", cfg.BasePath),
-		channelID:          channelID,
-		blockchainProvider: blockchainProvider,
-		jsonMarshal:        json.Marshal,
+		handler: newHandler(
+			channelID, cfg,
+			fmt.Sprintf("%s/transactions", cfg.BasePath),
+			http.MethodGet,
+			blockchainProvider,
+		),
 	}
 
 	t.getTransactions = t.allTransactions
@@ -60,35 +55,18 @@ func NewTransactionsHandler(channelID string, cfg Config, blockchainProvider blo
 // since the given block hash/transaction number
 func NewTransactionsSinceHandler(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *Transactions {
 	t := &Transactions{
-		Config: cfg,
-		path:   fmt.Sprintf("%s/transactions", cfg.BasePath),
-		params: map[string]string{
-			sinceParam:    fmt.Sprintf("{%s}", sinceParam),
-			timeHashParam: fmt.Sprintf("{%s}", timeHashParam),
-		},
-		channelID:          channelID,
-		blockchainProvider: blockchainProvider,
-		jsonMarshal:        json.Marshal,
+		handler: newHandler(
+			channelID, cfg,
+			fmt.Sprintf("%s/transactions", cfg.BasePath),
+			http.MethodGet,
+			blockchainProvider,
+			sinceParam, timeHashParam,
+		),
 	}
 
 	t.getTransactions = t.transactionsSince
 
 	return t
-}
-
-// Path returns the context path
-func (h *Transactions) Path() string {
-	return h.path
-}
-
-// Params returns the accepted parameters
-func (h *Transactions) Params() map[string]string {
-	return h.params
-}
-
-// Method returns the HTTP method
-func (h *Transactions) Method() string {
-	return http.MethodGet
 }
 
 // Handler returns the request handler
@@ -124,7 +102,7 @@ func (h *Transactions) allTransactions(req *http.Request) (*TransactionsResponse
 
 	logger.Debugf("[%s] Returning all transactions since inception (max=%d) ...", h.channelID, h.MaxTransactionsInResponse)
 
-	bcInfo, err := bcClient.GetBlockchainInfo()
+	bcInfo, err := h.getBlockchainInfo()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get blockchain info")
 	}

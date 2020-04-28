@@ -69,7 +69,7 @@ func (v *blockchainHandlerValidator) validateBlockchainHandler(cfg blockchainhan
 	}
 
 	if cfg.MaxTransactionsInResponse == 0 {
-		logger.Warn("field 'MaxTransactionsInResponse' is not set for %s. Will use default value.", kv.Key)
+		logger.Warnf("field 'MaxTransactionsInResponse' is not set for %s. Will use default value.", kv.Key)
 	}
 
 	return nil
