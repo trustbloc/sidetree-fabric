@@ -475,20 +475,15 @@ func (c *channelController) loadBlockchainHandlers(handlerCfg []blockchainhandle
 func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) []common.HTTPHandler {
 	var handlers []common.HTTPHandler
 
-	logger.Debugf("Adding blockchain time handlers for base path [%s]", cfg.BasePath)
+	logger.Debugf("Adding blockchain handlers for base path [%s]", cfg.BasePath)
 
 	handlers = append(handlers, blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider))
 	handlers = append(handlers, blockchainhandler.NewTimeByHashHandler(c.channelID, cfg, c.BlockchainProvider))
-
-	logger.Debugf("Adding blockchain version handler for base path [%s]", cfg.BasePath)
-
 	handlers = append(handlers, blockchainhandler.NewVersionHandler(c.channelID, cfg))
-
-	logger.Debugf("Adding blockchain transactions handlers for base path [%s]", cfg.BasePath)
-
 	handlers = append(handlers, blockchainhandler.NewTransactionsSinceHandler(c.channelID, cfg, c.BlockchainProvider))
 	handlers = append(handlers, blockchainhandler.NewTransactionsHandler(c.channelID, cfg, c.BlockchainProvider))
 	handlers = append(handlers, blockchainhandler.NewFirstValidHandler(c.channelID, cfg, c.BlockchainProvider))
+	handlers = append(handlers, blockchainhandler.NewInfoHandler(c.channelID, cfg, c.BlockchainProvider))
 
 	return handlers
 }

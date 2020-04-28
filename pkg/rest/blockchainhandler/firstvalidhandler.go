@@ -13,38 +13,24 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
-	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 )
 
 // FirstValid retrieves the first valid transaction in a given set of transactions
 type FirstValid struct {
-	Config
-	path               string
-	channelID          string
-	blockchainProvider blockchainClientProvider
-	jsonMarshal        func(v interface{}) ([]byte, error)
+	*handler
 }
 
 // NewFirstValidHandler returns a new, first valid handler
 func NewFirstValidHandler(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *FirstValid {
 	return &FirstValid{
-		Config:             cfg,
-		path:               fmt.Sprintf("%s/firstValid", cfg.BasePath),
-		channelID:          channelID,
-		blockchainProvider: blockchainProvider,
-		jsonMarshal:        json.Marshal,
+		handler: newHandler(
+			channelID, cfg,
+			fmt.Sprintf("%s/firstValid", cfg.BasePath),
+			http.MethodPost,
+			blockchainProvider,
+		),
 	}
-}
-
-// Path returns the context path
-func (h *FirstValid) Path() string {
-	return h.path
-}
-
-// Method returns the HTTP method
-func (h *FirstValid) Method() string {
-	return http.MethodPost
 }
 
 // Handler returns the request handler
@@ -110,7 +96,7 @@ func (h *FirstValid) getFirstValid(transactions []Transaction) (*Transaction, er
 	}
 
 	if len(resp.Transactions) == 0 {
-		logger.Errorf("[%s] No valid transactions found: %s", h.channelID)
+		logger.Debugf("[%s] No valid transactions found", h.channelID)
 
 		return nil, httpserver.NotFoundError
 	}
@@ -118,15 +104,4 @@ func (h *FirstValid) getFirstValid(transactions []Transaction) (*Transaction, er
 	logger.Debugf("[%s] Returning: %+v", h.channelID, resp)
 
 	return &resp.Transactions[0], nil
-}
-
-func (h *FirstValid) blockchainClient() (bcclient.Blockchain, error) {
-	bcClient, err := h.blockchainProvider.ForChannel(h.channelID)
-	if err != nil {
-		logger.Errorf("[%s] Failed to get blockchain client: %s", h.channelID, err)
-
-		return nil, httpserver.ServerError
-	}
-
-	return bcClient, nil
 }

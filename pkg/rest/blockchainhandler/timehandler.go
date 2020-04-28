@@ -8,14 +8,11 @@ package blockchainhandler
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
-	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
@@ -34,12 +31,8 @@ type getTimeFunc func(req *http.Request) (*TimeResponse, error)
 
 // Time retrieves the blockchain time from the ledger (block height and latest block hash)
 type Time struct {
-	Config
-	path               string
-	channelID          string
-	blockchainProvider blockchainClientProvider
-	getTime            getTimeFunc
-	jsonMarshal        func(v interface{}) ([]byte, error)
+	*handler
+	getTime getTimeFunc
 }
 
 type blockchainClientProvider interface {
@@ -49,11 +42,12 @@ type blockchainClientProvider interface {
 // NewTimeHandler returns a new blockchain time handler
 func NewTimeHandler(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *Time {
 	t := &Time{
-		Config:             cfg,
-		path:               fmt.Sprintf("%s/time", cfg.BasePath),
-		channelID:          channelID,
-		blockchainProvider: blockchainProvider,
-		jsonMarshal:        json.Marshal,
+		handler: newHandler(
+			channelID, cfg,
+			fmt.Sprintf("%s/time", cfg.BasePath),
+			http.MethodGet,
+			blockchainProvider,
+		),
 	}
 
 	t.getTime = t.getLatestTime
@@ -64,26 +58,17 @@ func NewTimeHandler(channelID string, cfg Config, blockchainProvider blockchainC
 // NewTimeByHashHandler returns a new blockchain time handler for a given hash
 func NewTimeByHashHandler(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *Time {
 	t := &Time{
-		Config:             cfg,
-		path:               fmt.Sprintf("%s/time/{hash}", cfg.BasePath),
-		channelID:          channelID,
-		blockchainProvider: blockchainProvider,
-		jsonMarshal:        json.Marshal,
+		handler: newHandler(
+			channelID, cfg,
+			fmt.Sprintf("%s/time/{hash}", cfg.BasePath),
+			http.MethodGet,
+			blockchainProvider,
+		),
 	}
 
 	t.getTime = t.getTimeForHash
 
 	return t
-}
-
-// Path returns the context path
-func (h *Time) Path() string {
-	return h.path
-}
-
-// Method returns the HTTP method
-func (h *Time) Method() string {
-	return http.MethodGet
 }
 
 // Handler returns the request handler
@@ -114,12 +99,7 @@ func (h *Time) time(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Time) getLatestTime(req *http.Request) (*TimeResponse, error) {
-	bcClient, err := h.blockchainClient()
-	if err != nil {
-		return nil, err
-	}
-
-	bcInfo, err := bcClient.GetBlockchainInfo()
+	bcInfo, err := h.getBlockchainInfo()
 	if err != nil {
 		logger.Errorf("[%s] Failed to get blockchain info: %s", h.channelID, err)
 
@@ -140,12 +120,7 @@ func (h *Time) getTimeForHash(req *http.Request) (*TimeResponse, error) {
 		return nil, httpserver.BadRequestError
 	}
 
-	bcClient, err := h.blockchainClient()
-	if err != nil {
-		return nil, err
-	}
-
-	block, err := h.getBlockByHash(strHash, bcClient)
+	block, err := h.getBlockByHash(strHash)
 	if err != nil {
 		return nil, err
 	}
@@ -163,39 +138,6 @@ func (h *Time) getTimeForHash(req *http.Request) (*TimeResponse, error) {
 		Time: strconv.FormatUint(header.Number, 10),
 		Hash: base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(header)),
 	}, nil
-}
-
-func (h *Time) blockchainClient() (bcclient.Blockchain, error) {
-	bcClient, err := h.blockchainProvider.ForChannel(h.channelID)
-	if err != nil {
-		logger.Errorf("[%s] Failed to get blockchain client: %s", h.channelID, err)
-
-		return nil, httpserver.ServerError
-	}
-
-	return bcClient, nil
-}
-
-func (h *Time) getBlockByHash(strHash string, bcClient bcclient.Blockchain) (*cb.Block, error) {
-	hash, err := base64.URLEncoding.DecodeString(strHash)
-	if err != nil {
-		logger.Debugf("Invalid base64 encoded hash [%s]: %s", strHash, err)
-
-		return nil, httpserver.NewError(http.StatusBadRequest, httpserver.StatusBadRequest)
-	}
-
-	block, err := bcClient.GetBlockByHash(hash)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil, httpserver.NotFoundError
-		}
-
-		logger.Errorf("Failed to get block for hash [%s]: %s", strHash, err)
-
-		return nil, httpserver.ServerError
-	}
-
-	return block, nil
 }
 
 var getHash = func(req *http.Request) string {

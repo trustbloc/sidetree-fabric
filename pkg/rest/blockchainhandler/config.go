@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 package blockchainhandler
 
-// Config defines the configuration for a DCAS handler
+// Config defines the configuration for a blockchain handler
 type Config struct {
 	// BasePath is the base context path of the REST endpoint
 	BasePath string
