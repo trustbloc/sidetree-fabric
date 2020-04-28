@@ -119,20 +119,6 @@ Feature:
     When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
     Then check success response contains "recoveryKey"
 
-  @create_update_did_doc
-  Scenario: create and update valid did doc
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    Then check success response contains "#didDocumentHash"
-    And we wait 10 seconds
-
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
-    Then check success response contains "#didDocumentHash"
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to update DID document path "/publicKey/0/type" with value "updatedValue"
-    Then we wait 10 seconds
-
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
-    Then check success response contains "updatedValue"
-
   @create_add_remove_public_key
   Scenario: add and remove public keys
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
