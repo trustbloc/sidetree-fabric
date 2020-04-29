@@ -38,8 +38,6 @@ func (h *Info) Handler() common.HTTPRequestHandler {
 }
 
 func (h *Info) blockchainInfo(w http.ResponseWriter, _ *http.Request) {
-	logger.Info("Handling blockchainInfo ...")
-
 	rw := httpserver.NewResponseWriter(w)
 
 	bcInfo, err := h.getBlockchainInfo()

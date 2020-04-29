@@ -407,14 +407,14 @@ func TestBlocks_ByHash(t *testing.T) {
 	})
 
 	t.Run("Missing hash param -> BadRequest", func(t *testing.T) {
-		restoreParams := setBlocksFromParams("", "1")
+		restoreParams := setBlocksByHashParams("")
 		defer restoreParams()
 
 		testInvalidParams(t, NewBlockByHashHandler, InvalidTimeHash)
 	})
 
 	t.Run("Invalid hash param -> BadRequest", func(t *testing.T) {
-		restoreParams := setBlocksFromParams("xxx", "1")
+		restoreParams := setBlocksByHashParams("xxx")
 		defer restoreParams()
 
 		testInvalidParams(t, NewBlockByHashHandler, InvalidTimeHash)

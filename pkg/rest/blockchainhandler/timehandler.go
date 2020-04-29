@@ -77,7 +77,7 @@ func (h *Time) Handler() common.HTTPRequestHandler {
 }
 
 func (h *Time) time(w http.ResponseWriter, req *http.Request) {
-	rw := httpserver.NewResponseWriter(w)
+	rw := newBlockchainWriter(w)
 
 	time, err := h.getTime(req)
 	if err != nil {
@@ -95,7 +95,7 @@ func (h *Time) time(w http.ResponseWriter, req *http.Request) {
 
 	logger.Debugf("[%s] ... returning blockchain time: %s", h.channelID, timeBytes)
 
-	rw.Write(http.StatusOK, timeBytes, httpserver.ContentTypeJSON)
+	rw.Write(timeBytes)
 }
 
 func (h *Time) getLatestTime(req *http.Request) (*TimeResponse, error) {
