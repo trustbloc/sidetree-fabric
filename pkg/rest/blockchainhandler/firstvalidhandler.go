@@ -26,7 +26,7 @@ func NewFirstValidHandler(channelID string, cfg Config, blockchainProvider block
 	return &FirstValid{
 		handler: newHandler(
 			channelID, cfg,
-			fmt.Sprintf("%s/firstValid", cfg.BasePath),
+			fmt.Sprintf("%s/first-valid", cfg.BasePath),
 			http.MethodPost,
 			blockchainProvider,
 		),

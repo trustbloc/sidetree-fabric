@@ -32,7 +32,7 @@ func TestNewFirstValidHandler(t *testing.T) {
 	h := NewFirstValidHandler(channel1, handlerCfg, bcProvider)
 	require.NotNil(t, h)
 
-	require.Equal(t, "/blockchain/firstValid", h.Path())
+	require.Equal(t, "/blockchain/first-valid", h.Path())
 	require.Equal(t, http.MethodPost, h.Method())
 }
 
@@ -93,7 +93,7 @@ func TestFirstValid_Handler(t *testing.T) {
 		require.NoError(t, err)
 
 		rw := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/blockchain/firstValid", bytes.NewReader(txnsBytes))
+		req := httptest.NewRequest(http.MethodPost, "/blockchain/first-valid", bytes.NewReader(txnsBytes))
 
 		h.Handler()(rw, req)
 
@@ -133,7 +133,7 @@ func TestFirstValid_Handler(t *testing.T) {
 		require.NoError(t, err)
 
 		rw := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/blockchain/firstValid", bytes.NewReader(txnsBytes))
+		req := httptest.NewRequest(http.MethodPost, "/blockchain/first-valid", bytes.NewReader(txnsBytes))
 
 		h.Handler()(rw, req)
 
@@ -153,7 +153,7 @@ func TestFirstValid_Handler(t *testing.T) {
 		require.NoError(t, err)
 
 		rw := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/blockchain/firstValid", bytes.NewReader(txnsBytes))
+		req := httptest.NewRequest(http.MethodPost, "/blockchain/first-valid", bytes.NewReader(txnsBytes))
 
 		h.Handler()(rw, req)
 
@@ -170,7 +170,7 @@ func TestFirstValid_Handler(t *testing.T) {
 		require.NotNil(t, h)
 
 		rw := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/blockchain/firstValid", bytes.NewReader([]byte("invalid data")))
+		req := httptest.NewRequest(http.MethodPost, "/blockchain/first-valid", bytes.NewReader([]byte("invalid data")))
 
 		h.Handler()(rw, req)
 
@@ -208,7 +208,7 @@ func TestFirstValid_Handler(t *testing.T) {
 		require.NoError(t, err)
 
 		rw := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/blockchain/firstValid", bytes.NewReader(txnsBytes))
+		req := httptest.NewRequest(http.MethodPost, "/blockchain/first-valid", bytes.NewReader(txnsBytes))
 
 		h.Handler()(rw, req)
 

@@ -100,7 +100,7 @@ Feature:
     And the JSON path "transactions.9.anchor_string" of the response is saved to variable "anchor_9"
 
     # Get more transactions from where we left off
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=${txnNum_9}&transaction_time_hash=${timeHash_9}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=${txnNum_9}&transaction-time-hash=${timeHash_9}"
     And the JSON path "transactions.0.transaction_time" of the numeric response equals "${time_9}"
     And the JSON path "transactions.0.transaction_time_hash" of the response equals "${timeHash_9}"
     And the JSON path "transactions.0.transaction_number" of the numeric response equals "${txnNum_9}"
@@ -108,26 +108,26 @@ Feature:
     And the JSON path "transactions" of the raw response is saved to variable "transactions"
 
     # Ensure that the anchor hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_9}?max_size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_9}?max-size=1024"
     And the JSON path "batchFileHash" of the response is saved to variable "batchFileHash"
 
     # Ensure that the batch file hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${batchFileHash}?max_size=8192"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${batchFileHash}?max-size=8192"
     And the JSON path "operations" of the array response is not empty
 
     # Invalid since
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=xxx&transaction_time_hash=${timeHash_9}" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=xxx&transaction-time-hash=${timeHash_9}" and the returned status code is 400
     And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
 
     # Invalid time hash
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=0&transaction_time_hash=xxx_xxx" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=0&transaction-time-hash=xxx_xxx" and the returned status code is 400
     And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
 
     # Hash not found
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=0&transaction_time_hash=AQIDBAUGBwgJCgsM" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=0&transaction-time-hash=AQIDBAUGBwgJCgsM" and the returned status code is 404
 
     # Valid transactions
-    When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/firstValid" with content "${transactions}" of type "application/json"
+    When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/first-valid" with content "${transactions}" of type "application/json"
     Then the JSON path "transaction_time" of the numeric response equals "${time_9}"
     And the JSON path "transaction_time_hash" of the response equals "${timeHash_9}"
     And the JSON path "transaction_number" of the numeric response equals "${txnNum_9}"
@@ -135,7 +135,7 @@ Feature:
 
     # Invalid transactions
     Given variable "invalidTransactions" is assigned the JSON value '[{"transaction_number":3,"transaction_time":10,"transaction_time_hash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
-    When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/firstValid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
+    When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/first-valid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
 
     # Blockchain info
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/info"
@@ -145,7 +145,7 @@ Feature:
     And the JSON path "previous_time_hash" of the response is saved to variable "previous-time-hash"
 
     # Retrieve the anchor file from the transaction time in transaction 0 above
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from_time=${time_0}&max_blocks=2"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from-time=${time_0}&max-blocks=2"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the response equals "${time_0}"
     And the JSON path "1.header.previous_hash" of the response is saved to variable "previous-hash"
@@ -153,7 +153,7 @@ Feature:
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max_size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1024"
     Then the JSON path "batchFileHash" of the response is not empty
 
     # Retrieve the previous block using the previous hash from above
@@ -168,7 +168,7 @@ Feature:
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max_size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1024"
     Then the JSON path "batchFileHash" of the response is not empty
 
     # Retrieve the anchor file from the previous block hash
@@ -177,11 +177,11 @@ Feature:
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max_size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1024"
     Then the JSON path "batchFileHash" of the response is not empty
 
     # Get block by hash where the data is base64-encoded
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}?data_encoding=base64"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}?data-encoding=base64"
     Then the JSON path "#" of the response has 1 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
     And the JSON path "0.header.data_hash" of the response is saved to variable "data-hash"
@@ -189,7 +189,7 @@ Feature:
     Then the hash of the base64-encoded value "${block-data}" equals "${data-hash}"
 
     # Get block by hash where the data is base64URL-encoded
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}?data_encoding=base64url"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}?data-encoding=base64url"
     Then the JSON path "#" of the response has 1 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
     And the JSON path "0.header.data_hash" of the response is saved to variable "data-hash"
@@ -197,7 +197,7 @@ Feature:
     Then the hash of the base64URL-encoded value "${block-data}" equals "${data-hash}"
 
     # Get blocks in range where the data is base64-encoded
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from_time=${time_0}&max_blocks=2&data_encoding=base64"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from-time=${time_0}&max-blocks=2&data-encoding=base64"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
     And the JSON path "0.header.data_hash" of the response is saved to variable "data-hash"
@@ -205,7 +205,7 @@ Feature:
     Then the hash of the base64-encoded value "${block-data}" equals "${data-hash}"
 
     # Get blocks in range where the data is base64URL-encoded
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from_time=${time_0}&max_blocks=2&data_encoding=base64url"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from-time=${time_0}&max-blocks=2&data-encoding=base64url"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
     And the JSON path "0.header.data_hash" of the response is saved to variable "data-hash"

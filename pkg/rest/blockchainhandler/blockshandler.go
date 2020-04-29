@@ -26,8 +26,8 @@ type Blocks struct {
 }
 
 // NewBlocksFromNumHandler returns a new handler that retrieves a range of blocks starting
-// at the block number given by the parameter, from_time, and returns a maximum
-// number of blocks given by parameter max_blocks. The blocks are returned in JSON encoding.
+// at the block number given by the parameter, from-time, and returns a maximum
+// number of blocks given by parameter max-blocks. The blocks are returned in JSON encoding.
 func NewBlocksFromNumHandler(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *Blocks {
 	h := &Blocks{
 		handler: newHandler(
@@ -35,7 +35,7 @@ func NewBlocksFromNumHandler(channelID string, cfg Config, blockchainProvider bl
 			fmt.Sprintf("%s/blocks", cfg.BasePath),
 			http.MethodGet,
 			blockchainProvider,
-			fromTimeParam, maxBlocks,
+			fromTimeParam, maxBlocksParam,
 		),
 	}
 
@@ -45,8 +45,8 @@ func NewBlocksFromNumHandler(channelID string, cfg Config, blockchainProvider bl
 }
 
 // NewBlocksFromNumHandlerWithEncoding returns a new handler that retrieves a range of blocks starting
-// at the block number given by the parameter, from_time, and returns a maximum
-// number of blocks given by parameter max_blocks. The blocks are returned with data encoded in the provided encoding.
+// at the block number given by the parameter, from-time, and returns a maximum
+// number of blocks given by parameter max-blocks. The blocks are returned with data encoded in the provided encoding.
 func NewBlocksFromNumHandlerWithEncoding(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *Blocks {
 	h := &Blocks{
 		handler: newHandler(
@@ -54,7 +54,7 @@ func NewBlocksFromNumHandlerWithEncoding(channelID string, cfg Config, blockchai
 			fmt.Sprintf("%s/blocks", cfg.BasePath),
 			http.MethodGet,
 			blockchainProvider,
-			fromTimeParam, maxBlocks, dataEncodingParam,
+			fromTimeParam, maxBlocksParam, dataEncodingParam,
 		),
 	}
 
@@ -252,7 +252,7 @@ var getFrom = func(req *http.Request) string {
 }
 
 var getMaxBlocks = func(req *http.Request) string {
-	return mux.Vars(req)[maxBlocks]
+	return mux.Vars(req)[maxBlocksParam]
 }
 
 func min(v1, v2 uint64) uint64 {
