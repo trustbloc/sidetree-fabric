@@ -46,6 +46,7 @@ type restConfig interface {
 	SidetreeListenURL() (string, error)
 	SidetreeTLSCertificate() string
 	SidetreeTLSKey() string
+	SidetreeAPIToken(name string) string
 }
 
 type sidetreeConfigProvider interface {

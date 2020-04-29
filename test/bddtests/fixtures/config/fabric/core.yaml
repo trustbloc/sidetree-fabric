@@ -3,6 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+sidetree:
+    api:
+        # configure tokens name and value
+        # example token1=xxx:token2=yyy
+        tokens:
+
 ###############################################################################
 #
 #    Peer section
