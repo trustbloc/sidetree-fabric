@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	viper "github.com/spf13/viper2015"
 )
@@ -19,6 +20,7 @@ const (
 	sidetreePortKey        = "sidetree.port"
 	sidetreeTLSCertificate = "sidetree.tls.cert.file"
 	sidetreeTLSKey         = "sidetree.tls.key.file"
+	sidetreeAPITokens      = "sidetree.api.tokens"
 
 	confPeerFileSystemPath = "peer.fileSystemPath"
 	sidetreeOperationsDir  = "sidetree_ops"
@@ -31,16 +33,31 @@ type Peer struct {
 	sidetreeTLSCertificate string
 	sidetreeTLSKey         string
 	levelDBOpQueueBasePath string
+	sidetreeAPITokens      map[string]string
 }
 
 // NewPeer returns a new peer config
 func NewPeer() *Peer {
+	tokens := make(map[string]string)
+	if viper.GetString(sidetreeAPITokens) != "" {
+		for _, field := range strings.Split(viper.GetString(sidetreeAPITokens), ":") {
+			split := strings.Split(field, "=")
+			switch len(split) {
+			case 2:
+				tokens[split[0]] = split[1]
+			default:
+				logger.Warnf("invalid token '%s'", field)
+			}
+		}
+	}
+
 	return &Peer{
 		sidetreeHost:           viper.GetString(sidetreeHostKey),
 		sidetreePort:           viper.GetInt(sidetreePortKey),
 		sidetreeTLSCertificate: viper.GetString(sidetreeTLSCertificate),
 		sidetreeTLSKey:         viper.GetString(sidetreeTLSKey),
 		levelDBOpQueueBasePath: filepath.Join(filepath.Clean(viper.GetString(confPeerFileSystemPath)), sidetreeOperationsDir),
+		sidetreeAPITokens:      tokens,
 	}
 }
 
@@ -71,4 +88,9 @@ func (c *Peer) SidetreeTLSCertificate() string {
 // SidetreeTLSKey returns the tls key
 func (c *Peer) SidetreeTLSKey() string {
 	return c.sidetreeTLSKey
+}
+
+// SidetreeAPIToken returns api token
+func (c *Peer) SidetreeAPIToken(name string) string {
+	return c.sidetreeAPITokens[name]
 }

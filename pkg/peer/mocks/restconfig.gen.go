@@ -6,6 +6,17 @@ import (
 )
 
 type RestConfig struct {
+	SidetreeAPITokenStub        func(string) string
+	sidetreeAPITokenMutex       sync.RWMutex
+	sidetreeAPITokenArgsForCall []struct {
+		arg1 string
+	}
+	sidetreeAPITokenReturns struct {
+		result1 string
+	}
+	sidetreeAPITokenReturnsOnCall map[int]struct {
+		result1 string
+	}
 	SidetreeListenURLStub        func() (string, error)
 	sidetreeListenURLMutex       sync.RWMutex
 	sidetreeListenURLArgsForCall []struct {
@@ -40,6 +51,66 @@ type RestConfig struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *RestConfig) SidetreeAPIToken(arg1 string) string {
+	fake.sidetreeAPITokenMutex.Lock()
+	ret, specificReturn := fake.sidetreeAPITokenReturnsOnCall[len(fake.sidetreeAPITokenArgsForCall)]
+	fake.sidetreeAPITokenArgsForCall = append(fake.sidetreeAPITokenArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("SidetreeAPIToken", []interface{}{arg1})
+	fake.sidetreeAPITokenMutex.Unlock()
+	if fake.SidetreeAPITokenStub != nil {
+		return fake.SidetreeAPITokenStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.sidetreeAPITokenReturns
+	return fakeReturns.result1
+}
+
+func (fake *RestConfig) SidetreeAPITokenCallCount() int {
+	fake.sidetreeAPITokenMutex.RLock()
+	defer fake.sidetreeAPITokenMutex.RUnlock()
+	return len(fake.sidetreeAPITokenArgsForCall)
+}
+
+func (fake *RestConfig) SidetreeAPITokenCalls(stub func(string) string) {
+	fake.sidetreeAPITokenMutex.Lock()
+	defer fake.sidetreeAPITokenMutex.Unlock()
+	fake.SidetreeAPITokenStub = stub
+}
+
+func (fake *RestConfig) SidetreeAPITokenArgsForCall(i int) string {
+	fake.sidetreeAPITokenMutex.RLock()
+	defer fake.sidetreeAPITokenMutex.RUnlock()
+	argsForCall := fake.sidetreeAPITokenArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *RestConfig) SidetreeAPITokenReturns(result1 string) {
+	fake.sidetreeAPITokenMutex.Lock()
+	defer fake.sidetreeAPITokenMutex.Unlock()
+	fake.SidetreeAPITokenStub = nil
+	fake.sidetreeAPITokenReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *RestConfig) SidetreeAPITokenReturnsOnCall(i int, result1 string) {
+	fake.sidetreeAPITokenMutex.Lock()
+	defer fake.sidetreeAPITokenMutex.Unlock()
+	fake.SidetreeAPITokenStub = nil
+	if fake.sidetreeAPITokenReturnsOnCall == nil {
+		fake.sidetreeAPITokenReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.sidetreeAPITokenReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
 }
 
 func (fake *RestConfig) SidetreeListenURL() (string, error) {
@@ -204,6 +275,8 @@ func (fake *RestConfig) SidetreeTLSKeyReturnsOnCall(i int, result1 string) {
 func (fake *RestConfig) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.sidetreeAPITokenMutex.RLock()
+	defer fake.sidetreeAPITokenMutex.RUnlock()
 	fake.sidetreeListenURLMutex.RLock()
 	defer fake.sidetreeListenURLMutex.RUnlock()
 	fake.sidetreeTLSCertificateMutex.RLock()

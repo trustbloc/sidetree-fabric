@@ -84,4 +84,16 @@ func TestPeerConfig(t *testing.T) {
 
 		require.Equal(t, "key", cfg.SidetreeTLSKey())
 	})
+
+	t.Run("Api token -> success", func(t *testing.T) {
+		viper.Reset()
+		viper.Set("sidetree.api.tokens", "tk1=token1:tk2=token2:tk3==token3")
+
+		cfg := NewPeer()
+		require.NotNil(t, cfg)
+
+		require.Equal(t, "token1", cfg.SidetreeAPIToken("tk1"))
+		require.Equal(t, "token2", cfg.SidetreeAPIToken("tk2"))
+		require.Empty(t, cfg.SidetreeAPIToken("tk3"))
+	})
 }
