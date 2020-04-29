@@ -98,7 +98,7 @@ func TestServer_Start(t *testing.T) {
 		require.NoError(t, json.Unmarshal(resp, &createdDoc))
 		require.Equal(t, sampleID, createdDoc.Document["id"])
 
-		resp, err = httpGet(t, clientURL+samplePath+"/"+sampleID+"?max_size=1024")
+		resp, err = httpGet(t, clientURL+samplePath+"/"+sampleID+"?max-size=1024")
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
@@ -264,7 +264,7 @@ func (h *sampleResolveHandler) Path() string {
 
 // Params returns the context path
 func (h *sampleResolveHandler) Params() map[string]string {
-	return map[string]string{"max_size": "{max_size:[0-9]+}"}
+	return map[string]string{"max-size": "{max-size:[0-9]+}"}
 }
 
 // Method returns the HTTP method

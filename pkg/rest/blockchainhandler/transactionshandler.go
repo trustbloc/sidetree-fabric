@@ -24,7 +24,7 @@ import (
 
 const (
 	sinceParam    = "since"
-	timeHashParam = "transaction_time_hash"
+	timeHashParam = "transaction-time-hash"
 )
 
 type getTransactionsFunc func(*http.Request) (*TransactionsResponse, error)

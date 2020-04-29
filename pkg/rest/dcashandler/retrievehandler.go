@@ -22,7 +22,7 @@ var logger = flogging.MustGetLogger("sidetree_peer")
 
 const (
 	hashParam    = "hash"
-	maxSizeParam = "max_size"
+	maxSizeParam = "max-size"
 )
 
 // Retrieve manages file retrievals from the DCAS store
@@ -75,7 +75,7 @@ func (h *Retrieve) retrieve(rw http.ResponseWriter, req *http.Request) {
 
 	maxSize := getMaxSize(req)
 
-	logger.Debugf("[%s:%s:%s] Retrieving resp for hash [%s] with max_size %d", h.channelID, h.ChaincodeName, h.Collection, hash, maxSize)
+	logger.Debugf("[%s:%s:%s] Retrieving resp for hash [%s] with max-size %d", h.channelID, h.ChaincodeName, h.Collection, hash, maxSize)
 
 	rrw := newRetrieveWriter(rw)
 
@@ -150,7 +150,7 @@ func maxSizeFromString(str string) int {
 
 	size, err := strconv.Atoi(str)
 	if err != nil {
-		logger.Debugf("Invalid value for parameter [max_size]: %s", err)
+		logger.Debugf("Invalid value for parameter [max-size]: %s", err)
 
 		return 0
 	}

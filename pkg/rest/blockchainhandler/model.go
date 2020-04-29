@@ -30,9 +30,9 @@ const (
 )
 
 const (
-	fromTimeParam     = "from_time"
-	maxBlocks         = "max_blocks"
-	dataEncodingParam = "data_encoding"
+	fromTimeParam     = "from-time"
+	maxBlocksParam    = "max-blocks"
+	dataEncodingParam = "data-encoding"
 )
 
 // DataEncoding specifies the encoding of the data sections of the blocks in the response

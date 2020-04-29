@@ -93,7 +93,7 @@ func TestRetrieve_Handler(t *testing.T) {
 		require.Equal(t, CodeInvalidHash, rw.Body.String())
 	})
 
-	t.Run("No max_size -> Bad Request", func(t *testing.T) {
+	t.Run("No max-size -> Bad Request", func(t *testing.T) {
 		restoreParams := setParams(hash, "0")
 		defer restoreParams()
 
@@ -106,7 +106,7 @@ func TestRetrieve_Handler(t *testing.T) {
 		require.Equal(t, CodeMaxSizeNotSpecified, rw.Body.String())
 	})
 
-	t.Run("Invalid max_size -> Bad Request", func(t *testing.T) {
+	t.Run("Invalid max-size -> Bad Request", func(t *testing.T) {
 		restoreParams := setParams(hash, "xxx")
 		defer restoreParams()
 
@@ -154,7 +154,7 @@ func TestRetrieve_Handler(t *testing.T) {
 		require.Equal(t, content, rw.Body.Bytes())
 	})
 
-	t.Run("max_size exceeded -> error", func(t *testing.T) {
+	t.Run("max-size exceeded -> error", func(t *testing.T) {
 		content := []byte{1, 2, 3, 4}
 
 		restoreParams := setParams(hash, "1")
