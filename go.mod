@@ -11,6 +11,7 @@ require (
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible
+	github.com/golang/protobuf v1.3.2
 	github.com/gorilla/mux v1.7.3
 	github.com/hyperledger/fabric v2.0.0+incompatible
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20200128192331-2d899240a7ed

@@ -212,6 +212,45 @@ Feature:
     And the JSON path "0.data" of the response is saved to variable "block-data"
     Then the hash of the base64URL-encoded value "${block-data}" equals "${data-hash}"
 
+    # Retrieve the config block for the given block number and make check the channel header type
+    # to ensure the block is a config block. Following are the channel header types:
+    #  MESSAGE              : 0
+    #  CONFIG               : 1
+    #  CONFIG_UPDATE        : 2
+    #  ENDORSER_TRANSACTION : 3
+    #  ORDERER_TRANSACTION  : 4
+    #  DELIVER_SEEK_INFO    : 5
+    #  CHAINCODE_PACKAGE    : 6
+    #  PEER_ADMIN_OPERATION : 8
+
+    # Get the latest config block (the data is in JSON format)
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock"
+    And the JSON path "data.data.0.payload.header.channel_header.type" of the numeric response equals "1"
+    # Get the latest config block (the data is base64-encoded)
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock?data-encoding=base64"
+    And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
+    And the JSON path "data" of the response is saved to variable "config-data"
+    Then the hash of the base64-encoded value "${config-data}" equals "${config-data-hash}"
+    # Get the latest config block (the data is base64URL-encoded)
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock?data-encoding=base64url"
+    And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
+    And the JSON path "data" of the response is saved to variable "config-data"
+    Then the hash of the base64URL-encoded value "${config-data}" equals "${config-data-hash}"
+
+    # Get the config block that was used by the block with the given hash (the data is in JSON format)
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock/${url-encoded-previous-hash}"
+    And the JSON path "data.data.0.payload.header.channel_header.type" of the numeric response equals "1"
+    # Get the config block that was used by the block with the given hash (the data is base64-encoded)
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock/${url-encoded-previous-hash}?data-encoding=base64"
+    And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
+    And the JSON path "data" of the response is saved to variable "config-data"
+    Then the hash of the base64-encoded value "${config-data}" equals "${config-data-hash}"
+    # Get the config block that was used by the block with the given hash (the data is base64URL-encoded)
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock/${url-encoded-previous-hash}?data-encoding=base64url"
+    And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
+    And the JSON path "data" of the response is saved to variable "config-data"
+    Then the hash of the base64URL-encoded value "${config-data}" equals "${config-data-hash}"
+
   @invalid_blockchain_config
   Scenario: Invalid configuration
     Given fabric-cli context "mychannel" is used

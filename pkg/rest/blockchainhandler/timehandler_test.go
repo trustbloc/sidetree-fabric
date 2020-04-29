@@ -241,8 +241,11 @@ func TestTime_ByHash(t *testing.T) {
 		h.Handler()(rw, req)
 
 		require.Equal(t, http.StatusBadRequest, rw.Result().StatusCode)
-		require.Equal(t, httpserver.ContentTypeText, rw.Header().Get(httpserver.ContentTypeHeader))
-		require.Equal(t, httpserver.StatusBadRequest, rw.Body.String())
+		require.Equal(t, httpserver.ContentTypeJSON, rw.Header().Get(httpserver.ContentTypeHeader))
+
+		errResp := &ErrorResponse{}
+		require.NoError(t, json.Unmarshal(rw.Body.Bytes(), errResp))
+		require.Equal(t, InvalidTimeHash, errResp.Code)
 	})
 
 	t.Run("Marshal error -> Server Error", func(t *testing.T) {

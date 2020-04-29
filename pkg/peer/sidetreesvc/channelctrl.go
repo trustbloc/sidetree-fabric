@@ -488,6 +488,10 @@ func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) 
 	handlers = append(handlers, blockchainhandler.NewBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider))
 	handlers = append(handlers, blockchainhandler.NewBlocksFromNumHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))
 	handlers = append(handlers, blockchainhandler.NewBlocksFromNumHandler(c.channelID, cfg, c.BlockchainProvider))
+	handlers = append(handlers, blockchainhandler.NewConfigBlockHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))
+	handlers = append(handlers, blockchainhandler.NewConfigBlockHandler(c.channelID, cfg, c.BlockchainProvider))
+	handlers = append(handlers, blockchainhandler.NewConfigBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))
+	handlers = append(handlers, blockchainhandler.NewConfigBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider))
 
 	return handlers
 }

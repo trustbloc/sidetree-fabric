@@ -74,7 +74,7 @@ func (h *handler) getBlockByHash(strHash string) (*cb.Block, error) {
 	if err != nil {
 		logger.Debugf("Invalid base64 encoded hash [%s]: %s", strHash, err)
 
-		return nil, httpserver.NewError(http.StatusBadRequest, httpserver.StatusBadRequest)
+		return nil, newBadRequestError(InvalidTimeHash)
 	}
 
 	bcClient, err := h.blockchainClient()
