@@ -112,7 +112,7 @@ Feature:
     And the JSON path "batchFileHash" of the response is saved to variable "batchFileHash"
 
     # Ensure that the batch file hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${batchFileHash}?max-size=8192"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${batchFileHash}?max-size=24000"
     And the JSON path "operations" of the array response is not empty
 
     # Invalid since
