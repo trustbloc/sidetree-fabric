@@ -78,13 +78,13 @@ const docTemplate = `{
   		"jwk": %s
 	},
    {
-     "id": "dual-auth-general",
+     "id": "dual-auth-gen",
      "type": "JwsVerificationKey2020",
      "usage": ["auth", "general"],
      "jwk": %s
    },
    {
-     "id": "dual-assertion-general",
+     "id": "dual-assertion-gen",
      "type": "Ed25519VerificationKey2018",
      "usage": ["assertion", "general"],
      "jwk": %s
