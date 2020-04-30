@@ -11,7 +11,7 @@ require (
 	github.com/sirupsen/logrus v1.3.0
 	github.com/spf13/viper v1.3.2
 	github.com/trustbloc/fabric-peer-test-common v0.1.3-0.20200428204902-1d34830c6905
-	github.com/trustbloc/sidetree-core-go v0.1.3-0.20200430025552-0729ac9d02a0
+	github.com/trustbloc/sidetree-core-go v0.1.3-0.20200430203822-5e12db11f149
 )
 
 replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.2
