@@ -11,10 +11,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
+
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
 
 const (
-	dcasHandlerCfg                 = `{"BasePath":"/cas","ChaincodeName":"dcascc","Collection":"dcas"}`
+	dcasHandlerCfg                 = `{"BasePath":"/cas","ChaincodeName":"dcascc","Collection":"dcas","Authorization":{"ReadTokens":["cas_r","cas_w"],"WriteTokens": ["cas_w"]}}`
 	dcasHandlerCfg_NoBasePath      = `{"ChaincodeName":"dcascc","Collection":"dcas"}`
 	dcasHandlerCfg_InvalidBasePath = `{"BasePath":"cas","ChaincodeName":"dcascc","Collection":"dcas"}`
 	dcasHandlerCfg_NoChaincodeName = `{"BasePath":"/cas","Collection":"dcas"}`
@@ -22,12 +24,24 @@ const (
 )
 
 func TestDcasHandlerValidator_Validate(t *testing.T) {
-	v := &dcasHandlerValidator{}
+	tokenProvider := &peermocks.RestConfig{}
+	tokenProvider.SidetreeAPITokenReturns("some-token")
+
+	v := newDCASHandlerValidator(tokenProvider)
 
 	key := config.NewPeerComponentKey(mspID, peerID, DCASHandlerAppName, DCASHandlerAppVersion, "/cas", DCASHandlerComponentVersion)
 
 	t.Run("Valid config -> success", func(t *testing.T) {
 		require.NoError(t, v.Validate(config.NewKeyValue(key, config.NewValue(txID, dcasHandlerCfg, config.FormatJSON))))
+	})
+
+	t.Run("Auth tokens not defined -> error", func(t *testing.T) {
+		tokenProvider.SidetreeAPITokenReturns("")
+		defer tokenProvider.SidetreeAPITokenReturns("some-token")
+
+		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, dcasHandlerCfg, config.FormatJSON)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not defined in peer config")
 	})
 
 	t.Run("Irrelevant config -> success", func(t *testing.T) {

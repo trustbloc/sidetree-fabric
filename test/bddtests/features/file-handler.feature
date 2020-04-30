@@ -119,3 +119,10 @@ Feature:
     # The Observer should have rejected the second create and the document resolver will not error out because of an invalid operation in the store
     When an HTTP GET is sent to "https://localhost:48326/file/${contentIdxID}"
     Then the JSON path "didDocument.id" of the response equals "${contentIdxID}"
+
+  @filehandler_unauthorized
+  Scenario: Attempt to access the /internal endpoint without providing an auth token
+    # peer2.org2.example.com requires authorization
+    When an HTTP GET is sent to "https://localhost:48428/internal/file.txt" and the returned status code is 401
+    When an HTTP POST is sent to "https://localhost:48428/internal" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/file/file:idx:1234" and the returned status code is 401

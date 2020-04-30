@@ -1,0 +1,16 @@
+#
+# Copyright SecureKey Technologies Inc. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+basePath: /sidetree/0.0.1/cas
+chaincodeName: sidetreetxn
+collection: dcas
+
+authorization:
+  readTokens:
+    - cas_r
+    - cas_w
+  writeTokens:
+    - cas_w

@@ -29,28 +29,3 @@ func (h *fileHandlers) HTTPHandlers() []common.HTTPHandler {
 
 	return handlers
 }
-
-type dcasHandlers struct {
-	readHandler    common.HTTPHandler
-	writeHandler   common.HTTPHandler
-	versionHandler common.HTTPHandler
-}
-
-// HTTPHandlers returns the HTTP handlers
-func (h *dcasHandlers) HTTPHandlers() []common.HTTPHandler {
-	var handlers []common.HTTPHandler
-
-	if h.readHandler != nil {
-		handlers = append(handlers, h.readHandler)
-	}
-
-	if h.writeHandler != nil {
-		handlers = append(handlers, h.writeHandler)
-	}
-
-	if h.versionHandler != nil {
-		handlers = append(handlers, h.versionHandler)
-	}
-
-	return handlers
-}

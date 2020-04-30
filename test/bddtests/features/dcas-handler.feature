@@ -46,3 +46,10 @@ Feature:
 
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${contentHash}?max-size=1024"
     And the JSON path "$id" of the response equals "https://example.com/geographical-location.schema.json"
+
+  @dcas_unauthorized
+  Scenario: Attempt to access the cas endpoints without providing an auth token
+    # peer2.org2.example.com requires authorization
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/version" and the returned status code is 401
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/hash1234?max-size=1024" and the returned status code is 401

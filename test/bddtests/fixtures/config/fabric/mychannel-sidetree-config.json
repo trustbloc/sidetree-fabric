@@ -1,0 +1,33 @@
+{
+  "Monitor": {
+    "Period": "8s",
+    "MetaDataChaincodeName": "document"
+  },
+  "Namespaces": [
+    {
+      "Namespace": "did:sidetree",
+      "BasePath": "/sidetree/0.0.1",
+      "Authorization":{
+        "ReadTokens": ["did_r","did_w"],
+        "WriteTokens": ["did_w"]
+      }
+    },
+    {
+      "Namespace": "did:bloc:trustbloc.dev",
+      "BasePath": "/trustbloc.dev",
+      "Authorization":{
+        "ReadTokens": ["did_r","did_w"],
+        "WriteTokens": ["did_w"]
+      }
+    },
+    {
+      "DocType": "FILE_INDEX",
+      "Namespace": "file:idx",
+      "BasePath": "/file",
+      "Authorization":{
+        "ReadTokens": ["content_r","content_w"],
+        "WriteTokens": ["content_w"]
+      }
+    }
+  ]
+}

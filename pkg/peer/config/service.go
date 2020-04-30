@@ -42,16 +42,20 @@ type SidetreeProvider struct {
 	configProvider configServiceProvider
 }
 
+type tokenProvider interface {
+	SidetreeAPIToken(name string) string
+}
+
 // NewSidetreeProvider returns a new SidetreeProvider instance
-func NewSidetreeProvider(configProvider configServiceProvider, registry validatorRegistry) *SidetreeProvider {
+func NewSidetreeProvider(configProvider configServiceProvider, registry validatorRegistry, tokenProvider tokenProvider) *SidetreeProvider {
 	logger.Info("Creating Sidetree config provider")
 
 	registry.Register(&sidetreeValidator{})
-	registry.Register(&sidetreePeerValidator{})
-	registry.Register(&fileHandlerValidator{})
+	registry.Register(newSidetreePeerValidator(tokenProvider))
+	registry.Register(newFileHandlerValidator(tokenProvider))
 	registry.Register(&dcasValidator{})
-	registry.Register(&dcasHandlerValidator{})
-	registry.Register(&blockchainHandlerValidator{})
+	registry.Register(newDCASHandlerValidator(tokenProvider))
+	registry.Register(newBlockchainHandlerValidator(tokenProvider))
 
 	return &SidetreeProvider{
 		configProvider: configProvider,

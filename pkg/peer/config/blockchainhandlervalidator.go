@@ -16,6 +16,13 @@ import (
 
 // blockchainHandlerValidator validates the blockchain handler configuration
 type blockchainHandlerValidator struct {
+	authTokenValidator *authTokenValidator
+}
+
+func newBlockchainHandlerValidator(provider tokenProvider) *blockchainHandlerValidator {
+	return &blockchainHandlerValidator{
+		authTokenValidator: newAuthTokenValidator(provider),
+	}
 }
 
 func (v *blockchainHandlerValidator) Validate(kv *config.KeyValue) error {
@@ -74,6 +81,10 @@ func (v *blockchainHandlerValidator) validateBlockchainHandler(cfg blockchainhan
 
 	if cfg.MaxBlocksInResponse == 0 {
 		logger.Warnf("field 'MaxBlocksInResponse' is not set for %s. Will use default value.", kv.Key)
+	}
+
+	if err := v.authTokenValidator.Validate(cfg.Authorization, kv); err != nil {
+		return err
 	}
 
 	return nil

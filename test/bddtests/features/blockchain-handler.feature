@@ -59,7 +59,7 @@ Feature:
     Then an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time/AQIDBAUGBwgJCgsM" and the returned status code is 404
 
     # Write a few Sidetree transactions. Scatter the requests across different endpoints to generate multiple
-    # Sidetree transactions within the same block. The Orderer's batch timeout is set to 2s, so sleep 2s between
+    # Sidetree transactions within the same block. The Orderer's batch timeout is set to 2s, so sleep 3s between
     # writes to guarantee that we generate a few blocks.
     Then client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     And check success response contains "#didDocumentHash"
@@ -67,21 +67,21 @@ Feature:
     And client sends request to "https://localhost:48328/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     And client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
 
-    Then we wait 2 seconds
+    Then we wait 3 seconds
 
     Then client sends request to "https://localhost:48427/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48428/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     And client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     And client sends request to "https://localhost:48327/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     And client sends request to "https://localhost:48328/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
 
-    Then we wait 2 seconds
+    Then we wait 3 seconds
 
     Then client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     And client sends request to "https://localhost:48427/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48428/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    And client sends request to "https://localhost:48327/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
 
-    Then we wait 15 seconds
+    Then we wait 20 seconds
 
     # The config setting for maxTransactionsInResponse is 10 so we should expect 10 transactions in the query for all transactions
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions"
@@ -255,3 +255,17 @@ Feature:
   Scenario: Invalid configuration
     Given fabric-cli context "mychannel" is used
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-blockchainhandler-config.json --noprompt" then the error response should contain "component name must be set to the base path [/sidetree/0.0.1/blockchain]"
+
+  @blockchain_unauthorized
+  Scenario: Attempt to access the blockchain endpoints without providing an auth token
+    # peer2.org2.example.com requires authorization
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/version" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/time" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/time/hash1234" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/transactions" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/transactions?since=0&transaction-time-hash=hash1234" and the returned status code is 401
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/first-valid" with content "transactions" of type "application/json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/info" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/blocks?from-time=1&max-blocks=2" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock/hash1234" and the returned status code is 401

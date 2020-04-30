@@ -22,6 +22,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -81,12 +82,17 @@ type protocolProvider interface {
 	Protocol() protocol.Client
 }
 
+type tokenProvider interface {
+	SidetreeAPIToken(name string) string
+}
+
 func newRESTHandlers(
 	channelID string,
 	cfg config.Namespace,
 	batchWriter dochandler.BatchWriter,
 	protocolProvider protocolProvider,
-	opStore processor.OperationStoreClient) (*restHandlers, error) {
+	opStore processor.OperationStoreClient,
+	tokenProvider tokenProvider) (*restHandlers, error) {
 
 	if !role.IsResolver() && !role.IsBatchWriter() {
 		return &restHandlers{
@@ -113,15 +119,27 @@ func newRESTHandlers(
 	var handlers []common.HTTPHandler
 
 	if role.IsResolver() {
-		logger.Debugf("Adding a Sidetree document resolver REST endpoint for namespace [%s].", cfg.Namespace)
+		logger.Debugf("[%s] Adding a Sidetree document resolver REST endpoint for namespace [%s].", channelID, cfg.Namespace)
+		logger.Debugf("[%s] Authorization tokens for document resolver REST endpoint for namespace [%s]: %s", channelID, cfg.Namespace, cfg.Authorization.ReadTokens)
 
-		handlers = append(handlers, getResolveHandler(cfg, docHandler))
+		handlers = append(handlers,
+			authhandler.New(
+				channelID,
+				authTokens(cfg.Authorization.ReadTokens, tokenProvider),
+				getResolveHandler(cfg, docHandler)),
+		)
 	}
 
 	if role.IsBatchWriter() {
-		logger.Debugf("Adding a Sidetree document update REST endpoint for namespace [%s].", cfg.Namespace)
+		logger.Debugf("[%s] Adding a Sidetree document update REST endpoint for namespace [%s].", channelID, cfg.Namespace)
+		logger.Debugf("[%s] Authorization tokens for document update REST endpoint for namespace [%s]: %s", channelID, cfg.Namespace, cfg.Authorization.WriteTokens)
 
-		handlers = append(handlers, getUpdateHandler(cfg, docHandler))
+		handlers = append(handlers,
+			authhandler.New(
+				channelID,
+				authTokens(cfg.Authorization.WriteTokens, tokenProvider),
+				getUpdateHandler(cfg, docHandler)),
+		)
 	}
 
 	return &restHandlers{
@@ -176,4 +194,14 @@ func newProviders(docType config.DocumentType) (validatorProvider, resolveHandle
 	default:
 		return nil, nil, nil, errors.Errorf("unsupported document type [%s]", docType)
 	}
+}
+
+func authTokens(names []string, tokenProvider tokenProvider) []string {
+	tokens := make([]string, len(names))
+
+	for i, name := range names {
+		tokens[i] = tokenProvider.SidetreeAPIToken(name)
+	}
+
+	return tokens
 }

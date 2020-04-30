@@ -11,10 +11,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
+
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
 
 const (
-	fileHandlerCfg                   = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
+	fileHandlerCfg                   = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234","Authorization":{"ReadTokens":["content_r","content_w"],"WriteTokens": ["content_w"]}}`
 	fileHandlerCfg_NoBasePath        = `{"ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
 	fileHandlerCfg_InvalidBasePath   = `{"BasePath":"schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
 	fileHandlerCfg_NoChaincodeName   = `{"BasePath":"/schema","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
@@ -25,12 +27,24 @@ const (
 )
 
 func TestFileHandlerValidator_Validate(t *testing.T) {
-	v := &fileHandlerValidator{}
+	tokenProvider := &peermocks.RestConfig{}
+	tokenProvider.SidetreeAPITokenReturns("some-token")
+
+	v := newFileHandlerValidator(tokenProvider)
 
 	key := config.NewPeerComponentKey(mspID, peerID, FileHandlerAppName, FileHandlerAppVersion, "/schema", "1")
 
 	t.Run("Valid config -> success", func(t *testing.T) {
 		require.NoError(t, v.Validate(config.NewKeyValue(key, config.NewValue(txID, fileHandlerCfg, config.FormatJSON))))
+	})
+
+	t.Run("Auth tokens not defined -> error", func(t *testing.T) {
+		tokenProvider.SidetreeAPITokenReturns("")
+		defer tokenProvider.SidetreeAPITokenReturns("some-token")
+
+		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, fileHandlerCfg, config.FormatJSON)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not defined in peer config")
 	})
 
 	t.Run("Irrelevant config -> success", func(t *testing.T) {
