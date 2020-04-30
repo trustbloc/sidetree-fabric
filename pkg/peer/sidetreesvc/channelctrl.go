@@ -23,6 +23,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
@@ -207,7 +208,7 @@ func (c *channelController) loadNewContexts(namespaces []config.Namespace, dcasC
 	var contexts []*context
 
 	for _, nsCfg := range namespaces {
-		ctx, err := newContext(c.channelID, nsCfg, dcasCfg, c.sidetreeCfgService, c.ContextProviders, storeProvider)
+		ctx, err := newContext(c.channelID, nsCfg, dcasCfg, c.sidetreeCfgService, c.ContextProviders, storeProvider, c.RESTConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -428,15 +429,23 @@ func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandle
 
 	handlers := &fileHandlers{}
 	if role.IsResolver() && cfg.IndexDocID != "" {
-		logger.Debugf("Adding file read handler for base path [%s]", cfg.BasePath)
+		logger.Debugf("[%s] Adding file read handler for base path [%s]", c.channelID, cfg.BasePath)
+		logger.Debugf("[%s] Authorization tokens for file read handler: %s", c.channelID, cfg.Authorization.ReadTokens)
 
-		handlers.readHandler = filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DCASProvider)
+		handlers.readHandler = c.authHandler(
+			cfg.Authorization.ReadTokens,
+			filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DCASProvider),
+		)
 	}
 
 	if role.IsBatchWriter() {
-		logger.Debugf("Adding file upload handler for base path [%s]", cfg.BasePath)
+		logger.Debugf("[%s] Adding file upload handler for base path [%s]", c.channelID, cfg.BasePath)
+		logger.Debugf("[%s] Authorization tokens for file upload handler: %s", c.channelID, cfg.Authorization.WriteTokens)
 
-		handlers.writeHandler = filehandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider)
+		handlers.writeHandler = c.authHandler(
+			cfg.Authorization.WriteTokens,
+			filehandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider),
+		)
 	}
 
 	return handlers, nil
@@ -444,26 +453,19 @@ func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandle
 
 func (c *channelController) loadDCASHandlers(handlerCfg []dcashandler.Config) {
 	for _, cfg := range handlerCfg {
-		c.handlers[cfg.BasePath] = c.loadDCASHandler(cfg).HTTPHandlers()
+		c.handlers[cfg.BasePath] = c.loadDCASHandler(cfg)
 	}
 }
 
-func (c *channelController) loadDCASHandler(cfg dcashandler.Config) *dcasHandlers {
-	handlers := &dcasHandlers{}
+func (c *channelController) loadDCASHandler(cfg dcashandler.Config) []common.HTTPHandler {
+	logger.Debugf("[%s] Adding DCAS handlers for base path [%s]", c.channelID, cfg.BasePath)
+	logger.Debugf("[%s] Authorization tokens for DCAS handlers - read: %s, write: %s", c.channelID, cfg.Authorization.ReadTokens, cfg.Authorization.WriteTokens)
 
-	logger.Debugf("Adding DCAS read handler for base path [%s]", cfg.BasePath)
-
-	handlers.readHandler = dcashandler.NewRetrieveHandler(c.channelID, cfg, c.DCASProvider)
-
-	logger.Debugf("Adding DCAS upload handler for base path [%s]", cfg.BasePath)
-
-	handlers.writeHandler = dcashandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider)
-
-	logger.Debugf("Adding DCAS version handler for base path [%s]", cfg.BasePath)
-
-	handlers.versionHandler = dcashandler.NewVersionHandler(c.channelID, cfg)
-
-	return handlers
+	return []common.HTTPHandler{
+		c.authHandler(cfg.Authorization.ReadTokens, dcashandler.NewVersionHandler(c.channelID, cfg)),
+		c.authHandler(cfg.Authorization.ReadTokens, dcashandler.NewRetrieveHandler(c.channelID, cfg, c.DCASProvider)),
+		c.authHandler(cfg.Authorization.WriteTokens, dcashandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider)),
+	}
 }
 
 func (c *channelController) loadBlockchainHandlers(handlerCfg []blockchainhandler.Config) {
@@ -473,27 +475,28 @@ func (c *channelController) loadBlockchainHandlers(handlerCfg []blockchainhandle
 }
 
 func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) []common.HTTPHandler {
-	var handlers []common.HTTPHandler
+	logger.Debugf("[%s] Adding blockchain handlers for base path [%s]", c.channelID, cfg.BasePath)
+	logger.Debugf("[%s] Authorization tokens for blockchain handlers: %s", c.channelID, cfg.Authorization.ReadTokens)
 
-	logger.Debugf("Adding blockchain handlers for base path [%s]", cfg.BasePath)
+	readTokens := cfg.Authorization.ReadTokens
 
-	handlers = append(handlers, blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewTimeByHashHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewVersionHandler(c.channelID, cfg))
-	handlers = append(handlers, blockchainhandler.NewTransactionsSinceHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewTransactionsHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewFirstValidHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewInfoHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewBlocksFromNumHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewBlocksFromNumHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewConfigBlockHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewConfigBlockHandler(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewConfigBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))
-	handlers = append(handlers, blockchainhandler.NewConfigBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider))
-
-	return handlers
+	return []common.HTTPHandler{
+		c.authHandler(readTokens, blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewTimeByHashHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewVersionHandler(c.channelID, cfg)),
+		c.authHandler(readTokens, blockchainhandler.NewTransactionsSinceHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewTransactionsHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewFirstValidHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewInfoHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewBlocksFromNumHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewBlocksFromNumHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewConfigBlockHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewConfigBlockHandler(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewConfigBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
+		c.authHandler(readTokens, blockchainhandler.NewConfigBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider)),
+	}
 }
 
 func (c *channelController) getDocHandler(ns string) (*dochandler.DocumentHandler, error) {
@@ -521,4 +524,14 @@ func (c *channelController) compareAndSetTxID(txID string) bool {
 	}
 
 	return false
+}
+
+func (c *channelController) authHandler(tokenNames []string, handler common.HTTPHandler) common.HTTPHandler {
+	tokens := make([]string, len(tokenNames))
+
+	for i, name := range tokenNames {
+		tokens[i] = c.RESTConfig.SidetreeAPIToken(name)
+	}
+
+	return authhandler.New(c.channelID, tokens, handler)
 }

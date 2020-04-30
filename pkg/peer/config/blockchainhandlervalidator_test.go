@@ -11,22 +11,35 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
 
 const (
-	blockchainHandlerCfg                   = `{"BasePath":"/blockchain","MaxTransactionsInResponse":50,"MaxBlocksInResponse":20}`
+	blockchainHandlerCfg                   = `{"BasePath":"/blockchain","MaxTransactionsInResponse":50,"MaxBlocksInResponse":20,"Authorization":{"ReadTokens":["blockchain_r","blockchain_w"],"WriteTokens": ["blockchain_w"]}}`
 	blockchainHandlerCfg_NoBasePath        = `{"MaxTransactionsInResponse":50,"MaxBlocksInResponse":20}`
 	blockchainHandlerCfg_InvalidBasePath   = `{"BasePath":"blockchain","MaxTransactionsInResponse":50,"MaxBlocksInResponse":20}`
 	blockchainHandlerCfg_NoMaxTransactions = `{"BasePath":"/blockchain"}`
 )
 
 func TestBlockchainHandlerValidator_Validate(t *testing.T) {
-	v := &blockchainHandlerValidator{}
+	tokenProvider := &peermocks.RestConfig{}
+	tokenProvider.SidetreeAPITokenReturns("some-token")
+
+	v := newBlockchainHandlerValidator(tokenProvider)
 
 	key := config.NewPeerComponentKey(mspID, peerID, BlockchainHandlerAppName, BlockchainHandlerAppVersion, "/blockchain", BlockchainHandlerComponentVersion)
 
 	t.Run("Valid config -> success", func(t *testing.T) {
 		require.NoError(t, v.Validate(config.NewKeyValue(key, config.NewValue(txID, blockchainHandlerCfg, config.FormatJSON))))
+	})
+
+	t.Run("Auth tokens not defined -> error", func(t *testing.T) {
+		tokenProvider.SidetreeAPITokenReturns("")
+		defer tokenProvider.SidetreeAPITokenReturns("some-token")
+
+		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, blockchainHandlerCfg, config.FormatJSON)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not defined in peer config")
 	})
 
 	t.Run("No MaxTransactionsInResponse  -> success", func(t *testing.T) {

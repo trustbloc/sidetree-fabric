@@ -160,3 +160,11 @@ Feature:
 
     When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
     Then check success response does NOT contain "newService"
+
+  @sidetree_unauthorized
+  Scenario: Attempt to access Sidetree endpoints without providing an auth token
+    # peer2.org2.example.com requires authorization
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/identifiers/did:sidtree:1234" and the returned status code is 401
+    When an HTTP POST is sent to "https://localhost:48428/trustbloc.dev/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/trustbloc.dev/identifiers/did:bloc:trustbloc.dev:1234" and the returned status code is 401

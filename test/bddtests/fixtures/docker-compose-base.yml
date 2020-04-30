@@ -44,6 +44,7 @@ services:
       - CORE_SIDETREE_PORT=48326
       - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_SIDETREE_API_TOKENS=did_r=TOKEN_DID_R:did_w=TOKEN_DID_W:cas_r=TOKEN_CAS_R:cas_w=TOKEN_CAS_W:blockchain_r=TOKEN_BLOCKCHAIN_R:content_r=TOKEN_CONTENT_R:content_w=TOKEN_CONTENT_W
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     tty: true
     volumes:

@@ -6,8 +6,14 @@ SPDX-License-Identifier: Apache-2.0
 
 package filehandler
 
+import (
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
+)
+
 // Config defines the configuration for a file handler
 type Config struct {
+	Authorization authhandler.Config
+
 	// BasePath is the base context path of the REST endpoint
 	BasePath string
 	// ChaincodeName is the name of the chaincode that stores the files

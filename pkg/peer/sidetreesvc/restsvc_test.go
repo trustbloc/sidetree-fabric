@@ -70,6 +70,7 @@ func TestRESTHandlers(t *testing.T) {
 	bw := &peermocks.BatchWriter{}
 	pp := &peermocks.ProtocolProvider{}
 	os := &mocks.OperationStore{}
+	restCfg := &peermocks.RestConfig{}
 
 	t.Run("Resolver and batch-writer role -> not empty", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})
@@ -80,7 +81,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os, restCfg)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Len(t, rh.HTTPHandlers(), 2)
@@ -94,7 +95,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os, restCfg)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Empty(t, rh.HTTPHandlers())

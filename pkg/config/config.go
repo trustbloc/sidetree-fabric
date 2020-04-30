@@ -11,6 +11,7 @@ import (
 
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
@@ -28,6 +29,8 @@ const (
 
 // Namespace holds Sidetree namespace config
 type Namespace struct {
+	Authorization authhandler.Config
+
 	DocType   DocumentType
 	Namespace string
 	BasePath  string

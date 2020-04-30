@@ -16,6 +16,13 @@ import (
 
 // sidetreePeerValidator validates the SidetreePeer configuration
 type sidetreePeerValidator struct {
+	authTokenValidator *authTokenValidator
+}
+
+func newSidetreePeerValidator(provider tokenProvider) *sidetreePeerValidator {
+	return &sidetreePeerValidator{
+		authTokenValidator: newAuthTokenValidator(provider),
+	}
 }
 
 func (v *sidetreePeerValidator) Validate(kv *config.KeyValue) error {
@@ -66,6 +73,10 @@ func (v *sidetreePeerValidator) validateNamespace(kv *config.KeyValue, ns sidetr
 
 	if ns.BasePath[0:1] != "/" {
 		return errors.Errorf("field 'BasePath' must begin with '/' for %s", kv.Key)
+	}
+
+	if err := v.authTokenValidator.Validate(ns.Authorization, kv); err != nil {
+		return err
 	}
 
 	return nil

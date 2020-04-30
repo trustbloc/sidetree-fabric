@@ -167,7 +167,7 @@
         {
           "AppName": "sidetree",
           "Version": "1",
-          "Config": "file://./mychannel-sidetree-config-org2.json",
+          "Config": "file://./mychannel-sidetree-config.json",
           "Format": "json"
         },
         {
@@ -184,6 +184,12 @@
               "Name": "/.well-known/did-bloc",
               "Version": "1",
               "Config": "file://./mychannel-filehandler-wellknown-config.json",
+              "Format": "json"
+            },
+            {
+              "Name": "/internal",
+              "Version": "1",
+              "Config": "file://./filehandler-internal-config.json",
               "Format": "json"
             }
           ]
@@ -207,7 +213,7 @@
             {
               "Name": "/sidetree/0.0.1/blockchain",
               "Version": "0.1.3",
-              "Config": "file://./mychannel-blockchainhandler-config.yaml",
+              "Config": "file://./blockchainhandler-config.yaml",
               "Format": "yaml"
             }
           ]

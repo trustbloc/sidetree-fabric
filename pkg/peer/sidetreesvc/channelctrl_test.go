@@ -12,12 +12,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
-
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
@@ -27,6 +25,7 @@ import (
 	mocks2 "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
@@ -59,11 +58,19 @@ func TestChannelController_Update(t *testing.T) {
 		{
 			Namespace: didTrustblocNamespace,
 			BasePath:  didTrustblocBasePath,
+			Authorization: authhandler.Config{
+				ReadTokens:  []string{"did_r", "did_w"},
+				WriteTokens: []string{"did_w"},
+			},
 		},
 		{
 			Namespace: fileIndexNamespace,
 			BasePath:  fileIndexBasePath,
 			DocType:   config.FileIndexType,
+			Authorization: authhandler.Config{
+				ReadTokens:  []string{"content_r"},
+				WriteTokens: []string{"content_r", "content_w"},
+			},
 		},
 	}
 
@@ -83,6 +90,10 @@ func TestChannelController_Update(t *testing.T) {
 			Collection:     "schemas",
 			IndexNamespace: "file:idx",
 			IndexDocID:     "file:idx:1234",
+			Authorization: authhandler.Config{
+				ReadTokens:  []string{"content_r"},
+				WriteTokens: []string{"content_r", "content_w"},
+			},
 		},
 	}
 
@@ -91,12 +102,18 @@ func TestChannelController_Update(t *testing.T) {
 			BasePath:      "/cas",
 			ChaincodeName: "cascc",
 			Collection:    "cas",
+			Authorization: authhandler.Config{
+				ReadTokens:  []string{"cas_r", "cas_w"},
+				WriteTokens: []string{"cas_w"},
+			},
 		},
 	}
 
 	peerConfig := &peermocks.PeerConfig{}
 	peerConfig.MSPIDReturns(msp1)
 	peerConfig.PeerIDReturns(peer1)
+
+	restCfg := &peermocks.RestConfig{}
 
 	configSvc := &peermocks.ConfigService{}
 	configProvider := &peermocks.ConfigServiceProvider{}
@@ -118,6 +135,7 @@ func TestChannelController_Update(t *testing.T) {
 		PeerConfig:     peerConfig,
 		ConfigProvider: configProvider,
 		BlockPublisher: extmocks.NewBlockPublisherProvider(),
+		RESTConfig:     restCfg,
 	}
 
 	stConfigService := &cfgmocks.SidetreeConfigService{}
@@ -227,6 +245,8 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 	peerConfig.MSPIDReturns(msp1)
 	peerConfig.PeerIDReturns(peer1)
 
+	restCfg := &peermocks.RestConfig{}
+
 	configSvc := &peermocks.ConfigService{}
 	configProvider := &peermocks.ConfigServiceProvider{}
 	configProvider.ForChannelReturns(configSvc)
@@ -247,6 +267,7 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 		PeerConfig:     peerConfig,
 		ConfigProvider: configProvider,
 		BlockPublisher: extmocks.NewBlockPublisherProvider(),
+		RESTConfig:     restCfg,
 	}
 
 	stConfigService := &cfgmocks.SidetreeConfigService{}
@@ -282,6 +303,8 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 	peerConfig.MSPIDReturns(msp1)
 	peerConfig.PeerIDReturns(peer1)
 
+	restCfg := &peermocks.RestConfig{}
+
 	configSvc := &peermocks.ConfigService{}
 	configProvider := &peermocks.ConfigServiceProvider{}
 	configProvider.ForChannelReturns(configSvc)
@@ -300,6 +323,7 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 		PeerConfig:     peerConfig,
 		ConfigProvider: configProvider,
 		BlockPublisher: extmocks.NewBlockPublisherProvider(),
+		RESTConfig:     restCfg,
 	}
 
 	stConfigService := &cfgmocks.SidetreeConfigService{}
@@ -320,6 +344,10 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 	blockchainHandlers := []blockchainhandler.Config{
 		{
 			BasePath: "/blockchain",
+			Authorization: authhandler.Config{
+				ReadTokens:  []string{"blockchain_r", "blockchain_w"},
+				WriteTokens: []string{"blockchain_w"},
+			},
 		},
 	}
 

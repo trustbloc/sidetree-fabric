@@ -63,7 +63,7 @@ type ContextProviders struct {
 	BlockchainProvider     blockchainClientProvider
 }
 
-func newContext(channelID string, nsCfg config.Namespace, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider common.OperationStoreProvider) (*context, error) {
+func newContext(channelID string, nsCfg config.Namespace, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider common.OperationStoreProvider, tokenProvider tokenProvider) (*context, error) {
 	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, nsCfg.Namespace)
 
 	ctx, err := newSidetreeContext(channelID, nsCfg.Namespace, cfg, dcasCfg, providers.TxnProvider, providers.DCASProvider, providers.OperationQueueProvider)
@@ -85,7 +85,7 @@ func newContext(channelID string, nsCfg config.Namespace, dcasCfg config.DCAS, c
 		return nil, err
 	}
 
-	restHandlers, err := newRESTHandlers(channelID, nsCfg, bw, ctx, store)
+	restHandlers, err := newRESTHandlers(channelID, nsCfg, bw, ctx, store, tokenProvider)
 	if err != nil {
 		return nil, err
 	}

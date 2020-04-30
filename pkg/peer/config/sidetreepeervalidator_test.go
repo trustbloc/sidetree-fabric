@@ -11,6 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
+
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
 
 const (
@@ -18,7 +20,7 @@ const (
 )
 
 const (
-	org1Peer1Cfg                = `{"Monitor":{"MetaDataChaincodeName":"document","Period":"3s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"}]}`
+	org1Peer1Cfg                = `{"Monitor":{"MetaDataChaincodeName":"document","Period":"3s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document","Authorization":{"ReadTokens":["did_r","did_w"],"WriteTokens": ["did_w"]}}]}`
 	org1Peer1CfgNoMetaDataCC    = `{"Monitor":{"Period":"3s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"}]}`
 	org1Peer1NoNamespaceCfg     = `{"Namespaces":[{"BasePath":"/document"}]}`
 	org1Peer1NoBasePathCfg      = `{"Namespaces":[{"Namespace":"did:sidetree"}]}`
@@ -26,13 +28,25 @@ const (
 )
 
 func TestSidetreePeerValidator_Validate(t *testing.T) {
-	v := &sidetreePeerValidator{}
+	tokenProvider := &peermocks.RestConfig{}
+	tokenProvider.SidetreeAPITokenReturns("some-token")
+
+	v := newSidetreePeerValidator(tokenProvider)
 
 	key := config.NewPeerKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion)
 
 	t.Run("Irrelevant config -> success", func(t *testing.T) {
 		k1 := config.NewPeerKey(mspID, peerID, "app1", "v1")
 		require.NoError(t, v.Validate(config.NewKeyValue(k1, config.NewValue(txID, `{}`, config.FormatJSON))))
+	})
+
+	t.Run("Auth tokens not defined -> error", func(t *testing.T) {
+		tokenProvider.SidetreeAPITokenReturns("")
+		defer tokenProvider.SidetreeAPITokenReturns("some-token")
+
+		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, org1Peer1Cfg, config.FormatJSON)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not defined in peer config")
 	})
 
 	t.Run("Empty config -> success", func(t *testing.T) {

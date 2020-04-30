@@ -55,7 +55,9 @@ func TestNewSidetreeProvider(t *testing.T) {
 
 	validatorRegistry := &cfgmocks.ValidatorRegistry{}
 
-	p := NewSidetreeProvider(configProvider, validatorRegistry)
+	restCfg := &mocks.RestConfig{}
+
+	p := NewSidetreeProvider(configProvider, validatorRegistry, restCfg)
 	require.NotNil(t, p)
 
 	s := p.ForChannel(channelID)

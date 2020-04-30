@@ -18,6 +18,13 @@ import (
 
 // fileHandlerValidator validates the file handler configuration
 type fileHandlerValidator struct {
+	authTokenValidator *authTokenValidator
+}
+
+func newFileHandlerValidator(provider tokenProvider) *fileHandlerValidator {
+	return &fileHandlerValidator{
+		authTokenValidator: newAuthTokenValidator(provider),
+	}
 }
 
 func (v *fileHandlerValidator) Validate(kv *config.KeyValue) error {
@@ -82,6 +89,10 @@ func (v *fileHandlerValidator) validateFileHandler(cfg filehandler.Config, kv *c
 		logger.Warnf("Warning for key [%s]: Field 'IndexDocID' was not provided for [%s]. Files can be uploaded but they cannot be retrieved until a valid 'IndexDocID' is provided.", kv.Key, cfg.BasePath)
 	} else if !strings.HasPrefix(cfg.IndexDocID, cfg.IndexNamespace) {
 		return errors.Errorf("field 'IndexDocID' must begin with '%s'", cfg.IndexNamespace)
+	}
+
+	if err := v.authTokenValidator.Validate(cfg.Authorization, kv); err != nil {
+		return err
 	}
 
 	return nil

@@ -1,0 +1,13 @@
+#
+# Copyright SecureKey Technologies Inc. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+basePath: /sidetree/0.0.1/blockchain
+maxTransactionsInResponse: 10
+maxBlocksInResponse: 5
+
+authorization:
+  readTokens:
+    - blockchain_r

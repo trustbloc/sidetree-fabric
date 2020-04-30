@@ -1,0 +1,12 @@
+{
+  "Description": "For testing authorization",
+  "BasePath": "/internal",
+  "ChaincodeName": "file",
+  "Collection": "consortium",
+  "IndexNamespace": "file:idx",
+  "IndexDocID": "file:idx:123",
+  "Authorization":{
+    "ReadTokens": ["content_r","content_w"],
+    "WriteTokens": ["content_w"]
+  }
+}

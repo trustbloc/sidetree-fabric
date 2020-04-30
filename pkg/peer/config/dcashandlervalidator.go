@@ -16,6 +16,13 @@ import (
 
 // dcasHandlerValidator validates the DCAS handler configuration
 type dcasHandlerValidator struct {
+	authTokenValidator *authTokenValidator
+}
+
+func newDCASHandlerValidator(provider tokenProvider) *dcasHandlerValidator {
+	return &dcasHandlerValidator{
+		authTokenValidator: newAuthTokenValidator(provider),
+	}
 }
 
 func (v *dcasHandlerValidator) Validate(kv *config.KeyValue) error {
@@ -74,6 +81,10 @@ func (v *dcasHandlerValidator) validateDCASHandler(cfg dcashandler.Config, kv *c
 
 	if cfg.Collection == "" {
 		return errors.Errorf("field 'Collection' is required")
+	}
+
+	if err := v.authTokenValidator.Validate(cfg.Authorization, kv); err != nil {
+		return err
 	}
 
 	return nil
