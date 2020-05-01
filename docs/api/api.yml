@@ -3,7 +3,7 @@ openapi: 3.0.0
 servers:
   - description: TrustBloc Testnet (sandbox)
     url: https://testnet.trustbloc.dev/sidetree/0.0.1
-  - description: TrustBloc Local (sandbox)
+  - description: TrustBloc Local
     url: https://testnet.trustbloc.local/sidetree/0.0.1
 info:
   description: This is an experimental Open API Specification for the Sidetree Protocol.
@@ -276,12 +276,16 @@ paths:
           name: data-encoding
           schema:
             type: string
-          description: The encoding of the block.
+            enum: [json, base64, base64url]
+          description: The encoding of the block. Defaults to json.
           example: "base64"
       responses:
         '200':
           description: Success
           content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainBlocks'          
         '400':
           description: Bad Request
         '401':
@@ -290,6 +294,49 @@ paths:
           description: Not Found
         '500':
           description: Server Error
+  /blockchain/blocks:
+    get:
+      tags:
+        - Blockchain
+      summary: Fetches the Fabric block for a blockchain time.
+      parameters:
+        - in: query
+          required: true
+          name: from-time
+          schema:
+            type: number
+          description: The starting time of blocks to fetch.
+          example: 0
+        - in: query
+          required: true
+          name: max-blocks
+          schema:
+            type: number
+          description: The number of blocks to fetch.
+          example: 10
+        - in: query
+          required: false
+          name: data-encoding
+          schema:
+            type: string
+            enum: [json, base64, base64url]
+          description: The encoding of the block. Defaults to json.
+          example: "base64"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainBlocks'          
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Server Error          
   /blockchain/configblock/{time-hash}:
     get:
       tags:
@@ -297,7 +344,7 @@ paths:
       summary: Fetches the Fabric config block for a blockchain time.
       parameters:
         - in: path
-          required: true
+          required: false
           name: time-hash
           schema:
             type: string
@@ -314,6 +361,9 @@ paths:
         '200':
           description: Success
           content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainBlocks'
         '400':
           description: Bad Request
         '401':
@@ -436,11 +486,9 @@ components:
         suffix_data:
           type: string
           description: The Base64URL encoded Suffix Data Object.
-          example: "create"
         delta:
           type: string
           description: The Base64URL encoded Create Operation Data Object.
-          example: "create"
       description: Create operation.
     SidetreeUpdateOperation:
       type: object
@@ -566,6 +614,28 @@ components:
           }
         ]
       }
+    BlockchainBlocks:
+      type: object
+      properties:
+        header: 
+          type: object
+          description: Block header
+          properties:
+            number:
+              type: number
+              description: Block number
+            data_hash:
+              type: string
+              description: Block hash
+            previous_hash:
+              type: string
+              description: Previous block hash
+        data:
+          type: string
+          description: Block data
+        metadata:
+          type: string
+          description: Block metadata
     BlockchainInfoResponse:
       type: object
       properties:
