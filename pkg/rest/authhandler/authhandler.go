@@ -49,6 +49,16 @@ func (h *Handler) Handler() common.HTTPRequestHandler {
 	return h.handle
 }
 
+// Params returns the parameters
+func (h *Handler) Params() map[string]string {
+	ph, ok := h.HTTPHandler.(paramHolder)
+	if ok {
+		return ph.Params()
+	}
+
+	return nil
+}
+
 func (h *Handler) handle(w http.ResponseWriter, r *http.Request) {
 	if !h.isAuthorized(r) {
 		logger.Debugf("[%s] Caller is not authorized for %s on path [%s]", h.channelID, h.Method(), h.Path())
@@ -78,4 +88,8 @@ func (h *Handler) isAuthorized(r *http.Request) bool {
 	}
 
 	return false
+}
+
+type paramHolder interface {
+	Params() map[string]string
 }
