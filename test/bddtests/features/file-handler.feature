@@ -13,6 +13,9 @@ Feature:
     Given off-ledger collection config "fileidx-cfg" is defined for collection "fileidxdoc" as policy="OR('IMPLICIT-ORG.member')", requiredPeerCount=0, maxPeerCount=0, and timeToLive=
     Given off-ledger collection config "meta-data-cfg" is defined for collection "meta_data" as policy="OR('IMPLICIT-ORG.member')", requiredPeerCount=0, maxPeerCount=0, and timeToLive=
 
+    Given variable "content_r" is assigned the value "TOKEN_CONTENT_R"
+    And variable "content_w" is assigned the value "TOKEN_CONTENT_W"
+
     Given the channel "mychannel" is created and all peers have joined
 
     # Give the peers some time to gossip their new channel membership
@@ -41,6 +44,11 @@ Feature:
 
   @upload_and_retrieve_files
   Scenario: upload files to DCAS and create index file on Sidetree that references them
+    And the authorization bearer token for "POST" requests to path "/schema" is set to "${content_w}"
+    And the authorization bearer token for "POST" requests to path "/.well-known/did-bloc" is set to "${content_w}"
+    And the authorization bearer token for "GET" requests to path "/file" is set to "${content_r}"
+    And the authorization bearer token for "POST" requests to path "/file" is set to "${content_w}"
+
     # Upload schema files
     When client sends request to "https://localhost:48326/schema" to upload file "fixtures/testdata/schemas/arrays.schema.json" with content type "application/json"
     Then the ID of the file is saved to variable "arraysSchemaID"
@@ -60,7 +68,6 @@ Feature:
     Given variable "wellKnownIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":"/.well-known/did-bloc","mappings":{"trustbloc.dev.json":"${wellKnownTrustblocID}","org1.dev.json":"${wellKnownOrg1ID}","org2.dev.json":"${wellKnownOrg2ID}"}}}'
     When client sends request to "https://localhost:48426/file" to create document with content "${wellKnownIndexFile}" in namespace "file:idx"
     Then the ID of the returned document is saved to variable "wellKnownIndexID"
-
 
     # Update the ledger config to point to the index file documents
     Given variable "schemaHandlerConfig" is assigned the JSON value '{"BasePath":"/schema","ChaincodeName":"file","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"${schemaIndexID}"}'
@@ -103,6 +110,9 @@ Feature:
 
   @duplicate_create_operation
   Scenario: Attempt to create the same index file on Sidetree twice. The second create operation should be rejected by the Observer.
+    And the authorization bearer token for "GET" requests to path "/file" is set to "${content_r}"
+    And the authorization bearer token for "POST" requests to path "/file" is set to "${content_w}"
+
     # Create the /content file index Sidetree document
     Given variable "contentIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":"/content"}}'
     When client sends request to "https://localhost:48426/file" to create document with content "${contentIndexFile}" in namespace "file:idx"
@@ -121,8 +131,19 @@ Feature:
     Then the JSON path "didDocument.id" of the response equals "${contentIdxID}"
 
   @filehandler_unauthorized
-  Scenario: Attempt to access the /internal endpoint without providing an auth token
-    # peer2.org2.example.com requires authorization
-    When an HTTP GET is sent to "https://localhost:48428/internal/file.txt" and the returned status code is 401
+  Scenario: Attempt to access the various content endpoints without providing a valid auth token
+    When an HTTP GET is sent to "https://localhost:48428/internal/some-unknown-file.txt" and the returned status code is 401
     When an HTTP POST is sent to "https://localhost:48428/internal" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+
+    # Now provide valid tokens for /internal
+    Given the authorization bearer token for "GET" requests to path "/internal" is set to "${content_r}"
+    And the authorization bearer token for "POST" requests to path "/internal" is set to "${content_w}"
+    When an HTTP GET is sent to "https://localhost:48428/internal/some-unknown-file.txt" and the returned status code is 404
+    When an HTTP POST is sent to "https://localhost:48428/internal" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 400
+
+    # Don't provide a token for POST requests to /file - should get 401
     When an HTTP GET is sent to "https://localhost:48428/file/file:idx:1234" and the returned status code is 401
+
+    # Now provide a valid tokens for /file
+    Given the authorization bearer token for "GET" requests to path "/file" is set to "${content_r}"
+    When an HTTP GET is sent to "https://localhost:48428/file/file:idx:1234" and the returned status code is 404

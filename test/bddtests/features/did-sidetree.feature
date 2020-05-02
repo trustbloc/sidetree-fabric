@@ -13,6 +13,9 @@ Feature:
     Given off-ledger collection config "fileidx-cfg" is defined for collection "fileidxdoc" as policy="OR('IMPLICIT-ORG.member')", requiredPeerCount=0, maxPeerCount=0, and timeToLive=
     Given off-ledger collection config "meta-data-cfg" is defined for collection "meta_data" as policy="OR('IMPLICIT-ORG.member')", requiredPeerCount=0, maxPeerCount=0, and timeToLive=
 
+    Given variable "did_r" is assigned the value "TOKEN_DID_R"
+    And variable "did_w" is assigned the value "TOKEN_DID_W"
+
     Given the channel "mychannel" is created and all peers have joined
     And the channel "yourchannel" is created and all peers have joined
 
@@ -57,6 +60,9 @@ Feature:
 
   @create_did_doc
   Scenario: create valid did doc
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
@@ -92,6 +98,9 @@ Feature:
 
   @create_deactivate_did_doc
   Scenario: create and deactivate valid did doc
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
@@ -106,6 +115,9 @@ Feature:
 
   @create_recover_did_doc
   Scenario: create and recover did doc
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
@@ -121,6 +133,9 @@ Feature:
 
   @create_add_remove_public_key
   Scenario: add and remove public keys
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
@@ -142,6 +157,9 @@ Feature:
 
   @create_add_remove_services
   Scenario: add and remove service endpoints
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
@@ -163,8 +181,15 @@ Feature:
 
   @sidetree_unauthorized
   Scenario: Attempt to access Sidetree endpoints without providing an auth token
-    # peer2.org2.example.com requires authorization
-    When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/identifiers/did:sidtree:1234" and the returned status code is 401
-    When an HTTP POST is sent to "https://localhost:48428/trustbloc.dev/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/trustbloc.dev/identifiers/did:bloc:trustbloc.dev:1234" and the returned status code is 401
+    When an HTTP POST is sent to "https://localhost:48327/sidetree/0.0.1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48327/sidetree/0.0.1/identifiers/did:sidetree:1234" and the returned status code is 401
+
+    # The following endpoints were configured with no authorization so they should be OK to access
+    When an HTTP POST is sent to "https://localhost:48327/trustbloc.dev/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48327/trustbloc.dev/identifiers/did:bloc:trustbloc.dev:1234" and the returned status code is 404
+
+    # Now provide valid auth tokens
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+    When an HTTP POST is sent to "https://localhost:48327/sidetree/0.0.1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48327/sidetree/0.0.1/identifiers/did:sidetree:1234" and the returned status code is 404
