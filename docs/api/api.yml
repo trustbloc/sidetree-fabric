@@ -458,6 +458,10 @@ paths:
                 $ref: '#/components/schemas/CASWriteResponse'
         '400':
           description: Bad Request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server Error
           
 components:
   schemas:
