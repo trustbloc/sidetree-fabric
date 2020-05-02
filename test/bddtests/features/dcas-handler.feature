@@ -10,6 +10,9 @@ Feature:
   Background: Setup
     Given DCAS collection config "dcas-cfg" is defined for collection "dcas" as policy="OR('Org1MSP.member','Org2MSP.member')", requiredPeerCount=1, maxPeerCount=2, and timeToLive=
 
+    Given variable "cas_r" is assigned the value "TOKEN_CAS_R"
+    And variable "cas_w" is assigned the value "TOKEN_CAS_W"
+
     Given the channel "mychannel" is created and all peers have joined
 
     # Give the peers some time to gossip their new channel membership
@@ -32,8 +35,11 @@ Feature:
     # Wait for the Sidetree services to start up on mychannel
     And we wait 10 seconds
 
-  @upload_and_retrieve_content
-  Scenario: upload files to DCAS
+  @dcas_upload_and_retrieve_content
+  Scenario: Upload files to DCAS
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/cas" is set to "${cas_w}"
+
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/version"
     Then the JSON path "name" of the response equals "cas"
     And the JSON path "version" of the response equals "0.1.3"
@@ -49,7 +55,13 @@ Feature:
 
   @dcas_unauthorized
   Scenario: Attempt to access the cas endpoints without providing an auth token
-    # peer2.org2.example.com requires authorization
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/version" and the returned status code is 401
     When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/hash1234?max-size=1024" and the returned status code is 401
+
+    # Now provide valid tokens
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_r}"
+    And the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_w}"
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/version" and the returned status code is 200
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/hash1234?max-size=1024" and the returned status code is 404

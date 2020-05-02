@@ -13,6 +13,10 @@ Feature:
     Given off-ledger collection config "fileidx-cfg" is defined for collection "fileidxdoc" as policy="OR('IMPLICIT-ORG.member')", requiredPeerCount=0, maxPeerCount=0, and timeToLive=
     Given off-ledger collection config "meta-data-cfg" is defined for collection "meta_data" as policy="OR('IMPLICIT-ORG.member')", requiredPeerCount=0, maxPeerCount=0, and timeToLive=
 
+    Given variable "blockchain_r" is assigned the value "TOKEN_BLOCKCHAIN_R"
+    And variable "cas_r" is assigned the value "TOKEN_CAS_R"
+    And variable "did_w" is assigned the value "TOKEN_DID_W"
+
     Given the channel "mychannel" is created and all peers have joined
 
     # Give the peers some time to gossip their new channel membership
@@ -38,6 +42,11 @@ Feature:
 
   @blockchain_handler
   Scenario: Blockchain functions
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/blockchain" is set to "${blockchain_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/blockchain" is set to "${blockchain_r}"
+    And the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/version"
     Then the JSON path "name" of the response equals "Hyperledger Fabric"
     And the JSON path "version" of the response equals "2.0.0"
@@ -258,7 +267,6 @@ Feature:
 
   @blockchain_unauthorized
   Scenario: Attempt to access the blockchain endpoints without providing an auth token
-    # peer2.org2.example.com requires authorization
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/version" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/time" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/time/hash1234" and the returned status code is 401
@@ -269,3 +277,18 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/blocks?from-time=1&max-blocks=2" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock/hash1234" and the returned status code is 401
+
+    # Now provide a valid token
+    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/blockchain" is set to "${blockchain_r}"
+    Given the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/blockchain" is set to "${blockchain_r}"
+
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/version" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/time" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/time/hash1234" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/transactions" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/transactions?since=0&transaction-time-hash=hash1234" and the returned status code is 404
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/first-valid" with content "transactions" of type "application/json" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/info" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/blocks?from-time=1&max-blocks=1" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock/hash1234" and the returned status code is 404

@@ -4,5 +4,8 @@
   "ChaincodeName": "file",
   "Collection": "consortium",
   "IndexNamespace": "file:idx",
-  "IndexDocID": ""
+  "IndexDocID": "",
+  "Authorization":{
+    "WriteTokens": ["content_w"]
+  }
 }

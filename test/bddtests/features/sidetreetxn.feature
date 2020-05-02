@@ -13,6 +13,11 @@ Feature:
     Given off-ledger collection config "fileidx-cfg" is defined for collection "fileidxdoc" as policy="OR('IMPLICIT-ORG.member')", requiredPeerCount=0, maxPeerCount=0, and timeToLive=
     Given off-ledger collection config "meta-data-cfg" is defined for collection "meta_data" as policy="OR('IMPLICIT-ORG.member')", requiredPeerCount=0, maxPeerCount=0, and timeToLive=
 
+    Given variable "did_r" is assigned the value "TOKEN_DID_R"
+    And variable "did_w" is assigned the value "TOKEN_DID_W"
+    Then the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+
     Given the channel "mychannel" is created and all peers have joined
 
     # Give the peers some time to gossip their new channel membership
