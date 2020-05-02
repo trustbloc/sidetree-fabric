@@ -16,13 +16,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/pkg/errors"
 
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
-
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
@@ -30,8 +28,6 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
-
-	"github.com/trustbloc/sidetree-fabric/test/bddtests/restclient"
 )
 
 const publicKeyTemplate = `[
@@ -45,13 +41,13 @@ const publicKeyTemplate = `[
 
 // FileHandlerSteps
 type FileHandlerSteps struct {
-	reqNamespace      string
+	httpSteps
+
+	bddContext        *bddtests.BDDContext
 	recoveryKeySigner helper.Signer
 	recoveryPublicKey *jws.JWK
 	updateKeySigner   helper.Signer
 	updatePublicKey   *jws.JWK
-	resp              *restclient.HttpResponse
-	bddContext        *bddtests.BDDContext
 }
 
 // NewFileHandlerSteps
@@ -83,14 +79,7 @@ func (d *FileHandlerSteps) createDocument(url, content, namespace string) error 
 		return err
 	}
 
-	d.reqNamespace = namespace
-
-	logger.Infof("Sending document to [%s]: %s", url, req)
-	d.resp, err = restclient.SendRequest(url, req)
-
-	logger.Infof("... got response from [%s]: %s", url, d.resp.Payload)
-
-	return err
+	return d.httpPost(url, req, contentTypeJSON)
 }
 
 func (d *FileHandlerSteps) updateDocument(url, docID, jsonPatch string) error {
@@ -125,13 +114,7 @@ func (d *FileHandlerSteps) updateDocument(url, docID, jsonPatch string) error {
 		return err
 	}
 
-	logger.Infof("Sending update payload to [%s]: %s", url, req)
-
-	d.resp, err = restclient.SendRequest(url, req)
-
-	logger.Infof("... got response from [%s] - Status code: %d, Payload: %s", url, d.resp.StatusCode, d.resp.Payload)
-
-	return err
+	return d.httpPost(url, req, contentTypeJSON)
 }
 
 func (d *FileHandlerSteps) uploadFile(url, path, contentType string) error {
@@ -149,34 +132,11 @@ func (d *FileHandlerSteps) uploadFile(url, path, contentType string) error {
 		return err
 	}
 
-	d.resp, err = restclient.SendRequest(url, reqBytes)
-	return err
+	return d.httpPost(url, reqBytes, contentTypeJSON)
 }
 
-func (d *FileHandlerSteps) resolveFile(url string) error {
-	logger.Infof("Resolving file: %s", url)
-
-	remainingAttempts := 20
-	for {
-		var err error
-		d.resp, err = restclient.SendResolveRequest(url)
-		if err != nil {
-			return err
-		}
-
-		bddtests.SetResponse(string(d.resp.Payload))
-
-		if d.resp.StatusCode == http.StatusNotFound {
-			logger.Infof("File not found: %s. Remaining attempts: %d", url, remainingAttempts)
-			remainingAttempts--
-			if remainingAttempts > 0 {
-				time.Sleep(time.Second)
-				continue
-			}
-		}
-
-		return nil
-	}
+func (d *httpSteps) httpGetWithRetryOnNotFound(url string) error {
+	return d.httpGetWithRetry(url, 20, http.StatusNotFound)
 }
 
 func (d *FileHandlerSteps) getCreateRequest(doc []byte) ([]byte, error) {
@@ -203,44 +163,25 @@ func (d *FileHandlerSteps) getCreateRequest(doc []byte) ([]byte, error) {
 	})
 }
 
-func (d *FileHandlerSteps) checkErrorResp(errorMsg string) error {
-	if !strings.Contains(d.resp.ErrorMsg, errorMsg) {
-		return errors.Errorf("error resp %s doesn't contain %s", d.resp.ErrorMsg, errorMsg)
-	}
-	return nil
-}
-
 func (d *FileHandlerSteps) retrievedFileContains(msg string) error {
-	if d.resp.ErrorMsg != "" {
-		return errors.Errorf("error resp: [%s]", d.resp.ErrorMsg)
+	if d.statusCode != http.StatusOK {
+		return errors.Errorf("status code: %d - %s", d.statusCode, d.response)
 	}
 
-	logger.Infof("check success resp %s contain %s", string(d.resp.Payload), msg)
-	if !strings.Contains(string(d.resp.Payload), msg) {
-		return errors.Errorf("success resp %s doesn't contain %s", d.resp.Payload, msg)
+	logger.Infof("check success resp %s contain %s", string(d.response), msg)
+	if !strings.Contains(string(d.response), msg) {
+		return errors.Errorf("success resp %s doesn't contain %s", d.response, msg)
 	}
-	return nil
-}
-
-func (d *FileHandlerSteps) checkErrorResponse(statusCode int, msg string) error {
-	if d.resp.StatusCode != statusCode {
-		return errors.Errorf("expecting status code %d but got %d", statusCode, d.resp.StatusCode)
-	}
-
-	if d.resp.ErrorMsg != msg {
-		return errors.Errorf("expecting error message [%s] but got [%s]", msg, d.resp.ErrorMsg)
-	}
-
 	return nil
 }
 
 func (d *FileHandlerSteps) saveIDToVariable(varName string) error {
-	if d.resp.ErrorMsg != "" {
-		return errors.Errorf("error resp: [%s]", d.resp.ErrorMsg)
+	if d.statusCode != http.StatusOK {
+		return errors.Errorf("status code: %d - %s", d.statusCode, d.response)
 	}
 
 	id := ""
-	if err := json.Unmarshal(d.resp.Payload, &id); err != nil {
+	if err := json.Unmarshal(d.response, &id); err != nil {
 		return err
 	}
 
@@ -251,12 +192,12 @@ func (d *FileHandlerSteps) saveIDToVariable(varName string) error {
 }
 
 func (d *FileHandlerSteps) saveDocIDToVariable(varName string) error {
-	if d.resp.ErrorMsg != "" {
-		return errors.Errorf("error resp: [%s]", d.resp.ErrorMsg)
+	if d.statusCode != http.StatusOK {
+		return errors.Errorf("status code: %d - %s", d.statusCode, d.response)
 	}
 
 	var result document.ResolutionResult
-	if err := json.Unmarshal(d.resp.Payload, &result); err != nil {
+	if err := json.Unmarshal(d.response, &result); err != nil {
 		return err
 	}
 
@@ -339,7 +280,7 @@ func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch strin
 	}
 
 	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
-		DidSuffix:       uniqueSuffix,
+		DidSuffix:             uniqueSuffix,
 		Patch:                 updatePatch,
 		UpdateRevealValue:     []byte(updateOTP),
 		NextUpdateRevealValue: []byte(updateOTP),
@@ -381,11 +322,11 @@ type UploadFile struct {
 func (d *FileHandlerSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^client sends request to "([^"]*)" to create document with content "([^"]*)" in namespace "([^"]*)"$`, d.createDocument)
 	s.Step(`^client sends request to "([^"]*)" to update document "([^"]*)" with patch "([^"]*)"$`, d.updateDocument)
-	s.Step(`^client sends request to "([^"]*)" to retrieve file$`, d.resolveFile)
+	s.Step(`^client sends request to "([^"]*)" to retrieve file$`, d.httpGetWithRetryOnNotFound)
 	s.Step(`^client sends request to "([^"]*)" to upload file "([^"]*)" with content type "([^"]*)"$`, d.uploadFile)
 	s.Step(`^the ID of the file is saved to variable "([^"]*)"`, d.saveIDToVariable)
 	s.Step(`^the ID of the returned document is saved to variable "([^"]*)"`, d.saveDocIDToVariable)
 	s.Step(`^the retrieved file contains "([^"]*)"$`, d.retrievedFileContains)
-	s.Step(`^the response has status code (\d+) and error message "([^"]*)"$`, d.checkErrorResponse)
+	s.Step(`^the response has status code (\d+) and error message "([^"]*)"$`, d.checkResponse)
 	s.Step(`^variable "([^"]*)" is assigned the JSON patch '([^']*)'$`, d.setJSONPatchVar)
 }

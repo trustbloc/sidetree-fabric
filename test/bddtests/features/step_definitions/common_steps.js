@@ -124,4 +124,10 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
     And(/^the value "([^"]*)" equals "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
+    And(/^variable "([^"]*)" is assigned the value "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    And(/^the authorization bearer token for "([^"]*)" requests to path "([^"]*)" is set to "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
 });
