@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/pkg/errors"
@@ -29,8 +28,6 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
-
-	"github.com/trustbloc/sidetree-fabric/test/bddtests/restclient"
 )
 
 var logger = logrus.New()
@@ -106,11 +103,12 @@ const docTemplate = `{
 
 // DIDSideSteps
 type DIDSideSteps struct {
+	httpSteps
+
 	createRequest     model.CreateRequest
 	reqNamespace      string
 	recoveryKeySigner helper.Signer
 	updateKeySigner   helper.Signer
-	resp              *restclient.HttpResponse
 	bddContext        *bddtests.BDDContext
 }
 
@@ -139,8 +137,7 @@ func (d *DIDSideSteps) sendDIDDocument(url, namespace string) error {
 
 	d.reqNamespace = namespace
 
-	d.resp, err = restclient.SendRequest(url, req)
-	return err
+	return d.httpPost(url, req, contentTypeJSON)
 }
 
 func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
@@ -159,17 +156,8 @@ func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
 	initialStateParam := fmt.Sprintf(initialStateParamTemplate, method)
 
 	req := url + "/" + did + initialStateParam + initialState
-	logger.Infof("Sending request: %s", req)
-	d.resp, err = restclient.SendResolveRequest(req)
-	logger.Infof("... got response: %s", d.resp.Payload)
-	return err
-}
 
-func (d *DIDSideSteps) checkErrorResp(errorMsg string) error {
-	if !strings.Contains(d.resp.ErrorMsg, errorMsg) {
-		return errors.Errorf("error resp %s doesn't contain %s", d.resp.ErrorMsg, errorMsg)
-	}
-	return nil
+	return d.httpGet(req)
 }
 
 func (d *DIDSideSteps) checkSuccessRespContains(msg string) error {
@@ -186,12 +174,8 @@ func (d *DIDSideSteps) checkSuccessResp(msg string, contains bool) error {
 		return err
 	}
 
-	if d.resp.StatusCode != http.StatusOK {
-		return errors.Errorf("request failed with status code %d", d.resp.StatusCode)
-	}
-
-	if d.resp.ErrorMsg != "" {
-		return errors.Errorf("error resp: [%s] - DID ID [%s]", d.resp.ErrorMsg, documentHash)
+	if d.statusCode != http.StatusOK {
+		return errors.Errorf("request failed with status code %d", d.statusCode)
 	}
 
 	if msg == "#didDocumentHash" {
@@ -204,7 +188,7 @@ func (d *DIDSideSteps) checkSuccessResp(msg string, contains bool) error {
 	}
 
 	var result document.ResolutionResult
-	err = json.Unmarshal(d.resp.Payload, &result)
+	err = json.Unmarshal(d.response, &result)
 	if err != nil {
 		return err
 	}
@@ -214,13 +198,13 @@ func (d *DIDSideSteps) checkSuccessResp(msg string, contains bool) error {
 		return err
 	}
 
-	if contains && !strings.Contains(string(d.resp.Payload), msg) {
-		return errors.Errorf("success resp %s doesn't contain %s", d.resp.Payload, msg)
+	if contains && !strings.Contains(string(d.response), msg) {
+		return errors.Errorf("success resp %s doesn't contain %s", d.response, msg)
 
 	}
 
-	if !contains && strings.Contains(string(d.resp.Payload), msg) {
-		return errors.Errorf("success resp %s should NOT contain %s", d.resp.Payload, msg)
+	if !contains && strings.Contains(string(d.response), msg) {
+		return errors.Errorf("success resp %s should NOT contain %s", d.response, msg)
 	}
 
 	logger.Infof("passed check that success response MUST%s contain %s", action, msg)
@@ -241,8 +225,7 @@ func (d *DIDSideSteps) updateDIDDocument(url string, updatePatch patch.Patch) er
 		return err
 	}
 
-	d.resp, err = restclient.SendRequest(url, req)
-	return err
+	return d.httpPost(url, req, contentTypeJSON)
 }
 
 func (d *DIDSideSteps) resolveDIDDocument(url string) error {
@@ -253,22 +236,7 @@ func (d *DIDSideSteps) resolveDIDDocument(url string) error {
 
 	logger.Infof("Resolving DID document %s from %s", documentHash, url)
 
-	remainingAttempts := 20
-	for {
-		d.resp, err = restclient.SendResolveRequest(url + "/" + documentHash)
-		if err != nil {
-			return err
-		}
-		if d.resp.StatusCode == http.StatusNotFound {
-			logger.Infof("Document not found: %s. Remaining attempts: %d", documentHash, remainingAttempts)
-			remainingAttempts--
-			if remainingAttempts > 0 {
-				time.Sleep(time.Second)
-				continue
-			}
-		}
-		return nil
-	}
+	return d.httpGetWithRetry(url+"/"+documentHash, 20, http.StatusNotFound)
 }
 
 func (d *DIDSideSteps) deactivateDIDDocument(url string) error {
@@ -284,11 +252,7 @@ func (d *DIDSideSteps) deactivateDIDDocument(url string) error {
 		return err
 	}
 
-	d.resp, err = restclient.SendRequest(url, req)
-
-	logger.Infof("deactivate status %d, error '%s:'", d.resp.StatusCode, d.resp.ErrorMsg)
-
-	return err
+	return d.httpPost(url, req, contentTypeJSON)
 }
 
 func (d *DIDSideSteps) recoverDIDDocument(url string) error {
@@ -309,8 +273,7 @@ func (d *DIDSideSteps) recoverDIDDocument(url string) error {
 		return err
 	}
 
-	d.resp, err = restclient.SendRequest(url, req)
-	return err
+	return d.httpPost(url, req, contentTypeJSON)
 }
 
 func (d *DIDSideSteps) getDID() (string, error) {
@@ -525,6 +488,40 @@ func (d *DIDSideSteps) getOpaqueDocument(keyID string) ([]byte, error) {
 	return doc.Bytes()
 }
 
+func (d *DIDSideSteps) httpPost(url string, req []byte, contentType string) error {
+	resp, statusCode, header, err := bddtests.HTTPPost(url, req, contentType)
+	if err != nil {
+		return err
+	}
+
+	d.setResponse(statusCode, resp, header)
+
+	return nil
+}
+
+func (d *DIDSideSteps) httpGet(url string) error {
+	resp, statusCode, header, err := bddtests.HTTPGet(url)
+	if err != nil {
+		return err
+	}
+
+	d.setResponse(statusCode, resp, header)
+
+	return nil
+}
+
+func (d *DIDSideSteps) setResponse(statusCode int, response []byte, header http.Header) {
+	d.statusCode = statusCode
+	d.response = response
+
+	logger.Infof("Got header: %s", header)
+
+	contentType, ok := header["Content-Type"]
+	if ok {
+		d.contentType = contentType[0]
+	}
+}
+
 // getMethod returns method from namespace
 func getMethod(namespace string) (string, error) {
 	const minPartsInNamespace = 2
@@ -563,7 +560,7 @@ func prettyPrint(result *document.ResolutionResult) error {
 
 // RegisterSteps registers did sidetree steps
 func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
-	s.Step(`^check error response contains "([^"]*)"$`, d.checkErrorResp)
+	s.Step(`^check error response contains "([^"]*)"$`, d.checkErrorResponse)
 	s.Step(`^client sends request to "([^"]*)" to create DID document in namespace "([^"]*)"$`, d.sendDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to update DID document path "([^"]*)" with value "([^"]*)"$`, d.updateDIDDocumentWithJSONPatch)
 	s.Step(`^client sends request to "([^"]*)" to add public key with ID "([^"]*)" to DID document$`, d.addPublicKeyToDIDDocument)

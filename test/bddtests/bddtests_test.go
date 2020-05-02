@@ -66,6 +66,8 @@ func TestMain(m *testing.M) {
 		})
 
 		s.BeforeScenario(func(i interface{}) {
+			bddtests.ClearState()
+
 			if s, ok := i.(*gherkin.Scenario); ok {
 				logger.Infof("\n\n********** Running scenario: %s **********", s.Name)
 			}

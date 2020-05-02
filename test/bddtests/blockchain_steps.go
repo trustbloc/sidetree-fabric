@@ -14,13 +14,10 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
-
-	"github.com/trustbloc/sidetree-fabric/test/bddtests/restclient"
 )
 
 // BlockchainSteps
 type BlockchainSteps struct {
-	resp       *restclient.HttpResponse
 	bddContext *bddtests.BDDContext
 }
 
