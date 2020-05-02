@@ -6,7 +6,7 @@ servers:
   - description: TrustBloc Local
     url: https://testnet.trustbloc.local/sidetree/0.0.1
 info:
-  description: This is an experimental Open API Specification for the Sidetree Protocol.
+  description: This is the Open API Specification for the Sidetree Protocol on Hyperledger Fabric.
   version: "0.0.1"
   title: Sidetree REST API
 tags:
@@ -77,9 +77,8 @@ paths:
     get:
       tags:
         - Blockchain
-      summary: Gets the latest logical blockchain time. This API allows the Observer and Batch Writer to determine protocol version to be used.
+      summary: Gets the latest logical blockchain time.
       operationId: getTime
-      description: A blockchain time hash must not be predictable/pre-computable, a canonical implementation would be to use the block number as the time and the block hash as the time hash. It is intentional that the concepts related to blockchain blocks are hidden from the layers above.
       responses:
         '200':
           description: Success
@@ -99,9 +98,8 @@ paths:
     get:
       tags:
         - Blockchain
-      summary: Gets the latest logical blockchain time. This API allows the Observer and Batch Writer to determine protocol version to be used.
+      summary: Gets the logical blockchain time from the associated hash.
       operationId: getTimeByHash
-      description: A blockchain time hash must not be predictable/pre-computable, a canonical implementation would be to use the block number as the time and the block hash as the time hash. It is intentional that the concepts related to blockchain blocks are hidden from the layers above.
       parameters:
         - in: path
           required: true
@@ -439,7 +437,7 @@ paths:
           description: Not Found
         '500':
           description: Server Error
-  /cas/:
+  /cas:
     post:
       tags:
         - Content Addressed Storage
