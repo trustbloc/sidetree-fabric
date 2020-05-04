@@ -90,7 +90,7 @@ Feature:
     And client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     And client sends request to "https://localhost:48327/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
 
-    Then we wait 20 seconds
+    Then we wait 30 seconds
 
     # The config setting for maxTransactionsInResponse is 10 so we should expect 10 transactions in the query for all transactions
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions"
