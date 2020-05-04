@@ -1,0 +1,8 @@
+{
+  "BasePath": "/sidetree/0.0.1",
+  "Namespace": "did:sidetree",
+  "Authorization":{
+    "ReadTokens": ["did_r","did_w"],
+    "WriteTokens": ["did_w"]
+  }
+}

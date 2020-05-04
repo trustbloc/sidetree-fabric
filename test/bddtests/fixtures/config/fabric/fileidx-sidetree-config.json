@@ -1,0 +1,9 @@
+{
+  "BasePath": "/file",
+  "Namespace": "file:idx",
+  "DocType": "FILE_INDEX",
+  "Authorization":{
+    "ReadTokens": ["content_r","content_w"],
+    "WriteTokens": ["content_w"]
+  }
+}

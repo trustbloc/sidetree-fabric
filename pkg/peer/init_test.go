@@ -50,9 +50,10 @@ const (
 	docNotFound  = "document not found"
 	pageNotFound = "404 page not found"
 
-	v1   = "1"
-	v0_4 = "0.4"
-	v0_5 = "0.5"
+	v1     = "1"
+	v0_4   = "0.4"
+	v0_5   = "0.5"
+	v0_1_3 = "0.1.3"
 
 	tx1 = "tx1"
 	tx2 = "tx2"
@@ -61,12 +62,16 @@ const (
 	tx5 = "tx5"
 	tx6 = "tx6"
 
+	documentBasePath  = "/document"
+	trustblocBasePath = "/trustbloc.dev"
+
 	dcasCfgJson = `{"ChaincodeName":"sidetreetxn","Collection":"dcas"}`
 
-	peerSidetreeCfgJson  = `{"Monitor":{"Period":"5s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"}]}`
-	peerTrustblocCfgJson = `{"Monitor":{"Period":"5s"},"Namespaces":[{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev"}]}`
-	peerBothCfgJson      = `{"Monitor":{"Period":"5s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"},{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev"}]}`
-	peerNoneCfgJson      = `{}`
+	peerSidetreeCfgJson         = `{"Monitor":{"Period":"5s"}}`
+	peerDocumentHandler1CfgJson = `{"Namespace":"did:sidetree","BasePath":"/document"}`
+	peerTrustblocCfgJson        = `{"Monitor":{"Period":"5s"}}`
+	peerTrustblocHandlerCfgJson = `{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev"}`
+	peerNoneCfgJson             = `{}`
 
 	didTrustblocNamespace             = "did:bloc:trustbloc.dev"
 	didTrustblocBasePath              = "/trustbloc.dev/identifiers"
@@ -106,11 +111,14 @@ var (
 	didSidetreeProtocol_v0_5_CfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewComponentKey(config.GlobalMSPID, didSidetreeNamespace, v1, config.ProtocolComponentName, v0_5))
 	didSidetreeProtocol_v0_5_CfgValueBytes = marshalConfigValue(tx1, didSidetreeProtocol_V0_5_CfgJSON, "json")
 
-	peerCfgKeyBytes            = ledgercfgmgr.MarshalKey(ledgercfg.NewPeerKey(mspID, peerID, config.SidetreePeerAppName, config.SidetreePeerAppVersion))
-	peerSidetreeCfgValueBytes  = marshalConfigValue(tx1, peerSidetreeCfgJson, "json")
-	peerTrustblocCfgValueBytes = marshalConfigValue(tx5, peerTrustblocCfgJson, "json")
-	peerBothCfgValueBytes      = marshalConfigValue(tx2, peerBothCfgJson, "json")
-	peerNoneCfgValueBytes      = marshalConfigValue(tx6, peerNoneCfgJson, "json")
+	peerCfgKeyBytes                   = ledgercfgmgr.MarshalKey(ledgercfg.NewPeerKey(mspID, peerID, config.SidetreePeerAppName, config.SidetreePeerAppVersion))
+	peerSidetreeCfgValueBytes         = marshalConfigValue(tx1, peerSidetreeCfgJson, "json")
+	peerDocumentHandlerCfgKeyBytes    = ledgercfgmgr.MarshalKey(ledgercfg.NewPeerComponentKey(mspID, peerID, config.SidetreePeerAppName, config.SidetreePeerAppVersion, documentBasePath, v0_1_3))
+	peerDocumentHandlerCfgValueBytes  = marshalConfigValue(tx1, peerDocumentHandler1CfgJson, "json")
+	peerTrustblocHandlerCfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewPeerComponentKey(mspID, peerID, config.SidetreePeerAppName, config.SidetreePeerAppVersion, trustblocBasePath, v0_1_3))
+	peerTrustblocCfgValueBytes        = marshalConfigValue(tx5, peerTrustblocCfgJson, "json")
+	peerTrustblocHandlerCfgValueBytes = marshalConfigValue(tx5, peerTrustblocHandlerCfgJson, "json")
+	peerNoneCfgValueBytes             = marshalConfigValue(tx6, peerNoneCfgJson, "json")
 )
 
 func TestInitialize(t *testing.T) {
@@ -175,6 +183,12 @@ func TestInitialize(t *testing.T) {
 	req.ConnectionRefused()
 
 	t.Run("Update peer config with only did:sidetree namespace", func(t *testing.T) {
+		qe.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+			WithState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID}), []byte("{}")).
+			WithDeletedState(configSCC, peerTrustblocHandlerCfgKeyBytes).
+			WithDeletedState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}))
+
+		// NOTE: When a write is published to the configSCC chaincode then the ledger config cache is updated
 		blockBuilder := mocks.NewBlockBuilder(channelID, 1000)
 		blockBuilder.Transaction(tx2, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
@@ -188,10 +202,17 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update peer config with did:sidetree and did:bloc:trustbloc.dev namespaces", func(t *testing.T) {
+		qe.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+			WithState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID}), []byte("{}")).
+			WithState(configSCC, peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes).
+			WithState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}), []byte("{}"))
+
 		blockBuilder := mocks.NewBlockBuilder(channelID, 1000)
 		blockBuilder.Transaction(tx2, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
-			Write(peerCfgKeyBytes, peerBothCfgValueBytes)
+			Write(peerCfgKeyBytes, peerSidetreeCfgValueBytes).
+			Write(peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+			Write(peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes)
 		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build())
 
 		time.Sleep(200 * time.Millisecond)
@@ -201,6 +222,11 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update consortium config", func(t *testing.T) {
+		qe.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+			WithState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID}), []byte("{}")).
+			WithState(configSCC, peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes).
+			WithState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}), []byte("{}"))
+
 		blockBuilder := mocks.NewBlockBuilder(channelID, 1001)
 		blockBuilder.Transaction(tx3, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
@@ -214,6 +240,11 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update irrelevant config", func(t *testing.T) {
+		qe.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+			WithState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID}), []byte("{}")).
+			WithState(configSCC, peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes).
+			WithState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}), []byte("{}"))
+
 		// Arbitrary config update should be ignored
 		someCfgKeyBytes := ledgercfgmgr.MarshalKey(ledgercfg.NewPeerKey(mspID, peerID, "some-app", "1"))
 		someCfgValueBytes := marshalConfigValue(tx4, "some-config", "other")
@@ -231,6 +262,11 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update peer config with only did:bloc:trustbloc.dev namespace", func(t *testing.T) {
+		qe.WithDeletedState(configSCC, peerDocumentHandlerCfgKeyBytes).
+			WithDeletedState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID})).
+			WithState(configSCC, peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes).
+			WithState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}), []byte("{}"))
+
 		blockBuilder := mocks.NewBlockBuilder(channelID, 1003)
 		blockBuilder.Transaction(tx5, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
@@ -244,6 +280,11 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update peer config with no namespaces", func(t *testing.T) {
+		qe.WithDeletedState(configSCC, peerDocumentHandlerCfgKeyBytes).
+			WithDeletedState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID})).
+			WithDeletedState(configSCC, peerTrustblocHandlerCfgKeyBytes).
+			WithDeletedState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}))
+
 		// This update removes all of the Sidetree peer config, which should cause all of the Sidetree services to be stopped
 		blockBuilder := mocks.NewBlockBuilder(channelID, 1003)
 		blockBuilder.Transaction(tx6, pb.TxValidationCode_VALID).

@@ -22,6 +22,9 @@ const (
 	// SidetreePeerAppVersion is the version of the Sidetree config application
 	SidetreePeerAppVersion = "1"
 
+	// SidetreeHandlerComponentVersion is the version of the Sidetree handler
+	SidetreeHandlerComponentVersion = "0.1.3"
+
 	// FileHandlerAppName is the name of the file handler config application
 	FileHandlerAppName = "file-handler"
 

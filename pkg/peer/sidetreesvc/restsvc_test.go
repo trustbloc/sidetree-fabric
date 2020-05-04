@@ -15,9 +15,9 @@ import (
 
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -66,7 +66,7 @@ func TestRESTService(t *testing.T) {
 }
 
 func TestRESTHandlers(t *testing.T) {
-	nsCfg := config.Namespace{}
+	nsCfg := sidetreehandler.Config{}
 	bw := &peermocks.BatchWriter{}
 	pp := &peermocks.ProtocolProvider{}
 	os := &mocks.OperationStore{}

@@ -12,6 +12,7 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 
 	sidetreecfg "github.com/trustbloc/sidetree-fabric/pkg/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 // sidetreePeerValidator validates the SidetreePeer configuration
@@ -32,10 +33,6 @@ func (v *sidetreePeerValidator) Validate(kv *config.KeyValue) error {
 
 	logger.Debugf("Validating config %s", kv)
 
-	if kv.ComponentName != "" {
-		return errors.Errorf("unexpected component [%s] for %s", kv.ComponentName, kv.Key)
-	}
-
 	if kv.PeerID == "" {
 		return errors.Errorf("field PeerID required for %s", kv.Key)
 	}
@@ -44,38 +41,50 @@ func (v *sidetreePeerValidator) Validate(kv *config.KeyValue) error {
 		return errors.Errorf("unsupported application version [%s] for %s", kv.AppVersion, kv.Key)
 	}
 
+	switch kv.ComponentName {
+	case "":
+		return v.validateConfig(kv)
+	default:
+		return v.validateHandlerConfig(kv)
+	}
+}
+
+func (v *sidetreePeerValidator) validateConfig(kv *config.KeyValue) error {
 	var sidetreeCfg sidetreecfg.SidetreePeer
 	if err := unmarshal(kv.Value, &sidetreeCfg); err != nil {
 		return errors.WithMessagef(err, "invalid config %s", kv.Key)
 	}
 
-	if err := v.validateMonitor(kv, sidetreeCfg.Monitor); err != nil {
-		return err
-	}
-
-	for _, ns := range sidetreeCfg.Namespaces {
-		if err := v.validateNamespace(kv, ns); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return v.validateMonitor(kv, sidetreeCfg.Monitor)
 }
 
-func (v *sidetreePeerValidator) validateNamespace(kv *config.KeyValue, ns sidetreecfg.Namespace) error {
-	if ns.Namespace == "" {
-		return errors.Errorf("field 'Namespace' is required for %s", kv.Key)
+func (v *sidetreePeerValidator) validateHandlerConfig(kv *config.KeyValue) error {
+	var cfg sidetreehandler.Config
+	if err := unmarshal(kv.Value, &cfg); err != nil {
+		return errors.WithMessagef(err, "invalid config %s", kv.Key)
 	}
 
-	if ns.BasePath == "" {
+	if kv.ComponentVersion != SidetreeHandlerComponentVersion {
+		return errors.Errorf("unsupported component version %s for %s", kv.ComponentVersion, kv.Key)
+	}
+
+	if cfg.BasePath == "" {
 		return errors.Errorf("field 'BasePath' is required for %s", kv.Key)
 	}
 
-	if ns.BasePath[0:1] != "/" {
+	if kv.ComponentName != cfg.BasePath {
+		return errors.Errorf("invalid component name [%s] - component name must be set to the base path [%s] for %s", kv.ComponentName, cfg.BasePath, kv.Key)
+	}
+
+	if cfg.BasePath[0:1] != "/" {
 		return errors.Errorf("field 'BasePath' must begin with '/' for %s", kv.Key)
 	}
 
-	if err := v.authTokenValidator.Validate(ns.Authorization, kv); err != nil {
+	if cfg.Namespace == "" {
+		return errors.Errorf("field 'Namespace' is required for %s", kv.Key)
+	}
+
+	if err := v.authTokenValidator.Validate(cfg.Authorization, kv); err != nil {
 		return err
 	}
 

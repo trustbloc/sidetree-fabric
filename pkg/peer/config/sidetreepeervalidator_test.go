@@ -20,11 +20,12 @@ const (
 )
 
 const (
-	org1Peer1Cfg                = `{"Monitor":{"MetaDataChaincodeName":"document","Period":"3s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document","Authorization":{"ReadTokens":["did_r","did_w"],"WriteTokens": ["did_w"]}}]}`
-	org1Peer1CfgNoMetaDataCC    = `{"Monitor":{"Period":"3s"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"}]}`
-	org1Peer1NoNamespaceCfg     = `{"Namespaces":[{"BasePath":"/document"}]}`
-	org1Peer1NoBasePathCfg      = `{"Namespaces":[{"Namespace":"did:sidetree"}]}`
-	org1Peer1InvalidBasePathCfg = `{"Namespaces":[{"Namespace":"did:sidetree","BasePath":"document"}]}`
+	org1Peer1Cfg                               = `{"Monitor":{"MetaDataChaincodeName":"document","Period":"3s"}}`
+	org1Peer1CfgNoMetaDataCC                   = `{"Monitor":{"Period":"3s"}}`
+	org1Peer1SidetreeHandlerCfg                = `{"BasePath":"/sidetree/0.0.1","Namespace":"did:sidetree","Authorization":{"ReadTokens":["did_r","did_w"],"WriteTokens": ["did_w"]}}`
+	org1Peer1SidetreeHandlerNoNamespaceCfg     = `{"BasePath":"/sidetree/0.0.1"}`
+	org1Peer1SidetreeHandlerNoBasePathCfg      = `{"Namespace":"did:sidetree"}`
+	org1Peer1SidetreeHandlerInvalidBasePathCfg = `{"Namespace":"did:sidetree","BasePath":"sidetree/0.0.1"}`
 )
 
 func TestSidetreePeerValidator_Validate(t *testing.T) {
@@ -34,6 +35,8 @@ func TestSidetreePeerValidator_Validate(t *testing.T) {
 	v := newSidetreePeerValidator(tokenProvider)
 
 	key := config.NewPeerKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion)
+	handler1Key := config.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, basePath1, v0_1_3)
+	handler1InvalidKey := config.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, "sidetree/0.0.1", v0_1_3)
 
 	t.Run("Irrelevant config -> success", func(t *testing.T) {
 		k1 := config.NewPeerKey(mspID, peerID, "app1", "v1")
@@ -44,7 +47,7 @@ func TestSidetreePeerValidator_Validate(t *testing.T) {
 		tokenProvider.SidetreeAPITokenReturns("")
 		defer tokenProvider.SidetreeAPITokenReturns("some-token")
 
-		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, org1Peer1Cfg, config.FormatJSON)))
+		err := v.Validate(config.NewKeyValue(handler1Key, config.NewValue(txID, org1Peer1SidetreeHandlerCfg, config.FormatJSON)))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "not defined in peer config")
 	})
@@ -70,18 +73,24 @@ func TestSidetreePeerValidator_Validate(t *testing.T) {
 		require.Contains(t, err.Error(), "field PeerID required")
 	})
 
-	t.Run("Unsupported version -> error", func(t *testing.T) {
+	t.Run("Unsupported app version -> error", func(t *testing.T) {
 		k1 := config.NewPeerKey(mspID, peerID, SidetreePeerAppName, "v0.2")
 		err := v.Validate(config.NewKeyValue(k1, config.NewValue(txID, `{}`, config.FormatJSON)))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "unsupported application version")
 	})
 
-	t.Run("Config with component -> error", func(t *testing.T) {
-		k1 := config.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, "comp1", "v1")
-		err := v.Validate(config.NewKeyValue(k1, config.NewValue(txID, `{}`, config.FormatJSON)))
+	t.Run("Handler config -> success", func(t *testing.T) {
+		k1 := config.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, basePath1, SidetreeHandlerComponentVersion)
+		err := v.Validate(config.NewKeyValue(k1, config.NewValue(txID, org1Peer1SidetreeHandlerCfg, config.FormatJSON)))
+		require.NoError(t, err)
+	})
+
+	t.Run("Unsupported component version -> success", func(t *testing.T) {
+		k1 := config.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, basePath1, "v1")
+		err := v.Validate(config.NewKeyValue(k1, config.NewValue(txID, org1Peer1SidetreeHandlerCfg, config.FormatJSON)))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "unexpected component")
+		require.Contains(t, err.Error(), "unsupported component version")
 	})
 
 	t.Run("Invalid config -> error", func(t *testing.T) {
@@ -90,20 +99,32 @@ func TestSidetreePeerValidator_Validate(t *testing.T) {
 		require.Contains(t, err.Error(), "invalid config")
 	})
 
-	t.Run("No Namespace -> error", func(t *testing.T) {
-		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, org1Peer1NoNamespaceCfg, config.FormatJSON)))
+	t.Run("Invalid component config -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(handler1Key, config.NewValue(txID, `}`, config.FormatJSON)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid config")
+	})
+
+	t.Run("Invalid component name -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(handler1InvalidKey, config.NewValue(txID, org1Peer1SidetreeHandlerCfg, config.FormatJSON)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid component name")
+	})
+
+	t.Run("No namespace -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(handler1Key, config.NewValue(txID, org1Peer1SidetreeHandlerNoNamespaceCfg, config.FormatJSON)))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "field 'Namespace' is required")
 	})
 
 	t.Run("No BasePath -> error", func(t *testing.T) {
-		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, org1Peer1NoBasePathCfg, config.FormatJSON)))
+		err := v.Validate(config.NewKeyValue(handler1Key, config.NewValue(txID, org1Peer1SidetreeHandlerNoBasePathCfg, config.FormatJSON)))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "field 'BasePath' is required")
 	})
 
 	t.Run("Invalid BasePath -> error", func(t *testing.T) {
-		err := v.Validate(config.NewKeyValue(key, config.NewValue(txID, org1Peer1InvalidBasePathCfg, config.FormatJSON)))
+		err := v.Validate(config.NewKeyValue(handler1InvalidKey, config.NewValue(txID, org1Peer1SidetreeHandlerInvalidBasePathCfg, config.FormatJSON)))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "field 'BasePath' must begin with '/'")
 	})

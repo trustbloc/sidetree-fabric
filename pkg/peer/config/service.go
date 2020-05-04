@@ -20,6 +20,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")
@@ -125,6 +126,37 @@ func (c *sidetreeService) LoadProtocols(namespace string) (map[string]protocolAp
 	}
 
 	return protocolVersions, nil
+}
+
+// LoadSidetreeHandlers loads the Sidetree handler configuration
+func (c *sidetreeService) LoadSidetreeHandlers(mspID, peerID string) ([]sidetreehandler.Config, error) {
+	criteria := &ledgerconfig.Criteria{
+		MspID:      mspID,
+		PeerID:     peerID,
+		AppName:    SidetreePeerAppName,
+		AppVersion: SidetreePeerAppVersion,
+	}
+
+	results, err := c.service.Query(criteria)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "error loading Sidetree handler config for criteria %s", criteria)
+	}
+
+	var handlers []sidetreehandler.Config
+	for _, kv := range results {
+		if kv.ComponentName == "" {
+			continue
+		}
+
+		cfg := sidetreehandler.Config{}
+		if err := unmarshal(kv.Value, &cfg); err != nil {
+			return nil, err
+		}
+
+		handlers = append(handlers, cfg)
+	}
+
+	return handlers, nil
 }
 
 // LoadFileHandlers loads the file handler configuration

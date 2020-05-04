@@ -28,14 +28,23 @@ const (
 	mspID     = "Org1MSP"
 	peerID    = "peer1.example.com"
 
-	v0_4 = "0.4"
-	v0_5 = "0.5"
+	v0_4   = "0.4"
+	v0_5   = "0.5"
+	v0_1_3 = "0.1.3"
+	v0_1_4 = "0.1.4"
+
+	basePath1  = "/sidetree/0.0.1"
+	namespace1 = "did:sidetree"
+	basePath2  = "/file"
+	namespace2 = "file:idx"
 
 	didSidetreeNamespace             = "did:sidetree"
 	didSidetreeCfgJSON               = `{"batchWriterTimeout":"5s"}`
 	didSidetreeProtocol_V0_4_CfgJSON = `{"startingBlockchainTime":200000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
 	didSidetreeProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":10000,"maxOperationsPerBatch":100}`
-	peerCfgJson                      = `{"Monitor":{"Period":"5s"},"Rest":{"Host":"0.0.0.0","Port":"48326"},"Namespaces":[{"Namespace":"did:sidetree","BasePath":"/document"},{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev/document"}]}`
+	sidetreePeerCfgJson              = `{"Monitor":{"Period":"5s"}}`
+	sidetreeHandler1CfgJson          = `{"Namespace":"did:sidetree","BasePath":"/sidetree/0.0.1"}`
+	sidetreeHandler2CfgJson          = `{"Namespace":"file:idx","BasePath":"/file"}`
 	fileHandler1CfgJson              = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
 	fileHandler2CfgJson              = `{"BasePath":"/.well-known/trustbloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:5678"}`
 	dcasHandler1CfgJson              = `{"BasePath":"/0.1.2/cas","ChaincodeName":"cascc","Collection":"cas1"}`
@@ -63,7 +72,7 @@ func TestNewSidetreeProvider(t *testing.T) {
 	s := p.ForChannel(channelID)
 	require.NotNil(t, s)
 
-	t.Run("", func(t *testing.T) {
+	t.Run("LoadProtocols", func(t *testing.T) {
 		results := []*ledgercfg.KeyValue{
 			{
 				Key: ledgercfg.NewComponentKey(GlobalMSPID, didSidetreeNamespace, "1", ProtocolComponentName, v0_4),
@@ -130,14 +139,84 @@ func TestNewSidetreeProvider(t *testing.T) {
 		cfgValue := &ledgercfg.Value{
 			TxID:   "tx1",
 			Format: "json",
-			Config: peerCfgJson,
+			Config: sidetreePeerCfgJson,
 		}
 
 		configService.GetReturns(cfgValue, nil)
 		cfg, err := s.LoadSidetreePeer(mspID, peerID)
 		require.NoError(t, err)
-		require.Len(t, cfg.Namespaces, 2)
 		require.Equal(t, 5*time.Second, cfg.Monitor.Period)
+	})
+
+	t.Run("LoadSidetreeHandlers", func(t *testing.T) {
+		results := []*ledgercfg.KeyValue{
+			{
+				Key: ledgercfg.NewPeerKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion),
+				Value: &ledgercfg.Value{
+					TxID:   "tx1",
+					Format: "json",
+					Config: sidetreePeerCfgJson,
+				},
+			},
+			{
+				Key: ledgercfg.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, basePath1, v0_1_3),
+				Value: &ledgercfg.Value{
+					TxID:   "tx1",
+					Format: "json",
+					Config: sidetreeHandler1CfgJson,
+				},
+			},
+			{
+				Key: ledgercfg.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, basePath2, v0_1_4),
+				Value: &ledgercfg.Value{
+					TxID:   "tx1",
+					Format: "json",
+					Config: sidetreeHandler2CfgJson,
+				},
+			},
+		}
+
+		configService.QueryReturns(results, nil)
+		handlers, err := s.LoadSidetreeHandlers(mspID, peerID)
+		require.NoError(t, err)
+		require.Len(t, handlers, 2)
+
+		handler1 := handlers[0]
+		require.Equal(t, basePath1, handler1.BasePath)
+		require.Equal(t, namespace1, handler1.Namespace)
+
+		handler2 := handlers[1]
+		require.Equal(t, basePath2, handler2.BasePath)
+		require.Equal(t, namespace2, handler2.Namespace)
+	})
+
+	t.Run("LoadSidetreeHandlers query error -> error", func(t *testing.T) {
+		errExpected := errors.New("injected config service error")
+		configService.QueryReturns(nil, errExpected)
+
+		handlers, err := s.LoadSidetreeHandlers(mspID, peerID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+		require.Nil(t, handlers)
+	})
+
+	t.Run("LoadSidetreeHandlers unmarshal error", func(t *testing.T) {
+		results := []*ledgercfg.KeyValue{
+			{
+				Key: ledgercfg.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, basePath1, v0_1_3),
+				Value: &ledgercfg.Value{
+					TxID:   "tx1",
+					Format: "json",
+					Config: `{`,
+				},
+			},
+		}
+
+		configService.QueryReturns(results, nil)
+		handlers, err := s.LoadSidetreeHandlers(mspID, peerID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "error reading config")
+		require.Empty(t, handlers)
 	})
 
 	t.Run("LoadProtocols service error", func(t *testing.T) {
