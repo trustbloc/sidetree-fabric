@@ -29,6 +29,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -54,7 +55,8 @@ func TestChannelController_Update(t *testing.T) {
 	defer restoreRoles()
 
 	sidetreePeerCfg := config.SidetreePeer{}
-	sidetreePeerCfg.Namespaces = []config.Namespace{
+
+	sidetreeHandlers := []sidetreehandler.Config{
 		{
 			Namespace: didTrustblocNamespace,
 			BasePath:  didTrustblocBasePath,
@@ -66,7 +68,7 @@ func TestChannelController_Update(t *testing.T) {
 		{
 			Namespace: fileIndexNamespace,
 			BasePath:  fileIndexBasePath,
-			DocType:   config.FileIndexType,
+			DocType:   sidetreehandler.FileIndexType,
 			Authorization: authhandler.Config{
 				ReadTokens:  []string{"content_r"},
 				WriteTokens: []string{"content_r", "content_w"},
@@ -142,6 +144,7 @@ func TestChannelController_Update(t *testing.T) {
 	stConfigService.LoadProtocolsReturns(protocolVersions, nil)
 	stConfigService.LoadFileHandlersReturns(fileHandlers, nil)
 	stConfigService.LoadDCASHandlersReturns(dcasHandlers, nil)
+	stConfigService.LoadSidetreeHandlersReturns(sidetreeHandlers, nil)
 
 	ctrl := &peermocks.RESTServerController{}
 
@@ -223,6 +226,25 @@ func TestChannelController_Update(t *testing.T) {
 	t.Run("File handler config not found", func(t *testing.T) {
 		stConfigService := &cfgmocks.SidetreeConfigService{}
 		stConfigService.LoadFileHandlersReturns(nil, service.ErrConfigNotFound)
+
+		m := newChannelController(channel1, providers, stConfigService, ctrl)
+		require.NotNil(t, m)
+		defer m.Close()
+
+		count := len(ctrl.Invocations()[eventMethod])
+
+		m.handleUpdate(&ledgerconfig.KeyValue{
+			Key:   ledgerconfig.NewPeerKey(msp1, peer1, peerconfig.FileHandlerAppName, peerconfig.FileHandlerAppVersion),
+			Value: &ledgerconfig.Value{TxID: tx1},
+		})
+
+		time.Sleep(100 * time.Millisecond)
+		require.Len(t, ctrl.Invocations()[eventMethod], count+1)
+	})
+
+	t.Run("Sidetree handler config not found", func(t *testing.T) {
+		stConfigService := &cfgmocks.SidetreeConfigService{}
+		stConfigService.LoadSidetreeHandlersReturns(nil, service.ErrConfigNotFound)
 
 		m := newChannelController(channel1, providers, stConfigService, ctrl)
 		require.NotNil(t, m)

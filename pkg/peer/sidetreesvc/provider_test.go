@@ -22,6 +22,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -54,11 +55,10 @@ func TestProvider(t *testing.T) {
 	}
 
 	sidetreePeerCfg := config.SidetreePeer{}
-	sidetreePeerCfg.Namespaces = []config.Namespace{
-		{
-			Namespace: didTrustblocNamespace,
-			BasePath:  didTrustblocBasePath,
-		},
+
+	trustblocHandler := sidetreehandler.Config{
+		Namespace: didTrustblocNamespace,
+		BasePath:  didTrustblocBasePath,
 	}
 
 	protocolVersions := map[string]protocolApi.Protocol{
@@ -105,6 +105,7 @@ func TestProvider(t *testing.T) {
 	sidetreeCfgService2 := &cfgmocks.SidetreeConfigService{}
 	sidetreeCfgService2.LoadSidetreeReturns(sidetreeCfg, nil)
 	sidetreeCfgService2.LoadSidetreePeerReturns(sidetreePeerCfg, nil)
+	sidetreeCfgService2.LoadSidetreeHandlersReturns([]sidetreehandler.Config{trustblocHandler}, nil)
 	sidetreeCfgService2.LoadProtocolsReturns(protocolVersions, nil)
 	sidetreeCfgService2.LoadFileHandlersReturns([]filehandler.Config{fileHandler1}, nil)
 

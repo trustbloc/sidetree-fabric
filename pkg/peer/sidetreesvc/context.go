@@ -15,6 +15,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 type batchWriter interface {
@@ -63,29 +64,29 @@ type ContextProviders struct {
 	BlockchainProvider     blockchainClientProvider
 }
 
-func newContext(channelID string, nsCfg config.Namespace, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider common.OperationStoreProvider, tokenProvider tokenProvider) (*context, error) {
-	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, nsCfg.Namespace)
+func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider common.OperationStoreProvider, tokenProvider tokenProvider) (*context, error) {
+	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, handlerCfg.Namespace)
 
-	ctx, err := newSidetreeContext(channelID, nsCfg.Namespace, cfg, dcasCfg, providers.TxnProvider, providers.DCASProvider, providers.OperationQueueProvider)
+	ctx, err := newSidetreeContext(channelID, handlerCfg.Namespace, cfg, dcasCfg, providers.TxnProvider, providers.DCASProvider, providers.OperationQueueProvider)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Debugf("[%s] Creating Sidetree batch writer for [%s]", channelID, nsCfg.Namespace)
+	logger.Debugf("[%s] Creating Sidetree batch writer for [%s]", channelID, handlerCfg.Namespace)
 
-	bw, err := newBatchWriter(channelID, nsCfg.Namespace, ctx, cfg)
+	bw, err := newBatchWriter(channelID, handlerCfg.Namespace, ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Debugf("[%s] Creating Sidetree REST handlers [%s]", channelID, nsCfg.Namespace)
+	logger.Debugf("[%s] Creating Sidetree REST handlers [%s]", channelID, handlerCfg.Namespace)
 
-	store, err := opStoreProvider.ForNamespace(nsCfg.Namespace)
+	store, err := opStoreProvider.ForNamespace(handlerCfg.Namespace)
 	if err != nil {
 		return nil, err
 	}
 
-	restHandlers, err := newRESTHandlers(channelID, nsCfg, bw, ctx, store, tokenProvider)
+	restHandlers, err := newRESTHandlers(channelID, handlerCfg, bw, ctx, store, tokenProvider)
 	if err != nil {
 		return nil, err
 	}

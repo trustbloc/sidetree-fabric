@@ -11,30 +11,11 @@ import (
 
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
-
-// DocumentType specifies the type of the Sidetree document
-type DocumentType = string
-
-const (
-	// DIDDocType indicates that the document is a DID document (this is the default)
-	DIDDocType DocumentType = ""
-	// FileIndexType indicates that the document contains a file index
-	FileIndexType DocumentType = "FILE_INDEX"
-)
-
-// Namespace holds Sidetree namespace config
-type Namespace struct {
-	Authorization authhandler.Config
-
-	DocType   DocumentType
-	Namespace string
-	BasePath  string
-}
 
 // Monitor holds Sidetree monitor config
 type Monitor struct {
@@ -44,8 +25,7 @@ type Monitor struct {
 
 // SidetreePeer holds peer-specific Sidetree config
 type SidetreePeer struct {
-	Monitor    Monitor
-	Namespaces []Namespace
+	Monitor Monitor
 }
 
 // DCAS holds Distributed Content Addressable Store (DCAS) configuration
@@ -66,6 +46,7 @@ type SidetreeService interface {
 	LoadProtocols(namespace string) (map[string]protocolApi.Protocol, error)
 	LoadSidetree(namespace string) (Sidetree, error)
 	LoadSidetreePeer(mspID, peerID string) (SidetreePeer, error)
+	LoadSidetreeHandlers(mspID, peerID string) ([]sidetreehandler.Config, error)
 	LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error)
 	LoadDCASHandlers(mspID, peerID string) ([]dcashandler.Config, error)
 	LoadBlockchainHandlers(mspID, peerID string) ([]blockchainhandler.Config, error)

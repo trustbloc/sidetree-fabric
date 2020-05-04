@@ -27,6 +27,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -140,7 +141,7 @@ func (c *channelController) load() error {
 
 	storeProvider := store.NewProvider(c.channelID, c.sidetreeCfgService, c.DCASProvider)
 
-	if err := c.loadContexts(cfg.Namespaces, dcasCfg, storeProvider); err != nil {
+	if err := c.loadContexts(restHandlerCfg.sidetree, dcasCfg, storeProvider); err != nil {
 		return err
 	}
 
@@ -168,8 +169,8 @@ type contextPair struct {
 	oldCtx *context
 }
 
-func (c *channelController) loadContexts(namespaces []config.Namespace, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
-	loadedContexts, err := c.loadNewContexts(namespaces, dcasCfg, storeProvider)
+func (c *channelController) loadContexts(handlers []sidetreehandler.Config, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
+	loadedContexts, err := c.loadNewContexts(handlers, dcasCfg, storeProvider)
 	if err != nil {
 		return err
 	}
@@ -204,16 +205,16 @@ func (c *channelController) loadContexts(namespaces []config.Namespace, dcasCfg 
 	return nil
 }
 
-func (c *channelController) loadNewContexts(namespaces []config.Namespace, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) ([]*context, error) {
+func (c *channelController) loadNewContexts(handlers []sidetreehandler.Config, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) ([]*context, error) {
 	var contexts []*context
 
-	for _, nsCfg := range namespaces {
-		ctx, err := newContext(c.channelID, nsCfg, dcasCfg, c.sidetreeCfgService, c.ContextProviders, storeProvider, c.RESTConfig)
+	for _, handlerCfg := range handlers {
+		ctx, err := newContext(c.channelID, handlerCfg, dcasCfg, c.sidetreeCfgService, c.ContextProviders, storeProvider, c.RESTConfig)
 		if err != nil {
 			return nil, err
 		}
 
-		logger.Debugf("[%s] Loaded context for [%s]", c.channelID, nsCfg.Namespace)
+		logger.Debugf("[%s] Loaded context for [%s]", c.channelID, handlerCfg.Namespace)
 
 		contexts = append(contexts, ctx)
 	}
@@ -222,6 +223,7 @@ func (c *channelController) loadNewContexts(namespaces []config.Namespace, dcasC
 }
 
 type restHandlerConfig struct {
+	sidetree   []sidetreehandler.Config
 	file       []filehandler.Config
 	dcas       []dcashandler.Config
 	blockchain []blockchainhandler.Config
@@ -231,6 +233,11 @@ func (c *channelController) loadRESTHandlerConfig() (*restHandlerConfig, error) 
 	cfg := &restHandlerConfig{}
 
 	var err error
+
+	cfg.sidetree, err = c.loadSidetreeHandlerConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	cfg.file, err = c.loadFileHandlerConfig()
 	if err != nil {
@@ -248,6 +255,20 @@ func (c *channelController) loadRESTHandlerConfig() (*restHandlerConfig, error) 
 	}
 
 	return cfg, nil
+}
+
+func (c *channelController) loadSidetreeHandlerConfig() ([]sidetreehandler.Config, error) {
+	sidetreeHandlerCfg, err := c.sidetreeCfgService.LoadSidetreeHandlers(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
+	if err == nil {
+		return sidetreeHandlerCfg, nil
+	}
+
+	if errors.Cause(err) == service.ErrConfigNotFound {
+		logger.Info("No Sidetree handler configuration found for this peer.")
+		return nil, nil
+	}
+
+	return nil, err
 }
 
 func (c *channelController) loadFileHandlerConfig() ([]filehandler.Config, error) {

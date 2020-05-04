@@ -20,10 +20,10 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -88,7 +88,7 @@ type tokenProvider interface {
 
 func newRESTHandlers(
 	channelID string,
-	cfg config.Namespace,
+	cfg sidetreehandler.Config,
 	batchWriter dochandler.BatchWriter,
 	protocolProvider protocolProvider,
 	opStore processor.OperationStoreClient,
@@ -156,19 +156,19 @@ func (h *restHandlers) HTTPHandlers() []common.HTTPHandler {
 }
 
 type validatorProvider func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator
-type resolveHandlerProvider func(config.Namespace, resthandler.Resolver) common.HTTPHandler
-type updateHandlerProvider func(config.Namespace, resthandler.Processor) common.HTTPHandler
+type resolveHandlerProvider func(sidetreehandler.Config, resthandler.Resolver) common.HTTPHandler
+type updateHandlerProvider func(sidetreehandler.Config, resthandler.Processor) common.HTTPHandler
 
 var (
 	didDocValidatorProvider = func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator {
 		return didvalidator.New(opStore)
 	}
 
-	didDocResolveProvider = func(cfg config.Namespace, resolver resthandler.Resolver) common.HTTPHandler {
+	didDocResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) common.HTTPHandler {
 		return diddochandler.NewResolveHandler(cfg.BasePath, resolver)
 	}
 
-	didDocUpdateProvider = func(cfg config.Namespace, processor resthandler.Processor) common.HTTPHandler {
+	didDocUpdateProvider = func(cfg sidetreehandler.Config, processor resthandler.Processor) common.HTTPHandler {
 		return diddochandler.NewUpdateHandler(cfg.BasePath, processor)
 	}
 
@@ -176,20 +176,20 @@ var (
 		return filehandler.NewValidator(opStore)
 	}
 
-	fileResolveProvider = func(cfg config.Namespace, resolver resthandler.Resolver) common.HTTPHandler {
+	fileResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) common.HTTPHandler {
 		return filehandler.NewResolveIndexHandler(cfg.BasePath, resolver)
 	}
 
-	fileUpdateProvider = func(cfg config.Namespace, processor resthandler.Processor) common.HTTPHandler {
+	fileUpdateProvider = func(cfg sidetreehandler.Config, processor resthandler.Processor) common.HTTPHandler {
 		return filehandler.NewUpdateIndexHandler(cfg.BasePath, processor)
 	}
 )
 
-func newProviders(docType config.DocumentType) (validatorProvider, resolveHandlerProvider, updateHandlerProvider, error) {
+func newProviders(docType sidetreehandler.DocumentType) (validatorProvider, resolveHandlerProvider, updateHandlerProvider, error) {
 	switch docType {
-	case config.FileIndexType:
+	case sidetreehandler.FileIndexType:
 		return fileValidatorProvider, fileResolveProvider, fileUpdateProvider, nil
-	case config.DIDDocType:
+	case sidetreehandler.DIDDocType:
 		return didDocValidatorProvider, didDocResolveProvider, didDocUpdateProvider, nil
 	default:
 		return nil, nil, nil, errors.Errorf("unsupported document type [%s]", docType)

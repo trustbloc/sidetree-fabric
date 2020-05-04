@@ -19,13 +19,14 @@ import (
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 //go:generate counterfeiter -o ../mocks/txnserviceprovider.gen.go --fake-name TxnServiceProvider . txnServiceProvider
 //go:generate counterfeiter -o ../mocks/dcasprovider.gen.go --fake-name DCASClientProvider . dcasClientProvider
 
 func TestContext(t *testing.T) {
-	nsCfg := config.Namespace{
+	nsCfg := sidetreehandler.Config{
 		Namespace: didTrustblocNamespace,
 		BasePath:  didTrustblocBasePath,
 	}

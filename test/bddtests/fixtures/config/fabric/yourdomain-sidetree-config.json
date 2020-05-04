@@ -1,0 +1,4 @@
+{
+  "Namespace": "did:bloc:yourdomain.com",
+  "BasePath": "/yourdomain.com"
+}
