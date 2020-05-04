@@ -63,6 +63,10 @@ Feature:
     Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
     And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
 
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version"
+    Then the JSON path "name" of the response equals "Sidetree"
+    And the JSON path "version" of the response equals "0.1.3"
+
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 

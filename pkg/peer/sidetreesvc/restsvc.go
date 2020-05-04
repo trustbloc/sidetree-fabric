@@ -142,6 +142,8 @@ func newRESTHandlers(
 		)
 	}
 
+	handlers = append(handlers, sidetreehandler.NewVersionHandler(channelID, cfg))
+
 	return &restHandlers{
 		channelID:    channelID,
 		namespace:    cfg.Namespace,

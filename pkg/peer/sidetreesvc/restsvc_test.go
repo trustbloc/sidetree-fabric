@@ -84,7 +84,7 @@ func TestRESTHandlers(t *testing.T) {
 		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os, restCfg)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
-		require.Len(t, rh.HTTPHandlers(), 2)
+		require.Len(t, rh.HTTPHandlers(), 3)
 	})
 
 	t.Run("No resolver or batch-writer role -> no handlers", func(t *testing.T) {

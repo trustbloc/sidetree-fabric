@@ -24,6 +24,8 @@ const (
 type Config struct {
 	Authorization authhandler.Config
 
+	// Version contains the version of the Sidetree endpoint
+	Version string
 	// DocType specifies the document type (DID or File index)
 	DocType DocumentType
 	// Namespace is the namespace prefix used in the ID of the document

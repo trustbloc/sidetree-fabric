@@ -153,6 +153,8 @@ func (c *sidetreeService) LoadSidetreeHandlers(mspID, peerID string) ([]sidetree
 			return nil, err
 		}
 
+		cfg.Version = kv.ComponentVersion
+
 		handlers = append(handlers, cfg)
 	}
 

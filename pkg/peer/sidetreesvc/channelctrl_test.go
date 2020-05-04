@@ -159,7 +159,7 @@ func TestChannelController_Update(t *testing.T) {
 
 	time.Sleep(20 * time.Millisecond)
 	require.Len(t, ctrl.Invocations()[eventMethod], count+1)
-	require.Len(t, m.RESTHandlers(), 9)
+	require.Len(t, m.RESTHandlers(), 11)
 
 	t.Run("Update peer config -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
