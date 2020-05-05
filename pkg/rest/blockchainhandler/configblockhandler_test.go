@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	configBlockPath = "/blockchain/configblock"
+	configBlockPath = "/blockchain/config-block"
 	blockNum        = uint64(999)
 	configBlockNum  = uint64(2)
 )
@@ -252,7 +252,7 @@ func TestNewConfigBlockByHashHandler(t *testing.T) {
 	h := NewConfigBlockByHashHandler(channel1, handlerCfg, &obmocks.BlockchainClientProvider{})
 	require.NotNil(t, h)
 
-	require.Equal(t, "/blockchain/configblock/{hash}", h.Path())
+	require.Equal(t, "/blockchain/config-block/{hash}", h.Path())
 	require.Equal(t, http.MethodGet, h.Method())
 	require.Empty(t, h.Params())
 }
@@ -261,7 +261,7 @@ func TestNewConfigBlockByHashHandlerWithEncoding(t *testing.T) {
 	h := NewConfigBlockByHashHandlerWithEncoding(channel1, handlerCfg, &obmocks.BlockchainClientProvider{})
 	require.NotNil(t, h)
 
-	require.Equal(t, "/blockchain/configblock/{hash}", h.Path())
+	require.Equal(t, "/blockchain/config-block/{hash}", h.Path())
 	require.Equal(t, http.MethodGet, h.Method())
 	require.Equal(t, map[string]string{"data-encoding": "{data-encoding}"}, h.Params())
 }

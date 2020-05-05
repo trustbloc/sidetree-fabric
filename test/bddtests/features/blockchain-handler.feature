@@ -233,29 +233,29 @@ Feature:
     #  PEER_ADMIN_OPERATION : 8
 
     # Get the latest config block (the data is in JSON format)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block"
     And the JSON path "data.data.0.payload.header.channel_header.type" of the numeric response equals "1"
     # Get the latest config block (the data is base64-encoded)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock?data-encoding=base64"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block?data-encoding=base64"
     And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64-encoded value "${config-data}" equals "${config-data-hash}"
     # Get the latest config block (the data is base64URL-encoded)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock?data-encoding=base64url"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block?data-encoding=base64url"
     And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64URL-encoded value "${config-data}" equals "${config-data-hash}"
 
     # Get the config block that was used by the block with the given hash (the data is in JSON format)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock/${url-encoded-previous-hash}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block/${url-encoded-previous-hash}"
     And the JSON path "data.data.0.payload.header.channel_header.type" of the numeric response equals "1"
     # Get the config block that was used by the block with the given hash (the data is base64-encoded)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock/${url-encoded-previous-hash}?data-encoding=base64"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block/${url-encoded-previous-hash}?data-encoding=base64"
     And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64-encoded value "${config-data}" equals "${config-data-hash}"
     # Get the config block that was used by the block with the given hash (the data is base64URL-encoded)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/configblock/${url-encoded-previous-hash}?data-encoding=base64url"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block/${url-encoded-previous-hash}?data-encoding=base64url"
     And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64URL-encoded value "${config-data}" equals "${config-data-hash}"
@@ -275,8 +275,8 @@ Feature:
     When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/first-valid" with content "transactions" of type "application/json" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/info" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/blocks?from-time=1&max-blocks=2" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock/hash1234" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/config-block" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/config-block/hash1234" and the returned status code is 401
 
     # Now provide a valid token
     Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/blockchain" is set to "${blockchain_r}"
@@ -290,5 +290,5 @@ Feature:
     When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/first-valid" with content "transactions" of type "application/json" and the returned status code is 400
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/info" and the returned status code is 200
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/blocks?from-time=1&max-blocks=1" and the returned status code is 200
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock" and the returned status code is 200
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock/hash1234" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/config-block" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/config-block/hash1234" and the returned status code is 404
