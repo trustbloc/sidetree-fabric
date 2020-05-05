@@ -109,8 +109,9 @@ func (h *Time) getLatestTime(req *http.Request) (*TimeResponse, error) {
 	logger.Debugf("Got latest blockchain info: %s", bcInfo)
 
 	return &TimeResponse{
-		Time: strconv.FormatUint(bcInfo.Height-1, 10),
-		Hash: base64.URLEncoding.EncodeToString(bcInfo.CurrentBlockHash),
+		Time:         strconv.FormatUint(bcInfo.Height-1, 10),
+		Hash:         base64.URLEncoding.EncodeToString(bcInfo.CurrentBlockHash),
+		PreviousHash: base64.URLEncoding.EncodeToString(bcInfo.PreviousBlockHash),
 	}, nil
 }
 
@@ -135,8 +136,9 @@ func (h *Time) getTimeForHash(req *http.Request) (*TimeResponse, error) {
 	logger.Debugf("[%s] Got block header for hash [%s]: %s", h.channelID, strHash, header)
 
 	return &TimeResponse{
-		Time: strconv.FormatUint(header.Number, 10),
-		Hash: base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(header)),
+		Time:         strconv.FormatUint(header.Number, 10),
+		Hash:         base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(header)),
+		PreviousHash: base64.URLEncoding.EncodeToString(header.PreviousHash),
 	}, nil
 }
 

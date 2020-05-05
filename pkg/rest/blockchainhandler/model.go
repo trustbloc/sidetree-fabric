@@ -50,7 +50,12 @@ const (
 // TimeResponse contains the response from the /time request
 type TimeResponse struct {
 	Time string `json:"time"`
+	// Hash is the base64 URL-encoded hash of the block.
 	Hash string `json:"hash"`
+	// PreviousHash is the base64 URL-encoded hash of the previous block's header.
+	// This value may be used as the hash value to retrieve the previous block
+	// using the '/time/{hash}' endpoint.
+	PreviousHash string `json:"previous_hash"`
 }
 
 // TransactionsResponse contains a set of transactions and a boolean that indicates
@@ -71,18 +76,6 @@ type Transaction struct {
 // ErrorResponse contains the error code for a failed response
 type ErrorResponse struct {
 	Code string `json:"code"`
-}
-
-// InfoResponse contains basic information about the blockchain.
-type InfoResponse struct {
-	// CurrentTime is the time (block number) of the current (latest) block in the chain.
-	CurrentTime uint64 `json:"current_time"`
-	// CurrentTimeHash is the base64 URL-encoded hash of the current (latest) block's header.
-	// (This value may be used to retrieve the latest block by hash.)
-	CurrentTimeHash string `json:"current_time_hash"`
-	// PreviousTimeHash is the base64 URL-encoded hash of the previous block's header.
-	// (This value may be used to retrieve the previous block by hash.)
-	PreviousTimeHash string `json:"previous_time_hash"`
 }
 
 // Block is the JSON object representation of a block

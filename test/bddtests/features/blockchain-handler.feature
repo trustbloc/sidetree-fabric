@@ -51,22 +51,6 @@ Feature:
     Then the JSON path "name" of the response equals "Hyperledger Fabric"
     And the JSON path "version" of the response equals "2.0.0"
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time"
-    Then the JSON path "time" of the response is not empty
-    And the JSON path "hash" of the response is not empty
-    And the JSON path "time" of the response is saved to variable "time"
-    And the JSON path "hash" of the response is saved to variable "hash"
-
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time/${hash}"
-    Then the JSON path "hash" of the response equals "${hash}"
-    And the JSON path "time" of the response equals "${time}"
-
-    # Invalid hash - Bad Request (400)
-    Then an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time/xxx_xxx" and the returned status code is 400
-
-    # Hash not found - Not Found (404)
-    Then an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time/AQIDBAUGBwgJCgsM" and the returned status code is 404
-
     # Write a few Sidetree transactions. Scatter the requests across different endpoints to generate multiple
     # Sidetree transactions within the same block. The Orderer's batch timeout is set to 2s, so sleep 3s between
     # writes to guarantee that we generate a few blocks.
@@ -91,6 +75,25 @@ Feature:
     And client sends request to "https://localhost:48327/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
 
     Then we wait 30 seconds
+
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time"
+    Then the JSON path "time" of the response is not empty
+    And the JSON path "hash" of the response is not empty
+    And the JSON path "previous_hash" of the response is not empty
+    And the JSON path "time" of the response is saved to variable "latest-time"
+    And the JSON path "hash" of the response is saved to variable "latest-hash"
+    And the JSON path "previous_hash" of the response is saved to variable "latest-previous-hash"
+
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time/${latest-hash}"
+    Then the JSON path "hash" of the response equals "${latest-hash}"
+    And the JSON path "previous_hash" of the response equals "${latest-previous-hash}"
+    And the JSON path "time" of the response equals "${latest-time}"
+
+    # Invalid hash - Bad Request (400)
+    Then an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time/xxx_xxx" and the returned status code is 400
+
+    # Hash not found - Not Found (404)
+    Then an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time/AQIDBAUGBwgJCgsM" and the returned status code is 404
 
     # The config setting for maxTransactionsInResponse is 10 so we should expect 10 transactions in the query for all transactions
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions"
@@ -146,13 +149,6 @@ Feature:
     Given variable "invalidTransactions" is assigned the JSON value '[{"transaction_number":3,"transaction_time":10,"transaction_time_hash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/first-valid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
 
-    # Blockchain info
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/info"
-    And the JSON path "current_time_hash" of the response is not empty
-    And the JSON path "previous_time_hash" of the response is not empty
-    And the JSON path "current_time_hash" of the response is saved to variable "current-time-hash"
-    And the JSON path "previous_time_hash" of the response is saved to variable "previous-time-hash"
-
     # Retrieve the anchor file from the transaction time in transaction 0 above
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from-time=${time_0}&max-blocks=2"
     Then the JSON path "#" of the response has 2 items
@@ -172,7 +168,7 @@ Feature:
     And the JSON path "0.header.number" of the response equals "${time_0}"
 
     # Retrieve the anchor file from the current block hash
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${current-time-hash}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${latest-hash}"
     Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.2.rwset.writes.0.value" of the response is saved to variable "anchor-string"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
@@ -181,7 +177,7 @@ Feature:
     Then the JSON path "batchFileHash" of the response is not empty
 
     # Retrieve the anchor file from the previous block hash
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${previous-time-hash}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${latest-previous-hash}"
     Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.2.rwset.writes.0.value" of the response is saved to variable "anchor-string"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
@@ -273,7 +269,6 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/transactions" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/transactions?since=0&transaction-time-hash=hash1234" and the returned status code is 401
     When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/first-valid" with content "transactions" of type "application/json" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/info" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/blocks?from-time=1&max-blocks=2" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock" and the returned status code is 401
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock/hash1234" and the returned status code is 401
@@ -288,7 +283,6 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/transactions" and the returned status code is 200
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/transactions?since=0&transaction-time-hash=hash1234" and the returned status code is 404
     When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/first-valid" with content "transactions" of type "application/json" and the returned status code is 400
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/info" and the returned status code is 200
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/blocks?from-time=1&max-blocks=1" and the returned status code is 200
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock" and the returned status code is 200
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/blockchain/configblock/hash1234" and the returned status code is 404
