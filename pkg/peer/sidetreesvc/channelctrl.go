@@ -508,7 +508,6 @@ func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) 
 		c.authHandler(readTokens, blockchainhandler.NewTransactionsSinceHandler(c.channelID, cfg, c.BlockchainProvider)),
 		c.authHandler(readTokens, blockchainhandler.NewTransactionsHandler(c.channelID, cfg, c.BlockchainProvider)),
 		c.authHandler(readTokens, blockchainhandler.NewFirstValidHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewInfoHandler(c.channelID, cfg, c.BlockchainProvider)),
 		c.authHandler(readTokens, blockchainhandler.NewBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
 		c.authHandler(readTokens, blockchainhandler.NewBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider)),
 		c.authHandler(readTokens, blockchainhandler.NewBlocksFromNumHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),

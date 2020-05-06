@@ -48,8 +48,9 @@ func TestNewTimeHandler(t *testing.T) {
 
 func TestTime_Latest(t *testing.T) {
 	bcInfo := &common.BlockchainInfo{
-		Height:           1000,
-		CurrentBlockHash: []byte{1, 2, 3, 4},
+		Height:            1000,
+		CurrentBlockHash:  []byte{1, 2, 3, 4},
+		PreviousBlockHash: []byte{5, 6, 7, 8},
 	}
 
 	bcProvider := &mocks.BlockchainClientProvider{}
@@ -75,6 +76,7 @@ func TestTime_Latest(t *testing.T) {
 		require.NoError(t, json.Unmarshal(rw.Body.Bytes(), resp))
 		require.Equal(t, strconv.FormatUint(bcInfo.Height-1, 10), resp.Time)
 		require.Equal(t, base64.URLEncoding.EncodeToString(bcInfo.CurrentBlockHash), resp.Hash)
+		require.Equal(t, base64.URLEncoding.EncodeToString(bcInfo.PreviousBlockHash), resp.PreviousHash)
 	})
 
 	t.Run("Marshal error -> Server Error", func(t *testing.T) {
@@ -168,6 +170,7 @@ func TestTime_ByHash(t *testing.T) {
 		require.NoError(t, json.Unmarshal(rw.Body.Bytes(), resp))
 		require.Equal(t, strconv.FormatUint(block.Header.Number, 10), resp.Time)
 		require.Equal(t, base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(block.Header)), resp.Hash)
+		require.Equal(t, base64.URLEncoding.EncodeToString(block.Header.PreviousHash), resp.PreviousHash)
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
