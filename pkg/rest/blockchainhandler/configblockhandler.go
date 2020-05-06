@@ -28,7 +28,7 @@ type ConfigBlock struct {
 func NewConfigBlockHandler(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *ConfigBlock {
 	h := newConfigBlock(
 		channelID, cfg,
-		fmt.Sprintf("%s/configblock", cfg.BasePath),
+		fmt.Sprintf("%s/config-block", cfg.BasePath),
 		blockchainProvider,
 	)
 
@@ -41,7 +41,7 @@ func NewConfigBlockHandler(channelID string, cfg Config, blockchainProvider bloc
 func NewConfigBlockHandlerWithEncoding(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *ConfigBlock {
 	h := newConfigBlock(
 		channelID, cfg,
-		fmt.Sprintf("%s/configblock", cfg.BasePath),
+		fmt.Sprintf("%s/config-block", cfg.BasePath),
 		blockchainProvider,
 		dataEncodingParam,
 	)
@@ -56,7 +56,7 @@ func NewConfigBlockHandlerWithEncoding(channelID string, cfg Config, blockchainP
 func NewConfigBlockByHashHandler(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *ConfigBlock {
 	h := newConfigBlock(
 		channelID, cfg,
-		fmt.Sprintf("%s/configblock/{%s}", cfg.BasePath, hashParam),
+		fmt.Sprintf("%s/config-block/{%s}", cfg.BasePath, hashParam),
 		blockchainProvider,
 	)
 
@@ -70,7 +70,7 @@ func NewConfigBlockByHashHandler(channelID string, cfg Config, blockchainProvide
 func NewConfigBlockByHashHandlerWithEncoding(channelID string, cfg Config, blockchainProvider blockchainClientProvider) *ConfigBlock {
 	h := newConfigBlock(
 		channelID, cfg,
-		fmt.Sprintf("%s/configblock/{%s}", cfg.BasePath, hashParam),
+		fmt.Sprintf("%s/config-block/{%s}", cfg.BasePath, hashParam),
 		blockchainProvider,
 		dataEncodingParam,
 	)
