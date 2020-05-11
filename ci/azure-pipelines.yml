@@ -58,8 +58,8 @@ jobs:
           source ci/version_var.sh
           echo $DOCKER_PASSWORD | docker login docker.pkg.github.com --username $DOCKER_USER --password-stdin
           make fabric-peer-docker
-          docker tag docker.pkg.github.com/trustbloc/sidetree-fabric/peer:latest  docker.pkg.github.com/trustbloc/sidetree-fabric/peer:$SIDETREE_FABRIC_IMAGE_TAG
-          docker push docker.pkg.github.com/trustbloc/sidetree-fabric/peer:$SIDETREE_FABRIC_IMAGE_TAG
+          docker tag docker.pkg.github.com/trustbloc/sidetree-fabric/peer:latest ${SIDETREE_FABRIC_PKG}:${SIDETREE_FABRIC_TAG}
+          docker push ${SIDETREE_FABRIC_PKG}:${SIDETREE_FABRIC_TAG}
         env:
           DOCKER_USER: $(DOCKER_USER)
           DOCKER_PASSWORD: $(DOCKER_PASSWORD)
