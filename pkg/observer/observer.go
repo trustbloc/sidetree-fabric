@@ -8,10 +8,11 @@ package observer
 
 import (
 	"github.com/hyperledger/fabric/common/flogging"
+	"github.com/pkg/errors"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
-	"github.com/trustbloc/sidetree-fabric/pkg/config"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
@@ -37,7 +38,17 @@ func (d *dcas) Read(key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return dcasClient.Get(d.ChaincodeName, d.Collection, key)
+
+	data, err := dcasClient.Get(d.ChaincodeName, d.Collection, key)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return nil, errors.Errorf("content not found for key [%s]", key)
+	}
+
+	return data, nil
 }
 
 func (d *dcas) getDCASClient() (dcasclient.DCAS, error) {

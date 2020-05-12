@@ -46,35 +46,28 @@ Feature:
     And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/blockchain" is set to "${blockchain_r}"
     And the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_r}"
     And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+    And the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_w}"
 
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/version"
     Then the JSON path "name" of the response equals "Hyperledger Fabric"
     And the JSON path "version" of the response equals "2.0.0"
 
-    # Write a few Sidetree transactions. Scatter the requests across different endpoints to generate multiple
-    # Sidetree transactions within the same block. The Orderer's batch timeout is set to 2s, so sleep 3s between
-    # writes to guarantee that we generate a few blocks.
-    Then client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And check success response contains "#didDocumentHash"
-    And client sends request to "https://localhost:48327/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48328/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    Given variable "peer0.org1" is assigned the value "https://localhost:48326/sidetree/0.0.1"
+    And variable "peer1.org1" is assigned the value "https://localhost:48327/sidetree/0.0.1"
+    And variable "peer2.org1" is assigned the value "https://localhost:48328/sidetree/0.0.1"
+    And variable "peer0.org2" is assigned the value "https://localhost:48426/sidetree/0.0.1"
+    And variable "peer1.org2" is assigned the value "https://localhost:48427/sidetree/0.0.1"
+    And variable "peer2.org2" is assigned the value "https://localhost:48428/sidetree/0.0.1"
 
-    Then we wait 3 seconds
+    # Write several Sidetree transactions. Scatter the requests across different endpoints to generate multiple
+    # Sidetree transactions within the same block and across multiple blocks.
+    When client sends request to "${peer0.org1}/operations,${peer1.org1}/operations,${peer2.org1}/operations,${peer0.org2}/operations,${peer1.org2}/operations,${peer2.org2}/operations" to create 50 DID documents using 10 concurrent requests
+    Then we wait 20 seconds
+    Then client sends request to "${peer0.org1}/identifiers,${peer1.org1}/identifiers,${peer2.org1}/identifiers,${peer0.org2}/identifiers,${peer1.org2}/identifiers,${peer2.org2}/identifiers" to verify the DID documents that were created
 
-    Then client sends request to "https://localhost:48427/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48327/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48328/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-
-    Then we wait 3 seconds
-
-    Then client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48427/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-    And client sends request to "https://localhost:48327/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
-
-    Then we wait 30 seconds
+    When client sends request to "${peer0.org1}/operations,${peer1.org1}/operations,${peer2.org1}/operations,${peer0.org2}/operations,${peer1.org2}/operations,${peer2.org2}/operations" to create 50 DID documents using 10 concurrent requests
+    Then we wait 20 seconds
+    Then client sends request to "${peer0.org1}/identifiers,${peer1.org1}/identifiers,${peer2.org1}/identifiers,${peer0.org2}/identifiers,${peer1.org2}/identifiers,${peer2.org2}/identifiers" to verify the DID documents that were created
 
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time"
     Then the JSON path "time" of the response is not empty
@@ -120,11 +113,11 @@ Feature:
     And the JSON path "transactions" of the raw response is saved to variable "transactions"
 
     # Ensure that the anchor hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_9}?max-size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_9}?max-size=1000000"
     And the JSON path "batchFileHash" of the response is saved to variable "batchFileHash"
 
     # Ensure that the batch file hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${batchFileHash}?max-size=24000"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${batchFileHash}?max-size=1000000"
     And the JSON path "operations" of the array response is not empty
 
     # Invalid since
@@ -158,7 +151,7 @@ Feature:
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
     Then the JSON path "batchFileHash" of the response is not empty
 
     # Retrieve the previous block using the previous hash from above
@@ -173,7 +166,7 @@ Feature:
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
     Then the JSON path "batchFileHash" of the response is not empty
 
     # Retrieve the anchor file from the previous block hash
@@ -182,7 +175,7 @@ Feature:
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
     Then the JSON path "batchFileHash" of the response is not empty
 
     # Get block by hash where the data is base64-encoded

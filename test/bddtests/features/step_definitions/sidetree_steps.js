@@ -66,5 +66,11 @@ var myStepDefinitionsWrapper = function () {
     this.When(/^client sends request to "([^"]*)" to remove service endpoint with ID "([^"]*)" from DID document$/, function (arg1, arg2, callback) {
         callback.pending();
     });
+    this.When(/^client sends request to "([^"]*)" to create (\d+) DID documents using (\d+) concurrent requests$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    this.When(/^client sends request to "([^"]*)" to verify the DID documents that were created$/, function (arg1, callback) {
+        callback.pending();
+    });
 };
 module.exports = myStepDefinitionsWrapper;

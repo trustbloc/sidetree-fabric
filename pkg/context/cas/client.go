@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package cas
 
 import (
+	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
@@ -49,5 +50,15 @@ func (c *Client) Read(address string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return dcasClient.Get(c.ChaincodeName, c.Collection, address)
+
+	data, err := dcasClient.Get(c.ChaincodeName, c.Collection, address)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return nil, errors.Errorf("content not found for key [%s]", address)
+	}
+
+	return data, nil
 }
