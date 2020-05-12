@@ -45,7 +45,7 @@ func (c *context) Start() error {
 	return c.batchWriter.Start()
 }
 
-// Start stops the Sidetree resources held by the context
+// Stop stops the Sidetree resources held by the context
 func (c *context) Stop() {
 	logger.Debugf("[%s] Stopping Sidetree [%s]", c.channelID, c.Namespace())
 

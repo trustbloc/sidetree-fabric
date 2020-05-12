@@ -13,6 +13,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	mrand "math/rand"
 	"net/http"
 	"strings"
 
@@ -110,6 +111,7 @@ type DIDSideSteps struct {
 	recoveryKeySigner helper.Signer
 	updateKeySigner   helper.Signer
 	bddContext        *bddtests.BDDContext
+	dids              []string
 }
 
 // NewDIDSideSteps
@@ -366,28 +368,39 @@ func getRemoveServiceEndpointsPatch(keyID string) (patch.Patch, error) {
 }
 
 func (d *DIDSideSteps) getCreateRequest(doc []byte) ([]byte, error) {
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	data, privateKey, err := getCreateRequest(doc)
 	if err != nil {
 		return nil, err
 	}
 
 	d.recoveryKeySigner = ecsigner.New(privateKey, "ES256", "")
+
+	return data, nil
+}
+
+func getCreateRequest(doc []byte) ([]byte, *ecdsa.PrivateKey, error) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	recoveryPublicKey, err := pubkey.GetPublicKeyJWK(&privateKey.PublicKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return helper.NewCreateRequest(&helper.CreateRequestInfo{
+	data, err := helper.NewCreateRequest(&helper.CreateRequestInfo{
 		OpaqueDocument:          string(doc),
 		RecoveryKey:             recoveryPublicKey,
 		NextRecoveryRevealValue: []byte(recoveryOTP),
 		NextUpdateRevealValue:   []byte(updateOTP),
 		MultihashCode:           sha2_256,
 	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return data, privateKey, nil
 }
 
 func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byte, error) {
@@ -443,49 +456,63 @@ func (d *DIDSideSteps) getUpdateRequest(did string, updatePatch patch.Patch) ([]
 }
 
 func (d *DIDSideSteps) getOpaqueDocument(keyID string) ([]byte, error) {
-	// create operations key (used for document updates)
-	opsPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return nil, err
-	}
-
-	opsPubKey, err := getPubKey(&opsPrivateKey.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	// create general + auth JWS verification key
-	jwsPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return nil, err
-	}
-
-	jwsPubKey, err := getPubKey(&jwsPrivateKey.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	// create general + assertion ed25519 verification key
-	ed25519PulicKey, _, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		return nil, err
-	}
-
-	ed25519PubKey, err := getPubKey(ed25519PulicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	data := fmt.Sprintf(docTemplate, keyID, opsPubKey, jwsPubKey, ed25519PubKey)
-
-	doc, err := document.FromBytes([]byte(data))
+	data, opsPrivateKey, err := getOpaqueDocument(keyID)
 	if err != nil {
 		return nil, err
 	}
 
 	d.updateKeySigner = ecsigner.New(opsPrivateKey, "ES256", keyID)
 
-	return doc.Bytes()
+	return data, nil
+}
+
+func getOpaqueDocument(keyID string) ([]byte, *ecdsa.PrivateKey, error) {
+	// create operations key (used for document updates)
+	opsPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	opsPubKey, err := getPubKey(&opsPrivateKey.PublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// create general + auth JWS verification key
+	jwsPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	jwsPubKey, err := getPubKey(&jwsPrivateKey.PublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// create general + assertion ed25519 verification key
+	ed25519PulicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ed25519PubKey, err := getPubKey(ed25519PulicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	data := fmt.Sprintf(docTemplate, keyID, opsPubKey, jwsPubKey, ed25519PubKey)
+
+	doc, err := document.FromBytes([]byte(data))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	docBytes, err := doc.Bytes()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return docBytes, opsPrivateKey, nil
 }
 
 func (d *DIDSideSteps) httpPost(url string, req []byte, contentType string) error {
@@ -520,6 +547,85 @@ func (d *DIDSideSteps) setResponse(statusCode int, response []byte, header http.
 	if ok {
 		d.contentType = contentType[0]
 	}
+}
+
+func (d *DIDSideSteps) createDIDDocuments(urlsExpr string, num int, concurrency int) error {
+	strURLs, err := bddtests.ResolveVarsInExpression(urlsExpr)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("Creating %d DID document(s) at %s using a concurrency of %d", num, strURLs, concurrency)
+
+	urls := strings.Split(strURLs, ",")
+
+	p := NewWorkerPool(concurrency)
+
+	p.Start()
+
+	for i := 0; i < num; i++ {
+		p.Submit(&createDIDRequest{
+			url: urls[mrand.Intn(len(urls))],
+		})
+	}
+
+	p.Stop()
+
+	logger.Infof("Got %d responses for %d requests", len(p.responses), num)
+
+	if len(p.responses) != num {
+		return errors.Errorf("expecting %d responses but got %d", num, len(p.responses))
+	}
+
+	for _, resp := range p.responses {
+		req := resp.Request.(*createDIDRequest)
+		if resp.Err != nil {
+			logger.Infof("Got error from [%s]: %s", req.url, resp.Err)
+			return resp.Err
+		}
+
+		did := resp.Resp.(string)
+		logger.Infof("Got DID from [%s]: %s", req.url, did)
+		d.dids = append(d.dids, did)
+	}
+
+	return nil
+}
+
+func (d *DIDSideSteps) verifyDIDDocuments(urlsExpr string) error {
+	strURLs, err := bddtests.ResolveVarsInExpression(urlsExpr)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("Verifying the %d DID document(s) that were created", len(d.dids))
+
+	urls := strings.Split(strURLs, ",")
+
+	for _, did := range d.dids {
+		if err := d.verifyDID(urls[mrand.Intn(len(urls))], did); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *DIDSideSteps) verifyDID(url, did string) error {
+	logger.Infof("Verifying DID %s from %s", did, url)
+
+	err := d.httpGetWithRetry(url+"/"+did, 20, http.StatusNotFound)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to resolve DID [%s]", did)
+	}
+
+	if d.statusCode != http.StatusOK {
+		return errors.Errorf("failed to resolve DID [%s] - Status code %d: %s", did, d.statusCode, d.response)
+	}
+
+	logger.Infof(".. successfully verified DID %s from %s", did, url)
+
+	return nil
 }
 
 // getMethod returns method from namespace
@@ -558,10 +664,51 @@ func prettyPrint(result *document.ResolutionResult) error {
 	return nil
 }
 
+type createDIDRequest struct {
+	url string
+}
+
+func (r *createDIDRequest) Invoke() (interface{}, error) {
+	logger.Infof("Creating DID document at %s", r.url)
+
+	opaqueDoc, _, err := getOpaqueDocument("key1")
+	if err != nil {
+		return "", err
+	}
+
+	req, _, err := getCreateRequest(opaqueDoc)
+	if err != nil {
+		return "", err
+	}
+
+	client := bddtests.HTTPClient{}
+	docBytes, _, _, err := client.Post(r.url, req, contentTypeJSON)
+	if err != nil {
+		return "", err
+	}
+
+	logger.Infof("... got DID document: %s", docBytes)
+
+	var doc document.DIDDocument
+	err = json.Unmarshal(docBytes, &doc)
+	if err != nil {
+		return "", err
+	}
+
+	didDocument, ok := doc["didDocument"]
+	if !ok {
+		return "", errors.Errorf("Response is missing field 'didDocument': %s", docBytes)
+	}
+
+	return didDocument.(map[string]interface{})["id"].(string), nil
+}
+
 // RegisterSteps registers did sidetree steps
 func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^check error response contains "([^"]*)"$`, d.checkErrorResponse)
 	s.Step(`^client sends request to "([^"]*)" to create DID document in namespace "([^"]*)"$`, d.sendDIDDocument)
+	s.Step(`^client sends request to "([^"]*)" to create (\d+) DID documents using (\d+) concurrent requests$`, d.createDIDDocuments)
+	s.Step(`^client sends request to "([^"]*)" to verify the DID documents that were created$`, d.verifyDIDDocuments)
 	s.Step(`^client sends request to "([^"]*)" to update DID document path "([^"]*)" with value "([^"]*)"$`, d.updateDIDDocumentWithJSONPatch)
 	s.Step(`^client sends request to "([^"]*)" to add public key with ID "([^"]*)" to DID document$`, d.addPublicKeyToDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to remove public key with ID "([^"]*)" from DID document$`, d.removePublicKeyFromDIDDocument)

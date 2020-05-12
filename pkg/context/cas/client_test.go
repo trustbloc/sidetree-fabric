@@ -109,11 +109,7 @@ func TestWriteContentError(t *testing.T) {
 }
 
 func TestReadContentError(t *testing.T) {
-
-	testErr := errors.New("channel error")
-
 	dcasClient := &stmocks.DCASClient{}
-	dcasClient.GetReturns(nil, testErr)
 	dcasProvider := &stmocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(dcasClient, nil)
 
@@ -124,8 +120,22 @@ func TestReadContentError(t *testing.T) {
 		},
 		dcasProvider)
 
-	read, err := cas.Read("address")
-	require.NotNil(t, err)
-	require.Nil(t, read)
-	require.Contains(t, err.Error(), testErr.Error())
+	t.Run("Error", func(t *testing.T) {
+		testErr := errors.New("channel error")
+		dcasClient.GetReturns(nil, testErr)
+
+		read, err := cas.Read("address")
+		require.Error(t, err)
+		require.Nil(t, read)
+		require.Contains(t, err.Error(), testErr.Error())
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		dcasClient.GetReturns(nil, nil)
+
+		read, err := cas.Read("address")
+		require.Error(t, err)
+		require.Nil(t, read)
+		require.Contains(t, err.Error(), "not found")
+	})
 }

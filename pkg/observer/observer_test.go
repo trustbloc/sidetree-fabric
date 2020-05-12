@@ -8,6 +8,7 @@ package observer
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -96,6 +97,65 @@ func TestObserver(t *testing.T) {
 	ops, ok := putCalls[0][0].([]*batch.Operation)
 	require.True(t, ok)
 	require.Len(t, ops, 2)
+}
+
+func TestDcas_Read(t *testing.T) {
+	dcasCfg := config.DCAS{
+		ChaincodeName: sideTreeTxnCCName,
+		Collection:    dcasColl,
+	}
+
+	dcasProvider := &stmocks.DCASClientProvider{}
+	c := &stmocks.DCASClient{}
+
+	client := newDCAS(channel, dcasCfg, dcasProvider)
+
+	t.Run("Success", func(t *testing.T) {
+		const key1 = "key1"
+		data1 := []byte("data1")
+
+		dcasProvider.ForChannelReturns(c, nil)
+		c.GetReturns(data1, nil)
+
+		data, err := client.Read(key1)
+		require.NoError(t, err)
+		require.Equal(t, data1, data)
+	})
+
+	t.Run("Not found error", func(t *testing.T) {
+		const key1 = "key1"
+
+		dcasProvider.ForChannelReturns(c, nil)
+		c.GetReturns(nil, nil)
+
+		data, err := client.Read(key1)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "not found")
+		require.Nil(t, data)
+	})
+
+	t.Run("Provider error", func(t *testing.T) {
+		const key1 = "key1"
+		errExpected := errors.New("injected provider error")
+		dcasProvider.ForChannelReturns(nil, errExpected)
+
+		data, err := client.Read(key1)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+		require.Nil(t, data)
+	})
+
+	t.Run("Client error", func(t *testing.T) {
+		const key1 = "key1"
+		errExpected := errors.New("injected client error")
+		dcasProvider.ForChannelReturns(c, nil)
+		c.GetReturns(nil, errExpected)
+
+		data, err := client.Read(key1)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+		require.Nil(t, data)
+	})
 }
 
 func getDefaultDCASClient(cfg config.DCAS) *obmocks.MockDCASClient {

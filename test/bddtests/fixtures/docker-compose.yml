@@ -34,10 +34,10 @@ services:
     ports:
       - 7050:7050
     volumes:
-        - ./fabric/channel:/etc/hyperledger/configtx
-        - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/etc/hyperledger/msp/orderer
-        - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/etc/hyperledger/tls/orderer
-        - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/ca.crt:/etc/hyperledger/mutual_tls/orderer/ca.crt
+      - ./fabric/channel:/etc/hyperledger/configtx
+      - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/etc/hyperledger/msp/orderer
+      - ./fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/etc/hyperledger/tls/orderer
+      - ./fabric/crypto-config/peerOrganizations/tls.example.com/users/User1@tls.example.com/tls/ca.crt:/etc/hyperledger/mutual_tls/orderer/ca.crt
 
   peer0.org1.example.com:
     extends:
@@ -181,6 +181,6 @@ services:
     volumes:
       - ${COMPOSE_DIR}/config/couchDB/config.ini:/opt/couchdb/etc/local.d/config.ini
 
- # builder is only here to create a dependency on the image (not used as part of compose)
+  # builder is only here to create a dependency on the image (not used as part of compose)
   builder:
     image: ${TRUSTBLOCK_NS}/${FABRIC_BUILDER_FIXTURE_IMAGE}:${ARCH}-${FABRIC_BUILDER_FIXTURE_TAG}

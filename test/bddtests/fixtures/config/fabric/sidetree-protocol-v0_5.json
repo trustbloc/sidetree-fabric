@@ -1,6 +1,6 @@
 {
-  "startingBlockchainTime": 500000,
+  "startingBlockchainTime": 100,
   "hashAlgorithmInMultihashCode": 18,
   "maxDeltaByteSize": 200000,
-  "maxOperationsPerBatch": 3
+  "maxOperationsPerBatch": 30
 }

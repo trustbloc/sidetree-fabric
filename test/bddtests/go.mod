@@ -10,7 +10,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.3.0
 	github.com/spf13/viper v1.3.2
-	github.com/trustbloc/fabric-peer-test-common v0.1.3
+	github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200511225148-de0c44fbba2a
 	github.com/trustbloc/sidetree-core-go v0.1.3
 )
 
