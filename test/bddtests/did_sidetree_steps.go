@@ -608,6 +608,8 @@ func (d *DIDSideSteps) verifyDIDDocuments(urlsExpr string) error {
 		}
 	}
 
+	d.dids = nil
+
 	return nil
 }
 
