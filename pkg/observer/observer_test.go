@@ -7,254 +7,438 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
+	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"testing"
 	"time"
 
-	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
+	cb "github.com/hyperledger/fabric-protos-go/common"
+	pb "github.com/hyperledger/fabric-protos-go/peer"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	offledgerdcas "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
-	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
-	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
-	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
-	"github.com/trustbloc/sidetree-core-go/pkg/patch"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
+	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
+	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
-	"github.com/trustbloc/sidetree-fabric/pkg/role"
+	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
 
-//go:generate counterfeiter -o ../mocks/operationstore.gen.go --fake-name OperationStore ../context/common OperationStore
-//go:generate counterfeiter -o ../mocks/opstoreprovider.gen.go --fake-name OperationStoreProvider ../context/common OperationStoreProvider
-
 const (
-	channel      = "diddoc"
-	namespace    = "did:sidetree"
-	uniqueSuffix = "abc123"
-
-	sideTreeTxnCCName = "sidetreetxn_cc"
-	dcasColl          = "dcas"
-	k1                = "key1"
+	channel1       = "channel1"
+	org1           = "Org1MSP"
+	peer1          = "peer1.org1.com"
+	txID1          = "tx1"
+	anchor1        = "anchor1"
+	monitorPeriod  = 50 * time.Millisecond
+	sleepTime      = 200 * time.Millisecond
+	metaDataCCName = "document"
 )
 
 func TestObserver(t *testing.T) {
-	rolesValue := make(map[extroles.Role]struct{})
-	rolesValue[extroles.EndorserRole] = struct{}{}
-	rolesValue[role.Observer] = struct{}{}
-	extroles.SetRoles(rolesValue)
-	defer func() {
-		extroles.SetRoles(nil)
-	}()
-
-	p := mocks.NewBlockPublisher()
-	bpp := mocks.NewBlockPublisherProvider().WithBlockPublisher(p)
-
-	dcasCfg := config.DCAS{
-		ChaincodeName: sideTreeTxnCCName,
-		Collection:    dcasColl,
+	bcInfo := &cb.BlockchainInfo{
+		Height: 1002,
 	}
 
-	c := getDefaultDCASClient(dcasCfg)
-	dcasProvider := &stmocks.DCASClientProvider{}
-	dcasProvider.ForChannelReturns(c, nil)
+	b := peerextmocks.NewBlockBuilder(channel1, 1001)
+	tb1 := b.Transaction(txID1, pb.TxValidationCode_VALID)
+	tb1.ChaincodeAction(sideTreeTxnCCName).
+		Write(common.AnchorAddrPrefix+anchor1, []byte(anchor1)).
+		Write("non_anchor_key", []byte("some value"))
+	tb1.ChaincodeAction("some_other_cc").
+		Write("some_key", []byte("some value"))
 
-	opStore := &stmocks.OperationStore{}
+	meta := &MetaData{
+		LastBlockProcessed: 1000,
+	}
+	metaBytes, err := json.Marshal(meta)
+	require.NoError(t, err)
+
+	op1 := &batch.Operation{
+		ID: "op1",
+	}
+	op1Bytes, err := json.Marshal(op1)
+	require.NoError(t, err)
+	b64Op1 := base64.URLEncoding.EncodeToString(op1Bytes)
+
+	op2 := &batch.Operation{
+		ID: "op2",
+	}
+	op2Bytes, err := json.Marshal(op2)
+	require.NoError(t, err)
+	b64Op2 := base64.URLEncoding.EncodeToString(op2Bytes)
+
+	batchFile := &observer.BatchFile{
+		Operations: []string{b64Op1, b64Op2},
+	}
+	batchFileBytes, err := json.Marshal(batchFile)
+	require.NoError(t, err)
+
+	anchorFile := &observer.AnchorFile{}
+	anchorFileBytes, err := json.Marshal(anchorFile)
+	require.NoError(t, err)
+
+	clients := newMockClients()
+	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+	clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+
+	require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
+
+	clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
+	clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
+	clients.dcas.GetReturnsOnCall(2, op1Bytes, nil)
+	clients.dcas.GetReturnsOnCall(3, op2Bytes, nil)
+
 	opStoreProvider := &stmocks.OperationStoreProvider{}
-	opStoreProvider.ForNamespaceReturns(opStore, nil)
 
-	observer := New(channel, dcasCfg,
-		&Providers{
-			DCAS:           dcasProvider,
-			OperationStore: opStoreProvider,
-			Ledger:         notifier.New(channel, bpp),
-			Filter:         &sidetreeobserver.NoopOperationFilterProvider{},
-		},
-	)
-	require.NotNil(t, observer)
-	require.NoError(t, observer.Start())
+	t.Run("Triggered by block event", func(t *testing.T) {
+		cfg := config.Observer{
+			Period:                10 * time.Second,
+			MetaDataChaincodeName: metaDataCCName,
+		}
 
-	defer observer.Stop()
+		txnChan := make(chan gossipapi.TxMetadata, 1)
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
 
-	txMetaData := gossipapi.TxMetadata{BlockNum: 1, ChannelID: channel, TxID: "tx1"}
-	kvWrite := &kvrwset.KVWrite{Key: common.AnchorAddrPrefix + k1, IsDelete: false, Value: []byte(getAnchorAddress(uniqueSuffix))}
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
 
-	require.NoError(t, p.HandleWrite(txMetaData, sideTreeTxnCCName, kvWrite))
-	time.Sleep(200 * time.Millisecond)
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1001, TxNum: 0, ChannelID: channel1, TxID: txID1}
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1001, TxNum: 1, ChannelID: channel1, TxID: txID1}
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1001, TxNum: 2, ChannelID: channel1, TxID: txID1}
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1001, TxNum: 3, ChannelID: channel1, TxID: txID1}
 
-	// since there was one batch file with two operations we will have two entries in document map
-	putCalls := opStore.Invocations()["Put"]
-	require.Len(t, putCalls, 1)
-	require.Len(t, putCalls[0], 1)
+		time.Sleep(sleepTime)
+		m.Stop()
 
-	ops, ok := putCalls[0][0].([]*batch.Operation)
-	require.True(t, ok)
-	require.Len(t, ops, 2)
+		metaBytes, err := clients.offLedger.Get(cfg.MetaDataChaincodeName, MetaDataColName, peer1)
+		require.NoError(t, err)
+
+		meta := &MetaData{}
+		require.NoError(t, json.Unmarshal(metaBytes, meta))
+		require.Equal(t, uint64(1001), meta.LastBlockProcessed)
+	})
+
+	t.Run("Triggered by schedule", func(t *testing.T) {
+		cfg := config.Observer{
+			Period:                monitorPeriod,
+			MetaDataChaincodeName: metaDataCCName,
+		}
+
+		txnChan := make(chan gossipapi.TxMetadata, 1)
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+
+		metaBytes, err := clients.offLedger.Get(cfg.MetaDataChaincodeName, MetaDataColName, peer1)
+		require.NoError(t, err)
+
+		meta := &MetaData{}
+		require.NoError(t, json.Unmarshal(metaBytes, meta))
+		require.Equal(t, uint64(1001), meta.LastBlockProcessed)
+	})
 }
 
-func TestDcas_Read(t *testing.T) {
+func TestObserver_Error(t *testing.T) {
+	cfg := config.Observer{
+		Period:                monitorPeriod,
+		MetaDataChaincodeName: metaDataCCName,
+	}
+
+	b := peerextmocks.NewBlockBuilder(channel1, 1001)
+	tb1 := b.Transaction(txID1, pb.TxValidationCode_VALID)
+	tb1.ChaincodeAction(sideTreeTxnCCName).
+		Write(common.AnchorAddrPrefix+anchor1, []byte(anchor1)).
+		Write("non_anchor_key", []byte("some value"))
+	tb1.ChaincodeAction("some_other_cc").
+		Write("some_key", []byte("some value"))
+
+	opStoreProvider := &stmocks.OperationStoreProvider{}
+
+	txnChan := make(chan gossipapi.TxMetadata)
+
+	t.Run("Blockchain.ForChannel error", func(t *testing.T) {
+		clients := newMockClients()
+		clients.blockchainProvider.ForChannelReturns(nil, errors.New("blockchain.ForChannel error"))
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("Blockchain.GetBlockchainInfo error", func(t *testing.T) {
+		clients := newMockClients()
+		clients.blockchain.GetBlockchainInfoReturns(nil, errors.New("blockchain.GetBlockchainInfo error"))
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("DCAS client error", func(t *testing.T) {
+		meta := &MetaData{
+			LastBlockProcessed: 1000,
+		}
+		metaBytes, err := json.Marshal(meta)
+		require.NoError(t, err)
+
+		bcInfo := &cb.BlockchainInfo{
+			Height: 1002,
+		}
+
+		clients := newMockClients()
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+		require.NoError(t, clients.offLedger.Put(cfg.MetaDataChaincodeName, MetaDataColName, peer1, metaBytes))
+		clients.dcas.GetReturns(nil, errors.New("injected DCAS error"))
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("off-ledger client error", func(t *testing.T) {
+		clients := newMockClients()
+		clients.offLedger.GetErr = errors.New("injected off-ledger error")
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("Blockchain.GetBlockByNum error", func(t *testing.T) {
+		clients := newMockClients()
+		clients.blockchain.GetBlockByNumberReturns(nil, errors.New("blockchain.GetBlockByNumber error"))
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("getLastBlockProcessed error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+		clients.offLedger.WithGetErrorForKey(metaDataCCName, MetaDataColName, peer1, errors.New("getLastBlockProcessed error"))
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("getAnchorFile error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+		clients.dcas.GetReturnsOnCall(0, nil, errors.New("getAnchorFile error"))
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("anchor file unmarshal error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+		clients.dcas.GetReturns([]byte("invalid anchor file"), nil)
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("getBatchFile error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+
+		anchorFile := &observer.AnchorFile{}
+		anchorFileBytes, err := json.Marshal(anchorFile)
+		require.NoError(t, err)
+		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
+		clients.dcas.GetReturnsOnCall(1, nil, errors.New("get batch file error"))
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("batch file unmarshal error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+
+		anchorFile := &observer.AnchorFile{}
+		anchorFileBytes, err := json.Marshal(anchorFile)
+		require.NoError(t, err)
+		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
+		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("operation base64 error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+
+		anchorFile := &observer.AnchorFile{}
+		anchorFileBytes, err := json.Marshal(anchorFile)
+		require.NoError(t, err)
+		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
+
+		batchFile := &observer.BatchFile{
+			Operations: []string{"invalid base64 operation"},
+		}
+		batchFileBytes, err := json.Marshal(batchFile)
+		require.NoError(t, err)
+
+		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("operation unmarshal error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+
+		anchorFile := &observer.AnchorFile{}
+		anchorFileBytes, err := json.Marshal(anchorFile)
+		require.NoError(t, err)
+		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
+
+		b64Op1 := base64.URLEncoding.EncodeToString([]byte("invalid operation"))
+
+		batchFile := &observer.BatchFile{
+			Operations: []string{b64Op1},
+		}
+		batchFileBytes, err := json.Marshal(batchFile)
+		require.NoError(t, err)
+
+		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+
+	t.Run("block unmarshal error", func(t *testing.T) {
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(&cb.Block{
+			Header: &cb.BlockHeader{
+				Number: 1002,
+			},
+			Data: &cb.BlockData{
+				Data: [][]byte{[]byte("invalid block data")},
+			},
+		}, nil)
+
+		anchorFile := &observer.AnchorFile{}
+		anchorFileBytes, err := json.Marshal(anchorFile)
+		require.NoError(t, err)
+		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
+		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
+}
+
+type mockClients struct {
+	offLedgerProvider  *obmocks.OffLedgerClientProvider
+	dcasProvider       *stmocks.DCASClientProvider
+	blockchainProvider *obmocks.BlockchainClientProvider
+	blockchain         *obmocks.BlockchainClient
+	offLedger          *obmocks.MockOffLedgerClient
+	dcas               *stmocks.DCASClient
+}
+
+func newMockClients() *mockClients {
+	clients := &mockClients{}
+
+	clients.offLedgerProvider = &obmocks.OffLedgerClientProvider{}
+	clients.dcasProvider = &stmocks.DCASClientProvider{}
+	clients.blockchainProvider = &obmocks.BlockchainClientProvider{}
+
+	clients.blockchain = &obmocks.BlockchainClient{}
+	clients.blockchainProvider.ForChannelReturns(clients.blockchain, nil)
+
+	clients.offLedger = obmocks.NewMockOffLedgerClient()
+	clients.offLedgerProvider.ForChannelReturns(clients.offLedger, nil)
+
+	clients.dcas = &stmocks.DCASClient{}
+	clients.dcasProvider.ForChannelReturns(clients.dcas, nil)
+
+	return clients
+}
+
+func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, clients *mockClients, opStoreProvider ctxcommon.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata) *Observer {
+	peerCfg := &mocks.PeerConfig{}
+	peerCfg.MSPIDReturns(org1)
+	peerCfg.PeerIDReturns(peer1)
+
 	dcasCfg := config.DCAS{
 		ChaincodeName: sideTreeTxnCCName,
 		Collection:    dcasColl,
 	}
 
-	dcasProvider := &stmocks.DCASClientProvider{}
-	c := &stmocks.DCASClient{}
+	m := New(
+		channelID, peerCfg, cfg, dcasCfg,
+		&ClientProviders{
+			OffLedger:  clients.offLedgerProvider,
+			DCAS:       clients.dcasProvider,
+			Blockchain: clients.blockchainProvider,
+		},
+		opStoreProvider, txnChan,
+	)
+	require.NotNil(t, m)
 
-	client := newDCAS(channel, dcasCfg, dcasProvider)
-
-	t.Run("Success", func(t *testing.T) {
-		const key1 = "key1"
-		data1 := []byte("data1")
-
-		dcasProvider.ForChannelReturns(c, nil)
-		c.GetReturns(data1, nil)
-
-		data, err := client.Read(key1)
-		require.NoError(t, err)
-		require.Equal(t, data1, data)
-	})
-
-	t.Run("Not found error", func(t *testing.T) {
-		const key1 = "key1"
-
-		dcasProvider.ForChannelReturns(c, nil)
-		c.GetReturns(nil, nil)
-
-		data, err := client.Read(key1)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "not found")
-		require.Nil(t, data)
-	})
-
-	t.Run("Provider error", func(t *testing.T) {
-		const key1 = "key1"
-		errExpected := errors.New("injected provider error")
-		dcasProvider.ForChannelReturns(nil, errExpected)
-
-		data, err := client.Read(key1)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), errExpected.Error())
-		require.Nil(t, data)
-	})
-
-	t.Run("Client error", func(t *testing.T) {
-		const key1 = "key1"
-		errExpected := errors.New("injected client error")
-		dcasProvider.ForChannelReturns(c, nil)
-		c.GetReturns(nil, errExpected)
-
-		data, err := client.Read(key1)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), errExpected.Error())
-		require.Nil(t, data)
-	})
-}
-
-func getDefaultDCASClient(cfg config.DCAS) *obmocks.MockDCASClient {
-	dcasClient := obmocks.NewMockDCASClient()
-
-	batchBytes, anchorBytes := getSidetreeTxnPrerequisites(uniqueSuffix)
-	_, err := dcasClient.Put(cfg.ChaincodeName, cfg.Collection, batchBytes)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = dcasClient.Put(cfg.ChaincodeName, cfg.Collection, anchorBytes)
-	if err != nil {
-		panic(err)
-	}
-
-	return dcasClient
-}
-
-func getSidetreeTxnPrerequisites(uniqueSuffix string) (batchBytes, anchorBytes []byte) {
-
-	operations := getDefaultOperations(uniqueSuffix)
-	batchAddr, batchBytes := getBatchFileBytes(operations)
-
-	anchorBytes = getAnchorFileBytes(batchAddr, []string{uniqueSuffix})
-	return batchBytes, anchorBytes
-}
-
-// Operation defines sample operation
-type Operation struct {
-	//Operation type
-	Type string
-	//The unique suffix - encoded hash of the original create document
-	UniqueSuffix string
-	//The full ID of the document (including namespace)
-	ID string
-	//Operation patch data
-	PatchData *model.DeltaModel
-}
-
-func getDefaultOperations(did string) []string {
-	id := namespace + docutil.NamespaceDelimiter + uniqueSuffix
-
-	return []string{
-		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "create", PatchData: &model.DeltaModel{
-			Patches: []patch.Patch{},
-		}}),
-		encode(Operation{ID: id, UniqueSuffix: uniqueSuffix, Type: "update", PatchData: &model.DeltaModel{
-			Patches: []patch.Patch{},
-		}}),
-	}
-}
-
-func encode(op Operation) string {
-	return docutil.EncodeToString([]byte(getJSON(op)))
-}
-
-func getJSON(op Operation) string {
-
-	bytes, err := json.Marshal(op)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(bytes)
-}
-
-func getBatchFileBytes(operations []string) (string, []byte) {
-	bf := sidetreeobserver.BatchFile{Operations: operations}
-	key, bytes, err := common.MarshalDCAS(bf)
-	if err != nil {
-		panic(err)
-	}
-	return key, bytes
-}
-
-func getAnchorFileBytes(batchFileHash string, uniqueSuffixes []string) []byte {
-	af := sidetreeobserver.AnchorFile{
-		BatchFileHash:  batchFileHash,
-		UniqueSuffixes: uniqueSuffixes,
-	}
-	_, bytes, err := common.MarshalDCAS(af)
-	if err != nil {
-		panic(err)
-	}
-	return bytes
-}
-
-func getAnchorAddress(uniqueSuffix string) string {
-	_, anchorBytes := getSidetreeTxnPrerequisites(uniqueSuffix)
-	key, _, err := offledgerdcas.GetCASKeyAndValue(anchorBytes)
-	if err != nil {
-		panic(err.Error())
-	}
-	return key
-}
-
-func TestMain(t *testing.M) {
-	// Ensure that the roles are pre-initialized
-	extroles.GetRoles()
-	t.Run()
+	return m
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	mocks2 "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
@@ -129,15 +130,18 @@ func TestChannelController_Update(t *testing.T) {
 	dcasProvider := &mocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(dcas, nil)
 
+	observerProviders := &observer.ClientProviders{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			DCASProvider:           dcasProvider,
 			OperationQueueProvider: opQueueProvider,
 		},
-		PeerConfig:     peerConfig,
-		ConfigProvider: configProvider,
-		BlockPublisher: extmocks.NewBlockPublisherProvider(),
-		RESTConfig:     restCfg,
+		PeerConfig:        peerConfig,
+		ConfigProvider:    configProvider,
+		BlockPublisher:    extmocks.NewBlockPublisherProvider(),
+		RESTConfig:        restCfg,
+		ObserverProviders: observerProviders,
 	}
 
 	stConfigService := &cfgmocks.SidetreeConfigService{}

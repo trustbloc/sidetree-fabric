@@ -7,108 +7,323 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
-	"github.com/hyperledger/fabric/common/flogging"
-	"github.com/pkg/errors"
-	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
-	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
+	"strings"
+	"sync/atomic"
+	"time"
 
+	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
+	"github.com/pkg/errors"
+	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
+
+	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric/common/flogging"
+	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
+	"github.com/trustbloc/sidetree-core-go/pkg/observer"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
 )
 
 var logger = flogging.MustGetLogger("sidetree_observer")
 
-type dcas struct {
-	config.DCAS
-	channelID      string
-	clientProvider common.DCASClientProvider
+const defaultMonitorPeriod = 10 * time.Second
+
+// MetaData contains meta-data for the document store
+type MetaData struct {
+	LastBlockProcessed uint64
 }
 
-func newDCAS(channelID string, dcasCfg config.DCAS, provider common.DCASClientProvider) *dcas {
-	return &dcas{
-		DCAS:           dcasCfg,
-		channelID:      channelID,
-		clientProvider: provider,
-	}
+// ClientProviders contains the providers for off-ledger, DCAS, and blockchain clients
+type ClientProviders struct {
+	OffLedger  common.OffLedgerClientProvider
+	DCAS       common.DCASClientProvider
+	Blockchain common.BlockchainClientProvider
 }
 
-func (d *dcas) Read(key string) ([]byte, error) {
-	dcasClient, err := d.getDCASClient()
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := dcasClient.Get(d.ChaincodeName, d.Collection, key)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(data) == 0 {
-		return nil, errors.Errorf("content not found for key [%s]", key)
-	}
-
-	return data, nil
+type metaDataStore interface {
+	Get() (*MetaData, error)
+	Put(*MetaData) error
 }
 
-func (d *dcas) getDCASClient() (dcasclient.DCAS, error) {
-	return d.clientProvider.ForChannel(d.channelID)
-}
-
-// Observer observes the ledger for new anchor files and updates the document store accordingly
+// Observer reads blocks from the ledger looking for Sidetree anchor writes and persists the document operations to the document store.
 type Observer struct {
-	channelID string
-	observer  *sidetreeobserver.Observer
+	channelID      string
+	period         time.Duration
+	blockVisitor   *blockvisitor.Visitor
+	done           chan struct{}
+	txnProcessor   *observer.TxnProcessor
+	blockchain     common.BlockchainClientProvider
+	metaDataStore  metaDataStore
+	processStarted uint32
+	txnChan        <-chan gossipapi.TxMetadata
+	processChan    chan struct{}
 }
 
-// Providers are the providers required by the observer
-type Providers struct {
-	DCAS           common.DCASClientProvider
-	OperationStore ctxcommon.OperationStoreProvider
-	Ledger         sidetreeobserver.Ledger
-	Filter         sidetreeobserver.OperationFilterProvider
+type peerConfig interface {
+	PeerID() string
+	MSPID() string
 }
 
 // New returns a new Observer
-func New(channelID string, dcasCfg config.DCAS, providers *Providers) *Observer {
-	stProviders := &sidetreeobserver.Providers{
-		Ledger:           providers.Ledger,
-		DCASClient:       newDCAS(channelID, dcasCfg, providers.DCAS),
-		OpStoreProvider:  storeProvider(providers.OperationStore),
-		OpFilterProvider: providers.Filter,
+func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcasCfg config.DCAS, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata) *Observer {
+	period := observerCfg.Period
+	if period == 0 {
+		period = defaultMonitorPeriod
 	}
 
-	return &Observer{
-		channelID: channelID,
-		observer:  sidetreeobserver.New(stProviders),
+	m := &Observer{
+		channelID:     channelID,
+		period:        period,
+		blockchain:    clientProviders.Blockchain,
+		metaDataStore: NewMetaDataStore(channelID, peerCfg, observerCfg.MetaDataChaincodeName, clientProviders.OffLedger),
+		txnProcessor: observer.NewTxnProcessor(
+			&observer.Providers{
+				DCASClient:       NewSidetreeDCASReader(channelID, dcasCfg, clientProviders.DCAS),
+				OpStoreProvider:  asObserverStoreProvider(opStoreProvider),
+				OpFilterProvider: operationfilter.NewProvider(channelID, opStoreProvider),
+			},
+		),
+		txnChan:     txnChan,
+		done:        make(chan struct{}, 1),
+		processChan: make(chan struct{}),
 	}
+
+	m.blockVisitor = blockvisitor.New(channelID,
+		blockvisitor.WithWriteHandler(m.handleWrite),
+		blockvisitor.WithErrorHandler(m.handleError),
+	)
+
+	return m
 }
 
-// Start starts channel observer
-func (o *Observer) Start() error {
-	logger.Infof("[%s] Starting observer for channel", o.channelID)
+// Start starts the Observer
+func (m *Observer) Start() error {
+	logger.Infof("[%s] Starting Observer", m.channelID)
 
-	o.observer.Start()
+	go m.run()
+	go m.listen()
 
 	return nil
 }
 
-// Stop stops the channel observer routines
-func (o *Observer) Stop() {
-	logger.Infof("[%s] Stopping observer", o.channelID)
+// Stop stops the Observer
+func (m *Observer) Stop() {
+	logger.Infof("[%s] Stopping Observer", m.channelID)
 
-	o.observer.Stop()
+	m.done <- struct{}{}
 }
 
-type storePovider struct {
+func (m *Observer) listen() {
+	logger.Infof("[%s] Starting Observer with a period of %s", m.channelID, m.period)
+
+	ticker := time.NewTicker(m.period)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			logger.Debugf("[%s] Triggering scheduled processing of Sidetree transactions", m.channelID)
+			m.trigger()
+		case txn := <-m.txnChan:
+			logger.Debugf("[%s] Got notification about a Sidetree transaction in block %d and txnNum %d - triggering processing", m.channelID, txn.BlockNum, txn.TxNum)
+			m.trigger()
+		case <-m.done:
+			logger.Infof("[%s] Exiting Observer", m.channelID)
+			close(m.processChan)
+			return
+		}
+	}
+}
+
+func (m *Observer) trigger() {
+	if m.started() {
+		logger.Debugf("[%s] No need to trigger the processor to start since it's already running", m.channelID)
+		return
+	}
+
+	select {
+	case m.processChan <- struct{}{}:
+		logger.Debugf("[%s] Triggered processor for Sidetree transactions", m.channelID)
+	default:
+		logger.Debugf("[%s] Unable to trigger processor since the notification channel is busy", m.channelID)
+	}
+}
+
+func (m *Observer) run() {
+	logger.Infof("[%s] Listening for triggers", m.channelID)
+
+	for range m.processChan {
+		logger.Debugf("[%s] Got notification to process blocks for Sidetree transactions", m.channelID)
+		m.process()
+	}
+
+	logger.Infof("[%s] ... stopped listening for triggers", m.channelID)
+}
+
+func (m *Observer) process() {
+	if !m.processorStarting() {
+		logger.Debugf("[%s] Processor already running", m.channelID)
+		return
+	}
+
+	defer m.processorStopped()
+
+	bcInfo, err := m.getBlockchainInfo()
+	if err != nil {
+		logger.Warnf("[%s] Error getting blockchain info: %s", m.channelID, err)
+		return
+	}
+
+	lastBlockNum, err := m.lastBlockProcessed()
+	if err != nil {
+		logger.Warnf("[%s] Error getting last block processed: %s", m.channelID, err)
+		return
+	}
+
+	logger.Debugf("[%s] Processing - Block height [%d], last block processed [%d]", m.channelID, bcInfo.Height, lastBlockNum)
+
+	for bNum := lastBlockNum + 1; bNum < bcInfo.Height; bNum++ {
+		logger.Debugf("[%s] Processing block [%d]", m.channelID, bNum)
+		if err = m.processBlock(bNum); err != nil {
+			logger.Errorf("[%s] Error processing block [%d]: %s", m.channelID, bNum, err)
+			return
+		}
+	}
+}
+
+func (m *Observer) processBlock(bNum uint64) error {
+	var block *cb.Block
+	var err error
+
+	if block, err = m.getBlockByNumber(bNum); err != nil {
+		return errors.WithMessagef(err, "error getting block [%d]", bNum)
+	}
+
+	if err = m.blockVisitor.Visit(block); err != nil {
+		return err
+	}
+
+	if err = m.setLastBlockProcessed(bNum); err != nil {
+		return errors.WithMessagef(err, "error setting last block processed for block [%d]", bNum)
+	}
+
+	return nil
+}
+
+func (m *Observer) handleWrite(w *blockvisitor.Write) error {
+	if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
+		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
+		return nil
+	}
+
+	logger.Debugf("[%s] Handling write to anchor [%s] in block [%d] and TxNum [%d]", m.channelID, w.Write.Value, w.BlockNum, w.TxNum)
+
+	sidetreeTxn := observer.SidetreeTxn{
+		TransactionTime:   w.BlockNum,
+		TransactionNumber: w.TxNum,
+		AnchorAddress:     string(w.Write.Value),
+	}
+
+	if err := m.txnProcessor.Process(sidetreeTxn); err != nil {
+		return errors.WithMessagef(err, "error processing Txn for anchor [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
+	}
+
+	return nil
+}
+
+func (m *Observer) handleError(err error, ctx *blockvisitor.Context) error {
+	if ctx.Category == blockvisitor.UnmarshalErr {
+		logger.Errorf("[%s] Ignoring persistent error: %s. Context: %s", m.channelID, err, ctx)
+		return nil
+	}
+
+	if !transienterr.Is(err) {
+		logger.Errorf("[%s] Ignoring persistent error: %s. Context: %s", m.channelID, err, ctx)
+		return nil
+	}
+
+	logger.Warnf("[%s] Will retry on transient error [%s] in %s. Context: %s", m.channelID, err, m.period, ctx)
+
+	return err
+}
+
+func (m *Observer) getBlockchainInfo() (*cb.BlockchainInfo, error) {
+	bcClient, err := m.blockchainClient()
+	if err != nil {
+		return nil, err
+	}
+	block, err := bcClient.GetBlockchainInfo()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to get blockchain info")
+	}
+	return block, nil
+}
+
+func (m *Observer) getBlockByNumber(bNum uint64) (*cb.Block, error) {
+	bcClient, err := m.blockchainClient()
+	if err != nil {
+		return nil, err
+	}
+	block, err := bcClient.GetBlockByNumber(bNum)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "failed to get block number [%d]", bNum)
+	}
+	return block, nil
+}
+
+func (m *Observer) blockchainClient() (client.Blockchain, error) {
+	return m.blockchain.ForChannel(m.channelID)
+}
+
+func (m *Observer) lastBlockProcessed() (uint64, error) {
+	metaData, err := m.metaDataStore.Get()
+	if err != nil {
+		if err == errMetaDataNotFound {
+			return 0, nil
+		}
+
+		return 0, err
+	}
+
+	return metaData.LastBlockProcessed, nil
+}
+
+func (m *Observer) setLastBlockProcessed(bNum uint64) error {
+	metaData := &MetaData{LastBlockProcessed: bNum}
+
+	logger.Debugf("[%s] Updating meta-data: %+v", m.channelID, metaData)
+
+	if err := m.metaDataStore.Put(metaData); err != nil {
+		return errors.WithMessage(err, "error persisting meta-data")
+	}
+
+	return nil
+}
+
+func (m *Observer) started() bool {
+	return atomic.LoadUint32(&m.processStarted) == 1
+}
+
+func (m *Observer) processorStarting() bool {
+	return atomic.CompareAndSwapUint32(&m.processStarted, 0, 1)
+}
+
+func (m *Observer) processorStopped() {
+	atomic.CompareAndSwapUint32(&m.processStarted, 1, 0)
+}
+
+type observerStorePovider struct {
 	opStoreProvider ctxcommon.OperationStoreProvider
 }
 
-func storeProvider(p ctxcommon.OperationStoreProvider) *storePovider {
-	return &storePovider{opStoreProvider: p}
+func asObserverStoreProvider(p ctxcommon.OperationStoreProvider) *observerStorePovider {
+	return &observerStorePovider{opStoreProvider: p}
 }
 
-func (p *storePovider) ForNamespace(namespace string) (sidetreeobserver.OperationStore, error) {
+func (p *observerStorePovider) ForNamespace(namespace string) (observer.OperationStore, error) {
 	s, err := p.opStoreProvider.ForNamespace(namespace)
 	if err != nil {
 		return nil, err

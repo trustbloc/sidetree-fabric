@@ -67,9 +67,9 @@ const (
 
 	dcasCfgJson = `{"ChaincodeName":"sidetreetxn","Collection":"dcas"}`
 
-	peerSidetreeCfgJson         = `{"Monitor":{"Period":"5s"}}`
+	peerSidetreeCfgJson         = `{"Observer":{"Period":"5s"}}`
 	peerDocumentHandler1CfgJson = `{"Namespace":"did:sidetree","BasePath":"/document"}`
-	peerTrustblocCfgJson        = `{"Monitor":{"Period":"5s"}}`
+	peerTrustblocCfgJson        = `{"Observer":{"Period":"5s"}}`
 	peerTrustblocHandlerCfgJson = `{"Namespace":"did:bloc:trustbloc.dev","BasePath":"/trustbloc.dev"}`
 	peerNoneCfgJson             = `{}`
 

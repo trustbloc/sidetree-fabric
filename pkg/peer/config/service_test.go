@@ -42,7 +42,7 @@ const (
 	didSidetreeCfgJSON               = `{"batchWriterTimeout":"5s"}`
 	didSidetreeProtocol_V0_4_CfgJSON = `{"startingBlockchainTime":200000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
 	didSidetreeProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":10000,"maxOperationsPerBatch":100}`
-	sidetreePeerCfgJson              = `{"Monitor":{"Period":"5s"}}`
+	sidetreePeerCfgJson              = `{"Observer":{"Period":"5s"}}`
 	sidetreeHandler1CfgJson          = `{"Namespace":"did:sidetree","BasePath":"/sidetree/0.0.1"}`
 	sidetreeHandler2CfgJson          = `{"Namespace":"file:idx","BasePath":"/file"}`
 	fileHandler1CfgJson              = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
@@ -145,7 +145,7 @@ func TestNewSidetreeProvider(t *testing.T) {
 		configService.GetReturns(cfgValue, nil)
 		cfg, err := s.LoadSidetreePeer(mspID, peerID)
 		require.NoError(t, err)
-		require.Equal(t, 5*time.Second, cfg.Monitor.Period)
+		require.Equal(t, 5*time.Second, cfg.Observer.Period)
 	})
 
 	t.Run("LoadSidetreeHandlers", func(t *testing.T) {

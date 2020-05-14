@@ -10,23 +10,39 @@ import (
 	"testing"
 	"time"
 
+	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/stretchr/testify/require"
-	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
-func TestObserverController(t *testing.T) {
-	bp := extmocks.NewBlockPublisher()
-	bpp := extmocks.NewBlockPublisherProvider().WithBlockPublisher(bp)
+//go:generate counterfeiter -o ../mocks/peerconfig.gen.go --fake-name PeerConfig . peerConfig
 
-	n := notifier.New(channel1, bpp)
+const (
+	peer1 = "peer1.example.com"
+	msp1  = "Org1MSP"
+)
 
-	t.Run("Observer role", func(t *testing.T) {
+// Ensure that the roles are loaded
+var _ = extroles.GetRoles()
+
+func TestMonitorController(t *testing.T) {
+	peerCfg := &peermocks.PeerConfig{}
+	peerCfg.PeerIDReturns(peer1)
+	peerCfg.MSPIDReturns(msp1)
+
+	monitorCfg := config.Observer{Period: time.Second}
+	dcasCfg := config.DCAS{}
+	providers := &observer.ClientProviders{}
+
+	txnChan := make(chan gossipapi.TxMetadata)
+
+	t.Run("Observer is started", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})
 		rolesValue[role.Observer] = struct{}{}
 		extroles.SetRoles(rolesValue)
@@ -34,25 +50,28 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		o := newObserverController(channel1, config.DCAS{}, &mocks.DCASClientProvider{}, &mocks.OperationStoreProvider{}, n)
-		require.NotNil(t, o)
+		m := newObserverController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{}, txnChan)
+		require.NotNil(t, m)
 
-		require.NoError(t, o.Start())
+		require.NoError(t, m.Start())
 		time.Sleep(100 * time.Millisecond)
-		o.Stop()
+		m.Stop()
 	})
 
-	t.Run("No observer role", func(t *testing.T) {
+	t.Run("Observer is not started", func(t *testing.T) {
 		rolesValue := make(map[extroles.Role]struct{})
+		rolesValue[extroles.EndorserRole] = struct{}{}
+		rolesValue[role.Resolver] = struct{}{}
 		extroles.SetRoles(rolesValue)
 		defer func() {
 			extroles.SetRoles(nil)
 		}()
 
-		o := newObserverController(channel1, config.DCAS{}, &mocks.DCASClientProvider{}, &mocks.OperationStoreProvider{}, n)
-		require.NotNil(t, o)
+		m := newObserverController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{}, txnChan)
+		require.NotNil(t, m)
 
-		require.NoError(t, o.Start())
-		o.Stop()
+		require.NoError(t, m.Start())
+		time.Sleep(100 * time.Millisecond)
+		m.Stop()
 	})
 }

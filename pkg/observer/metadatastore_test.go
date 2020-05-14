@@ -4,27 +4,36 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package monitor
+package observer
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
+
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 )
 
 const (
 	cc1 = "cc1"
 )
 
-func TestMetaDataStore(t *testing.T) {
-	olp := &mocks.OffLedgerClientProvider{}
+// Initialize roles
+var _ = roles.GetRoles()
 
-	s := NewMetaDataStore(channel1, peer1, cc1, olp)
-	require.NotNil(t, s)
+func TestMetaDataStore(t *testing.T) {
+	olp := &obmocks.OffLedgerClientProvider{}
+	peerCfg := &mocks.PeerConfig{}
+	peerCfg.MSPIDReturns(org1)
+	peerCfg.PeerIDReturns(peer1)
 
 	t.Run("Get - provider error", func(t *testing.T) {
+		s := NewMetaDataStore(channel1, peerCfg, cc1, olp)
+		require.NotNil(t, s)
+
 		errProvider := errors.New("injected provider error")
 		olp.ForChannelReturns(nil, errProvider)
 
@@ -34,6 +43,9 @@ func TestMetaDataStore(t *testing.T) {
 	})
 
 	t.Run("Put - provider error", func(t *testing.T) {
+		s := NewMetaDataStore(channel1, peerCfg, cc1, olp)
+		require.NotNil(t, s)
+
 		errProvider := errors.New("injected provider error")
 		olp.ForChannelReturns(nil, errProvider)
 
@@ -42,7 +54,10 @@ func TestMetaDataStore(t *testing.T) {
 	})
 
 	t.Run("Get - client error", func(t *testing.T) {
-		ols := mocks.NewMockOffLedgerClient()
+		s := NewMetaDataStore(channel1, peerCfg, cc1, olp)
+		require.NotNil(t, s)
+
+		ols := obmocks.NewMockOffLedgerClient()
 		olp.ForChannelReturns(ols, nil)
 
 		ols.GetErr = errors.New("injected Get error")
@@ -54,7 +69,10 @@ func TestMetaDataStore(t *testing.T) {
 	})
 
 	t.Run("Put - client error", func(t *testing.T) {
-		ols := mocks.NewMockOffLedgerClient()
+		s := NewMetaDataStore(channel1, peerCfg, cc1, olp)
+		require.NotNil(t, s)
+
+		ols := obmocks.NewMockOffLedgerClient()
 		olp.ForChannelReturns(ols, nil)
 
 		ols.PutErr = errors.New("injected Put error")
@@ -65,7 +83,10 @@ func TestMetaDataStore(t *testing.T) {
 	})
 
 	t.Run("Not found error", func(t *testing.T) {
-		ols := mocks.NewMockOffLedgerClient()
+		s := NewMetaDataStore(channel1, peerCfg, cc1, olp)
+		require.NotNil(t, s)
+
+		ols := obmocks.NewMockOffLedgerClient()
 		olp.ForChannelReturns(ols, nil)
 
 		d, err := s.Get()
@@ -74,7 +95,33 @@ func TestMetaDataStore(t *testing.T) {
 	})
 
 	t.Run("Get and put -> success", func(t *testing.T) {
-		ols := mocks.NewMockOffLedgerClient()
+		s := NewMetaDataStore(channel1, peerCfg, cc1, olp)
+		require.NotNil(t, s)
+
+		ols := obmocks.NewMockOffLedgerClient()
+		olp.ForChannelReturns(ols, nil)
+
+		data := &MetaData{}
+		require.NoError(t, s.Put(data))
+
+		d, err := s.Get()
+		require.NoError(t, err)
+		require.Equal(t, data, d)
+	})
+
+	t.Run("Clustered -> success", func(t *testing.T) {
+		rolesValue := make(map[roles.Role]struct{})
+		rolesValue[roles.CommitterRole] = struct{}{}
+		roles.SetRoles(rolesValue)
+
+		defer func() {
+			roles.SetRoles(nil)
+		}()
+
+		s := NewMetaDataStore(channel1, peerCfg, cc1, olp)
+		require.NotNil(t, s)
+
+		ols := obmocks.NewMockOffLedgerClient()
 		olp.ForChannelReturns(ols, nil)
 
 		data := &MetaData{}

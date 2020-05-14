@@ -20,7 +20,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")
@@ -60,11 +60,11 @@ type operationQueueProvider interface {
 type providers struct {
 	*ContextProviders
 
-	PeerConfig       peerConfig
-	RESTConfig       restConfig
-	ConfigProvider   configServiceProvider
-	MonitorProviders *monitor.ClientProviders
-	BlockPublisher   ctxcommon.BlockPublisherProvider
+	PeerConfig        peerConfig
+	RESTConfig        restConfig
+	ConfigProvider    configServiceProvider
+	ObserverProviders *observer.ClientProviders
+	BlockPublisher    ctxcommon.BlockPublisherProvider
 }
 
 // Provider implements a Sidetree services provider which is responsible for managing Sidetree
