@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","operationBuffer","updateRevealValue","recoveryRevealValue","updateCommitment","recoveryCommitment","hashAlgorithmInMultiHashCode","operationIndex","delta","encodedDelta","signedData","suffixData","transactionNumber","transactionTime","type","uniqueSuffix"]}`
+	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","operationBuffer","updateRevealValue","recoveryRevealValue","operationIndex","delta","encodedDelta","signedData","suffixData","transactionNumber","transactionTime","type","uniqueSuffix"]}`
 )
 
 var logger = flogging.MustGetLogger("sidetree_context")
