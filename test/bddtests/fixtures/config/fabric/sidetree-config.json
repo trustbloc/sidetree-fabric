@@ -1,6 +1,6 @@
 {
-  "Monitor": {
-    "Period": "8s",
+  "Observer": {
+    "Period": "20s",
     "MetaDataChaincodeName": "document"
   }
 }

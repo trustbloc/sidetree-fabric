@@ -17,15 +17,15 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
-// Monitor holds Sidetree monitor config
-type Monitor struct {
+// Observer holds Sidetree Observer config
+type Observer struct {
 	Period                time.Duration
 	MetaDataChaincodeName string
 }
 
 // SidetreePeer holds peer-specific Sidetree config
 type SidetreePeer struct {
-	Monitor Monitor
+	Observer Observer
 }
 
 // DCAS holds Distributed Content Addressable Store (DCAS) configuration

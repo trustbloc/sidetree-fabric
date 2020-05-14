@@ -10,10 +10,9 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/flogging"
-
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 )
 
 var logger = flogging.MustGetLogger("sidetree_chaincode")
@@ -52,7 +51,7 @@ func (cc *DocumentCC) Chaincode() shim.Chaincode { return cc }
 func (cc *DocumentCC) GetDBArtifacts(collNames []string) map[string]*ccapi.DBArtifacts {
 	collIndexes := make(map[string][]string)
 	for _, collName := range collNames {
-		if collName == monitor.MetaDataColName {
+		if collName == observer.MetaDataColName {
 			continue
 		}
 

@@ -31,15 +31,6 @@ func TestIsBatchWriter(t *testing.T) {
 	require.True(t, IsBatchWriter())
 }
 
-func TestIsMonitor(t *testing.T) {
-	require.False(t, IsMonitor())
-
-	restore := setRoles(Monitor)
-	defer restore()
-
-	require.True(t, IsMonitor())
-}
-
 func TestIsObserver(t *testing.T) {
 	require.False(t, IsObserver())
 

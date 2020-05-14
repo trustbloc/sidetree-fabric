@@ -20,8 +20,9 @@ const (
 )
 
 const (
-	org1Peer1Cfg                               = `{"Monitor":{"MetaDataChaincodeName":"document","Period":"3s"}}`
-	org1Peer1CfgNoMetaDataCC                   = `{"Monitor":{"Period":"3s"}}`
+	org1Peer1Cfg                               = `{"Observer":{"MetaDataChaincodeName":"document","Period":"3s"}}`
+	org1Peer1NoPeriodCfg                       = `{"Observer":{"MetaDataChaincodeName":"document"}}`
+	org1Peer1CfgNoMetaDataCC                   = `{"Observer":{"Period":"3s"}}`
 	org1Peer1SidetreeHandlerCfg                = `{"BasePath":"/sidetree/0.0.1","Namespace":"did:sidetree","Authorization":{"ReadTokens":["did_r","did_w"],"WriteTokens": ["did_w"]}}`
 	org1Peer1SidetreeHandlerNoNamespaceCfg     = `{"BasePath":"/sidetree/0.0.1"}`
 	org1Peer1SidetreeHandlerNoBasePathCfg      = `{"Namespace":"did:sidetree"}`
@@ -52,8 +53,8 @@ func TestSidetreePeerValidator_Validate(t *testing.T) {
 		require.Contains(t, err.Error(), "not defined in peer config")
 	})
 
-	t.Run("Empty config -> success", func(t *testing.T) {
-		require.NoError(t, v.Validate(config.NewKeyValue(key, config.NewValue(txID, `{}`, config.FormatJSON))))
+	t.Run("No period -> success", func(t *testing.T) {
+		require.NoError(t, v.Validate(config.NewKeyValue(key, config.NewValue(txID, org1Peer1NoPeriodCfg, config.FormatJSON))))
 	})
 
 	t.Run("Config with apps -> success", func(t *testing.T) {

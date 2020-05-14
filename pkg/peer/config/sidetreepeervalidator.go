@@ -55,7 +55,7 @@ func (v *sidetreePeerValidator) validateConfig(kv *config.KeyValue) error {
 		return errors.WithMessagef(err, "invalid config %s", kv.Key)
 	}
 
-	return v.validateMonitor(kv, sidetreeCfg.Monitor)
+	return v.validateObserver(kv, sidetreeCfg.Observer)
 }
 
 func (v *sidetreePeerValidator) validateHandlerConfig(kv *config.KeyValue) error {
@@ -91,10 +91,9 @@ func (v *sidetreePeerValidator) validateHandlerConfig(kv *config.KeyValue) error
 	return nil
 }
 
-func (v *sidetreePeerValidator) validateMonitor(kv *config.KeyValue, cfg sidetreecfg.Monitor) error {
+func (v *sidetreePeerValidator) validateObserver(kv *config.KeyValue, cfg sidetreecfg.Observer) error {
 	if cfg.Period == 0 {
-		logger.Infof("The Sidetree monitor period is set to 0 and therefore will be disabled for peer [%s].", kv.PeerID)
-		return nil
+		logger.Infof("The Sidetree monitor period is set to 0 and therefore the default value will be used for [%s].", kv.PeerID)
 	}
 
 	if cfg.MetaDataChaincodeName == "" {

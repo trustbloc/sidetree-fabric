@@ -13,7 +13,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 
 	sidetreecfg "github.com/trustbloc/sidetree-fabric/pkg/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/monitor"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 )
 
 const (
@@ -69,7 +69,7 @@ func (v *sidetreeValidator) validateConfig(kv *config.KeyValue) error {
 		return errors.Errorf("field 'Collection' is required for %s", kv.Key)
 	}
 
-	if sidetreeCfg.Collection == monitor.MetaDataColName {
+	if sidetreeCfg.Collection == observer.MetaDataColName {
 		return errors.Errorf("field 'Collection' must not use reserved name [%s] for %s", sidetreeCfg.Collection, kv.Key)
 	}
 

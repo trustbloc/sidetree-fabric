@@ -20,6 +20,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
@@ -84,15 +85,18 @@ func TestProvider(t *testing.T) {
 	dcasProvider := &mocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(dcasClient, nil)
 
+	observerProviders := &observer.ClientProviders{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			OperationQueueProvider: opQueueProvider,
 			DCASProvider:           dcasProvider,
 		},
-		PeerConfig:     peerConfig,
-		RESTConfig:     restConfig,
-		ConfigProvider: configProvider,
-		BlockPublisher: blockpublisher.NewProvider(),
+		PeerConfig:        peerConfig,
+		RESTConfig:        restConfig,
+		ConfigProvider:    configProvider,
+		BlockPublisher:    blockpublisher.NewProvider(),
+		ObserverProviders: observerProviders,
 	}
 
 	fileHandler1 := filehandler.Config{

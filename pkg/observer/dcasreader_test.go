@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package monitor
+package observer
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
@@ -50,10 +51,6 @@ func TestSidetreeDCASReader_Read(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "content not found for key")
 		require.Nil(t, value)
-
-		merr, ok := err.(monitorError)
-		require.True(t, ok)
-		require.False(t, merr.Transient())
 	})
 }
 
@@ -77,8 +74,5 @@ func TestSidetreeDCASReader_ReadError(t *testing.T) {
 	value, err := r.Read("some-key")
 	require.EqualError(t, err, errExpected.Error())
 	require.Nil(t, value)
-
-	merr, ok := err.(monitorError)
-	require.True(t, ok)
-	require.True(t, merr.Transient())
+	require.True(t, transienterr.Is(err))
 }

@@ -4,12 +4,13 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package monitor
+package observer
 
 import (
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
@@ -34,16 +35,16 @@ func NewSidetreeDCASReader(channelID string, dcasCfg config.DCAS, dcasClientProv
 func (r *SidetreeDCASReader) Read(key string) ([]byte, error) {
 	dcasClient, err := r.dcasClient()
 	if err != nil {
-		return nil, newMonitorError(err, true)
+		return nil, transienterr.New(err)
 	}
 
 	content, err := dcasClient.Get(r.ChaincodeName, r.Collection, key)
 	if err != nil {
-		return nil, newMonitorError(err, true)
+		return nil, transienterr.New(err)
 	}
 
 	if len(content) == 0 {
-		return nil, newMonitorError(errors.Errorf("content not found for key [%s]", key), false)
+		return nil, errors.Errorf("content not found for key [%s]", key)
 	}
 
 	return content, nil

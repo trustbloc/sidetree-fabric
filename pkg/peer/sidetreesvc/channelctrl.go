@@ -9,13 +9,12 @@ package sidetreesvc
 import (
 	"sync"
 
+	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/pkg/errors"
-
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
-	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
@@ -42,12 +41,12 @@ type channelController struct {
 
 	mutex     sync.RWMutex
 	channelID string
-	notifier  observer.Ledger
+	notifier  *notifier.Notifier
 	observer  *observerController
-	monitor   *monitorController
 	contexts  map[string]*context
 	handlers  map[string][]common.HTTPHandler
 	cfgTxID   string
+	txnChan   chan gossipapi.TxMetadata
 }
 
 func newChannelController(channelID string, providers *providers, configService config.SidetreeService, listener restServiceController) *channelController {
@@ -61,7 +60,8 @@ func newChannelController(channelID string, providers *providers, configService 
 	}
 
 	if role.IsObserver() {
-		ctrl.notifier = notifier.New(channelID, providers.BlockPublisher)
+		ctrl.txnChan = make(chan gossipapi.TxMetadata, 1)
+		ctrl.notifier = notifier.New(channelID, providers.BlockPublisher, ctrl.txnChan)
 	}
 
 	providers.ConfigProvider.ForChannel(channelID).AddUpdateHandler(ctrl.handleUpdate)
@@ -81,16 +81,15 @@ func (c *channelController) Close() {
 		c.observer = nil
 	}
 
-	if c.monitor != nil {
-		c.monitor.Stop()
-		c.monitor = nil
-	}
-
 	for _, ctx := range c.contexts {
 		ctx.Stop()
 	}
 
 	c.contexts = make(map[string]*context)
+
+	if c.txnChan != nil {
+		close(c.txnChan)
+	}
 }
 
 // RESTHandlers returns the registered Sidetree REST handlers for the channel
@@ -149,11 +148,7 @@ func (c *channelController) load() error {
 		return err
 	}
 
-	if err := c.restartObserver(dcasCfg, storeProvider); err != nil {
-		return err
-	}
-
-	if err := c.restartMonitor(cfg.Monitor, dcasCfg, storeProvider); err != nil {
+	if err := c.restartObserver(cfg.Observer, dcasCfg, storeProvider); err != nil {
 		return err
 	}
 
@@ -319,24 +314,14 @@ func (c *channelController) loadDCASConfig() (config.DCAS, error) {
 	return c.sidetreeCfgService.LoadDCAS()
 }
 
-func (c *channelController) restartObserver(dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
+func (c *channelController) restartObserver(observerCfg config.Observer, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
 	if c.observer != nil {
 		c.observer.Stop()
 	}
 
-	c.observer = newObserverController(c.channelID, dcasCfg, c.DCASProvider, storeProvider, c.notifier)
+	c.observer = newObserverController(c.channelID, c.PeerConfig, observerCfg, dcasCfg, c.ObserverProviders, storeProvider, c.txnChan)
 
 	return c.observer.Start()
-}
-
-func (c *channelController) restartMonitor(monitorCfg config.Monitor, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
-	if c.monitor != nil {
-		c.monitor.Stop()
-	}
-
-	c.monitor = newMonitorController(c.channelID, c.PeerConfig, monitorCfg, dcasCfg, c.MonitorProviders, storeProvider)
-
-	return c.monitor.Start()
 }
 
 func (c *channelController) createContextMap(newContexts []*context) map[string]*contextPair {
