@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 )
 
 const (
@@ -48,7 +50,7 @@ func (c *Client) WriteAnchor(anchor string) error {
 		Args:        [][]byte{[]byte(writeAnchorFcn), []byte(anchor)},
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to store anchor file address")
+		return transienterr.New(errors.Wrap(err, "failed to store anchor file address"))
 	}
 
 	return nil
