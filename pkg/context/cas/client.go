@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 )
 
@@ -40,7 +41,13 @@ func (c *Client) Write(content []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return dcasClient.Put(c.ChaincodeName, c.Collection, content)
+
+	key, err := dcasClient.Put(c.ChaincodeName, c.Collection, content)
+	if err != nil {
+		return "", transienterr.New(err)
+	}
+
+	return key, nil
 }
 
 // Read reads the content at the given address from content addressable storage
@@ -53,7 +60,7 @@ func (c *Client) Read(address string) ([]byte, error) {
 
 	data, err := dcasClient.Get(c.ChaincodeName, c.Collection, address)
 	if err != nil {
-		return nil, err
+		return nil, transienterr.New(err)
 	}
 
 	if len(data) == 0 {

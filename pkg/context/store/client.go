@@ -20,6 +20,8 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 )
 
 const (
@@ -57,14 +59,14 @@ func (c *Client) Get(uniqueSuffix string) ([]*batch.Operation, error) {
 
 	iter, err := c.store.Query(fmt.Sprintf(queryByIDTemplate, id))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query document operations")
+		return nil, transienterr.New(errors.Wrap(err, "failed to query document operations"))
 	}
 
 	var ops [][]byte
 	for {
 		next, err := iter.Next()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to retrieve key and value in the range")
+			return nil, transienterr.New(errors.Wrap(err, "failed to retrieve key and value in the range"))
 		}
 		if next == nil {
 			break
@@ -95,7 +97,7 @@ func (c *Client) Put(ops []*batch.Operation) error {
 
 		err = c.store.Put(bytes)
 		if err != nil {
-			return err
+			return transienterr.New(err)
 		}
 	}
 
