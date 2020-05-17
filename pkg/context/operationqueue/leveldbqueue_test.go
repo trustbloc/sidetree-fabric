@@ -29,6 +29,7 @@ var (
 	op1 = &batch.OperationInfo{UniqueSuffix: "op1"}
 	op2 = &batch.OperationInfo{UniqueSuffix: "op2"}
 	op3 = &batch.OperationInfo{UniqueSuffix: "op3"}
+	op4 = &batch.OperationInfo{UniqueSuffix: "op4"}
 )
 
 func TestLevelDBQueue(t *testing.T) {
@@ -95,6 +96,16 @@ func TestLevelDBQueue_Reload(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint(3), n)
 
+	n, err = q.Add(op4)
+	require.NoError(t, err)
+	require.Equal(t, uint(4), n)
+	require.Equal(t, uint(4), q.Len())
+
+	op, l, err := q.Remove(1)
+	require.NoError(t, err)
+	require.Equal(t, op1, op[0])
+
+	require.Equal(t, uint(3), l)
 	require.Equal(t, uint(3), q.Len())
 
 	q.Close()
@@ -105,18 +116,25 @@ func TestLevelDBQueue_Reload(t *testing.T) {
 
 	require.Equal(t, uint(3), q2.Len())
 
-	op, l, err := q2.Remove(1)
+	op, l, err = q2.Remove(1)
 	require.NoError(t, err)
 	require.Equal(t, uint(2), l)
 	require.Len(t, op, 1)
-	require.Equal(t, op1, op[0])
+	require.Equal(t, op2, op[0])
 
 	op, l, err = q2.Remove(2)
 	require.NoError(t, err)
 	require.Zero(t, l)
 	require.Len(t, op, 2)
-	require.Equal(t, op2, op[0])
-	require.Equal(t, op3, op[1])
+	require.Equal(t, op3, op[0])
+	require.Equal(t, op4, op[1])
+
+	q2.Close()
+
+	q3, cleanup3, err := newTestQueue(channel2)
+	require.NoError(t, err)
+	defer cleanup3()
+	require.Zero(t, q3.Len())
 }
 
 func TestLevelDBQueue_Close(t *testing.T) {

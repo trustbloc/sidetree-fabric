@@ -56,6 +56,7 @@ func newLevelDBQueue(channelID, namespace, baseDir string) (*LevelDBQueue, error
 	}
 
 	it := db.NewIterator(nil, nil)
+	defer it.Release()
 
 	var first uint64
 	var last uint64
@@ -164,26 +165,33 @@ func (q *LevelDBQueue) Remove(num uint) ([]*batch.OperationInfo, uint, error) {
 			Start: toBytes(q.head), // Inclusive
 			Limit: toBytes(to),     // Exclusive
 		}, nil)
+	defer it.Release()
 
 	var ops []*batch.OperationInfo
 	var keys [][]byte
 	for it.Next() {
+		// Copy the key since the buffer is modified after each iteration
+		key := make([]byte, len(it.Key()))
+		copy(key, it.Key())
+
 		op := &batch.OperationInfo{}
 		if err := unmarshal(it.Value(), op); err != nil {
 			return nil, 0, err
 		}
 
-		logger.Debugf("[%s-%s] Removing operation %s", q.channelID, q.namespace, op.UniqueSuffix)
+		logger.Debugf("[%s-%s] Removing operation at key %v: %s", q.channelID, q.namespace, key, op.UniqueSuffix)
 
 		ops = append(ops, op)
-		keys = append(keys, it.Key())
+		keys = append(keys, key)
 	}
 
 	// Delete the items
 	for i, key := range keys {
+		logger.Debugf("[%s-%s] Deleting key %v", q.channelID, q.namespace, key)
+
 		if err := q.db.Delete(key, nil); err != nil {
-			logger.Warnf("[%s-%s] Unable to delete the key for item %s", q.channelID, q.namespace, ops[i].UniqueSuffix)
-			return nil, 0, errors.WithMessagef(err, "unable to delete the key for item %s", ops[i].UniqueSuffix)
+			logger.Warnf("[%s-%s] Unable to delete the key %v for item %s", q.channelID, q.namespace, key, ops[i].UniqueSuffix)
+			return nil, 0, errors.WithMessagef(err, "unable to delete the key %v for item %s", key, ops[i].UniqueSuffix)
 		}
 	}
 
@@ -218,6 +226,7 @@ func (q *LevelDBQueue) Peek(num uint) ([]*batch.OperationInfo, error) {
 			Start: toBytes(q.head), // Inclusive
 			Limit: toBytes(to),     // Exclusive
 		}, nil)
+	defer it.Release()
 
 	var ops []*batch.OperationInfo
 	for it.Next() {
