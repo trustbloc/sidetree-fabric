@@ -7,8 +7,10 @@ SPDX-License-Identifier: Apache-2.0
 package common
 
 import (
+	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
+
 	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
 )
 
@@ -31,4 +33,9 @@ type OffLedgerClientProvider interface {
 // BlockchainClientProvider provides a blockchain client for a given channel
 type BlockchainClientProvider interface {
 	ForChannel(channelID string) (bcclient.Blockchain, error)
+}
+
+// GossipProvider is a Gossip service provider
+type GossipProvider interface {
+	GetGossipService() gossipapi.GossipService
 }

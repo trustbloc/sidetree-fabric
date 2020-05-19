@@ -1,6 +1,6 @@
 {
   "Observer": {
-    "Period": "20s",
+    "Period": "10s",
     "MetaDataChaincodeName": "document"
   }
 }

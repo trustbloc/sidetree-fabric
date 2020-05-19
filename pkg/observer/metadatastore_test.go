@@ -49,7 +49,7 @@ func TestMetaDataStore(t *testing.T) {
 		errProvider := errors.New("injected provider error")
 		olp.ForChannelReturns(nil, errProvider)
 
-		err := s.Put(&MetaData{})
+		err := s.Put(&Metadata{})
 		require.EqualError(t, err, errProvider.Error())
 	})
 
@@ -77,7 +77,7 @@ func TestMetaDataStore(t *testing.T) {
 
 		ols.PutErr = errors.New("injected Put error")
 
-		err := s.Put(&MetaData{})
+		err := s.Put(&Metadata{})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), ols.PutErr.Error())
 	})
@@ -101,7 +101,7 @@ func TestMetaDataStore(t *testing.T) {
 		ols := obmocks.NewMockOffLedgerClient()
 		olp.ForChannelReturns(ols, nil)
 
-		data := &MetaData{}
+		data := &Metadata{}
 		require.NoError(t, s.Put(data))
 
 		d, err := s.Get()
@@ -124,7 +124,7 @@ func TestMetaDataStore(t *testing.T) {
 		ols := obmocks.NewMockOffLedgerClient()
 		olp.ForChannelReturns(ols, nil)
 
-		data := &MetaData{}
+		data := &Metadata{}
 		require.NoError(t, s.Put(data))
 
 		d, err := s.Get()

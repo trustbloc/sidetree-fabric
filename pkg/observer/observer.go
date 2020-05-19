@@ -11,29 +11,32 @@ import (
 	"sync/atomic"
 	"time"
 
-	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
-	"github.com/pkg/errors"
-	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
-
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
+	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
+	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
+	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/lease"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
 )
 
 var logger = flogging.MustGetLogger("sidetree_observer")
 
-const defaultMonitorPeriod = 10 * time.Second
+const (
+	defaultMonitorPeriod = 10 * time.Second
+)
 
-// MetaData contains meta-data for the document store
-type MetaData struct {
+// Metadata contains meta-data for the document store
+type Metadata struct {
 	LastBlockProcessed uint64
+	LeaseOwner         string
 }
 
 // ClientProviders contains the providers for off-ledger, DCAS, and blockchain clients
@@ -41,22 +44,24 @@ type ClientProviders struct {
 	OffLedger  common.OffLedgerClientProvider
 	DCAS       common.DCASClientProvider
 	Blockchain common.BlockchainClientProvider
+	Gossip     common.GossipProvider
 }
 
-type metaDataStore interface {
-	Get() (*MetaData, error)
-	Put(*MetaData) error
+type metadataStore interface {
+	Get() (*Metadata, error)
+	Put(*Metadata) error
 }
 
 // Observer reads blocks from the ledger looking for Sidetree anchor writes and persists the document operations to the document store.
 type Observer struct {
+	leaseProvider  *lease.Provider
 	channelID      string
 	period         time.Duration
 	blockVisitor   *blockvisitor.Visitor
 	done           chan struct{}
 	txnProcessor   *observer.TxnProcessor
 	blockchain     common.BlockchainClientProvider
-	metaDataStore  metaDataStore
+	metadataStore  metadataStore
 	processStarted uint32
 	txnChan        <-chan gossipapi.TxMetadata
 	processChan    chan struct{}
@@ -78,7 +83,8 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		channelID:     channelID,
 		period:        period,
 		blockchain:    clientProviders.Blockchain,
-		metaDataStore: NewMetaDataStore(channelID, peerCfg, observerCfg.MetaDataChaincodeName, clientProviders.OffLedger),
+		metadataStore: NewMetaDataStore(channelID, peerCfg, observerCfg.MetaDataChaincodeName, clientProviders.OffLedger),
+		leaseProvider: lease.NewProvider(channelID, clientProviders.Gossip.GetGossipService()),
 		txnProcessor: observer.NewTxnProcessor(
 			&observer.Providers{
 				DCASClient:       NewSidetreeDCASReader(channelID, dcasCfg, clientProviders.DCAS),
@@ -177,21 +183,83 @@ func (m *Observer) process() {
 		return
 	}
 
-	lastBlockNum, err := m.lastBlockProcessed()
+	metadata, err := m.getMetadata()
 	if err != nil {
-		logger.Warnf("[%s] Error getting last block processed: %s", m.channelID, err)
+		logger.Warnf("[%s] Error getting metadata: %s", m.channelID, err)
 		return
 	}
 
-	logger.Debugf("[%s] Processing - Block height [%d], last block processed [%d]", m.channelID, bcInfo.Height, lastBlockNum)
+	if ok := m.checkLeaseOwner(metadata); !ok {
+		return
+	}
 
-	for bNum := lastBlockNum + 1; bNum < bcInfo.Height; bNum++ {
+	lastBlockNum := metadata.LastBlockProcessed
+	toBlockNum := bcInfo.Height - 1
+
+	if lastBlockNum < toBlockNum {
+		logger.Debugf("[%s] Processing blocks [%d:%d]", m.channelID, lastBlockNum+1, toBlockNum)
+	} else {
+		logger.Debugf("[%s] No blocks to process. Last block processed: [%d]", m.channelID, lastBlockNum)
+	}
+
+	for bNum := lastBlockNum + 1; bNum <= toBlockNum; bNum++ {
 		logger.Debugf("[%s] Processing block [%d]", m.channelID, bNum)
+
 		if err = m.processBlock(bNum); err != nil {
 			logger.Errorf("[%s] Error processing block [%d]: %s", m.channelID, bNum, err)
 			return
 		}
+
+		metadata.LastBlockProcessed = bNum
+
+		if bNum == toBlockNum {
+			metadata.LeaseOwner = m.leaseProvider.CreateLease(bNum + 1).Owner()
+
+			logger.Debugf("[%s] Done processing blocks [%d:%d]. Lease owner for the next block is [%s]", m.channelID, lastBlockNum+1, toBlockNum, metadata.LeaseOwner)
+		}
+
+		err = m.putMetadata(metadata)
+		if err != nil {
+			logger.Errorf("[%s] Error saving metadata for block [%d]: %s", m.channelID, bNum, err)
+			return
+		}
 	}
+}
+
+// checkLeaseOwner checks if the existing lease is still valid and returns true if this
+// peer should start processing.
+func (m *Observer) checkLeaseOwner(metadata *Metadata) bool {
+	currentLease := m.leaseProvider.GetLease(metadata.LeaseOwner)
+
+	// Check if the lease is still valid
+	if currentLease.IsValid() {
+		if !currentLease.IsLocalPeerOwner() {
+			logger.Debugf("[%s] Not processing block %d since [%s] owns the lease", m.channelID, metadata.LastBlockProcessed+1, currentLease.Owner())
+			return false
+		}
+
+		return true
+	}
+
+	// Create a new lease for the next block
+	newLease := m.leaseProvider.CreateLease(metadata.LastBlockProcessed + 1)
+	if !newLease.IsLocalPeerOwner() {
+		logger.Debugf("[%s] Not processing block %d since [%s] is the new lease owner", m.channelID, metadata.LastBlockProcessed+1, newLease.Owner())
+		return false
+	}
+
+	logger.Debugf("[%s] I am replacing [%s] as the new lease owner for block %d", m.channelID, currentLease.Owner(), metadata.LastBlockProcessed+1)
+
+	// Save the metadata with the new lease owner and wait until the next period before processing it.
+	// This avoids race conditions where multiple peers are trying to do the same thing.
+
+	metadata.LeaseOwner = newLease.Owner()
+
+	if err := m.putMetadata(metadata); err != nil {
+		logger.Errorf("[%s] Error saving metadata: %s", m.channelID, err)
+	}
+
+	return false
 }
 
 func (m *Observer) processBlock(bNum uint64) error {
@@ -202,15 +270,7 @@ func (m *Observer) processBlock(bNum uint64) error {
 		return errors.WithMessagef(err, "error getting block [%d]", bNum)
 	}
 
-	if err = m.blockVisitor.Visit(block); err != nil {
-		return err
-	}
-
-	if err = m.setLastBlockProcessed(bNum); err != nil {
-		return errors.WithMessagef(err, "error setting last block processed for block [%d]", bNum)
-	}
-
-	return nil
+	return m.blockVisitor.Visit(block)
 }
 
 func (m *Observer) handleWrite(w *blockvisitor.Write) error {
@@ -278,26 +338,27 @@ func (m *Observer) blockchainClient() (client.Blockchain, error) {
 	return m.blockchain.ForChannel(m.channelID)
 }
 
-func (m *Observer) lastBlockProcessed() (uint64, error) {
-	metaData, err := m.metaDataStore.Get()
+func (m *Observer) getMetadata() (*Metadata, error) {
+	metadata, err := m.metadataStore.Get()
 	if err != nil {
 		if err == errMetaDataNotFound {
-			return 0, nil
+			return &Metadata{
+				LastBlockProcessed: 0,
+				LeaseOwner:         m.leaseProvider.CreateLease(1).Owner(),
+			}, nil
 		}
 
-		return 0, err
+		return nil, err
 	}
 
-	return metaData.LastBlockProcessed, nil
+	return metadata, nil
 }
 
-func (m *Observer) setLastBlockProcessed(bNum uint64) error {
-	metaData := &MetaData{LastBlockProcessed: bNum}
+func (m *Observer) putMetadata(metadata *Metadata) error {
+	logger.Debugf("[%s] Updating metadata: %+v", m.channelID, metadata)
 
-	logger.Debugf("[%s] Updating meta-data: %+v", m.channelID, metaData)
-
-	if err := m.metaDataStore.Put(metaData); err != nil {
-		return errors.WithMessage(err, "error persisting meta-data")
+	if err := m.metadataStore.Put(metadata); err != nil {
+		return errors.WithMessage(err, "error persisting metadata")
 	}
 
 	return nil

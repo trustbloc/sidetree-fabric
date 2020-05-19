@@ -157,12 +157,18 @@ func TestInitialize(t *testing.T) {
 	req.NotPanics(extpeer.Initialize)
 	req.NotPanics(Initialize)
 
+	gossip := mocks.NewMockGossipAdapter()
+	gossip.Self(mspID, mocks.NewMember(peerID, []byte("pkiid")))
+
+	gossipProvider := &mocks.GossipProvider{}
+	gossipProvider.GetGossipServiceReturns(gossip)
+
 	req.NoError(
 		resource.Mgr.Initialize(
 			blockpublisher.ProviderInstance,
 			newMockLedgerProvider(qe),
 			newMockPeerConfigPrivider(),
-			&mocks.GossipProvider{},
+			gossipProvider,
 			&mocks.IdentityDeserializerProvider{},
 			&mocks.IdentifierProvider{},
 			&mocks.IdentityProvider{},

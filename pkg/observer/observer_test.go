@@ -15,9 +15,11 @@ import (
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
+	gcommon "github.com/hyperledger/fabric/gossip/common"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
+	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 
@@ -27,12 +29,17 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
 const (
-	channel1       = "channel1"
-	org1           = "Org1MSP"
-	peer1          = "peer1.org1.com"
+	channel1 = "channel1"
+	org1     = "Org1MSP"
+
+	peer1 = "peer1.org1.com"
+	peer2 = "peer2.org1.com"
+	peer3 = "peer3.org1.com"
+
 	txID1          = "tx1"
 	anchor1        = "anchor1"
 	monitorPeriod  = 50 * time.Millisecond
@@ -40,12 +47,23 @@ const (
 	metaDataCCName = "document"
 )
 
+var (
+	p1Org1PKIID = gcommon.PKIidType("pkiid_P1O1")
+	p2Org1PKIID = gcommon.PKIidType("pkiid_P2O1")
+
+	p1Org1 = peerextmocks.NewMember(peer1, p1Org1PKIID)
+	p2Org1 = peerextmocks.NewMember(peer2, p2Org1PKIID, role.Observer)
+
+	// Ensure roles are initialized
+	_ = roles.GetRoles()
+)
+
 func TestObserver(t *testing.T) {
 	bcInfo := &cb.BlockchainInfo{
-		Height: 1002,
+		Height: 1003,
 	}
 
-	b := peerextmocks.NewBlockBuilder(channel1, 1001)
+	b := peerextmocks.NewBlockBuilder(channel1, 1002)
 	tb1 := b.Transaction(txID1, pb.TxValidationCode_VALID)
 	tb1.ChaincodeAction(sideTreeTxnCCName).
 		Write(common.AnchorAddrPrefix+anchor1, []byte(anchor1)).
@@ -53,8 +71,9 @@ func TestObserver(t *testing.T) {
 	tb1.ChaincodeAction("some_other_cc").
 		Write("some_key", []byte("some value"))
 
-	meta := &MetaData{
-		LastBlockProcessed: 1000,
+	meta := &Metadata{
+		LastBlockProcessed: 1001,
+		LeaseOwner:         peer1,
 	}
 	metaBytes, err := json.Marshal(meta)
 	require.NoError(t, err)
@@ -87,8 +106,6 @@ func TestObserver(t *testing.T) {
 	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 	clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 
-	require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
-
 	clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 	clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
 	clients.dcas.GetReturnsOnCall(2, op1Bytes, nil)
@@ -97,6 +114,8 @@ func TestObserver(t *testing.T) {
 	opStoreProvider := &stmocks.OperationStoreProvider{}
 
 	t.Run("Triggered by block event", func(t *testing.T) {
+		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
+
 		cfg := config.Observer{
 			Period:                10 * time.Second,
 			MetaDataChaincodeName: metaDataCCName,
@@ -108,10 +127,10 @@ func TestObserver(t *testing.T) {
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 
-		txnChan <- gossipapi.TxMetadata{BlockNum: 1001, TxNum: 0, ChannelID: channel1, TxID: txID1}
-		txnChan <- gossipapi.TxMetadata{BlockNum: 1001, TxNum: 1, ChannelID: channel1, TxID: txID1}
-		txnChan <- gossipapi.TxMetadata{BlockNum: 1001, TxNum: 2, ChannelID: channel1, TxID: txID1}
-		txnChan <- gossipapi.TxMetadata{BlockNum: 1001, TxNum: 3, ChannelID: channel1, TxID: txID1}
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1002, TxNum: 0, ChannelID: channel1, TxID: txID1}
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1002, TxNum: 1, ChannelID: channel1, TxID: txID1}
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1002, TxNum: 2, ChannelID: channel1, TxID: txID1}
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1002, TxNum: 3, ChannelID: channel1, TxID: txID1}
 
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -119,12 +138,14 @@ func TestObserver(t *testing.T) {
 		metaBytes, err := clients.offLedger.Get(cfg.MetaDataChaincodeName, MetaDataColName, peer1)
 		require.NoError(t, err)
 
-		meta := &MetaData{}
+		meta := &Metadata{}
 		require.NoError(t, json.Unmarshal(metaBytes, meta))
-		require.Equal(t, uint64(1001), meta.LastBlockProcessed)
+		require.Equal(t, uint64(1002), meta.LastBlockProcessed)
 	})
 
 	t.Run("Triggered by schedule", func(t *testing.T) {
+		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
+
 		cfg := config.Observer{
 			Period:                monitorPeriod,
 			MetaDataChaincodeName: metaDataCCName,
@@ -140,9 +161,81 @@ func TestObserver(t *testing.T) {
 		metaBytes, err := clients.offLedger.Get(cfg.MetaDataChaincodeName, MetaDataColName, peer1)
 		require.NoError(t, err)
 
-		meta := &MetaData{}
+		meta := &Metadata{}
 		require.NoError(t, json.Unmarshal(metaBytes, meta))
-		require.Equal(t, uint64(1001), meta.LastBlockProcessed)
+		require.Equal(t, uint64(1002), meta.LastBlockProcessed)
+	})
+
+	t.Run("Clustered - replacing lease owner", func(t *testing.T) {
+		roles.SetRoles(map[roles.Role]struct{}{roles.CommitterRole: {}, role.Observer: {}})
+		defer roles.SetRoles(nil)
+
+		require.True(t, roles.IsClustered())
+
+		meta := &Metadata{
+			LastBlockProcessed: 1001,
+			LeaseOwner:         peer3,
+		}
+		metaBytes, err := json.Marshal(meta)
+		require.NoError(t, err)
+		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, org1, metaBytes))
+
+		cfg := config.Observer{
+			Period:                monitorPeriod,
+			MetaDataChaincodeName: metaDataCCName,
+		}
+
+		txnChan := make(chan gossipapi.TxMetadata, 1)
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+
+		metaBytes, err = clients.offLedger.Get(metaDataCCName, MetaDataColName, org1)
+		require.NoError(t, err)
+
+		// peer2 should end up the lease owner for the next block
+		meta = &Metadata{}
+		require.NoError(t, json.Unmarshal(metaBytes, meta))
+		require.Equal(t, uint64(1002), meta.LastBlockProcessed)
+		require.Equal(t, peer2, meta.LeaseOwner)
+	})
+
+	t.Run("Clustered - not lease owner", func(t *testing.T) {
+		roles.SetRoles(map[roles.Role]struct{}{roles.CommitterRole: {}, role.Observer: {}})
+		defer roles.SetRoles(nil)
+
+		require.True(t, roles.IsClustered())
+
+		meta := &Metadata{
+			LastBlockProcessed: 1000,
+			LeaseOwner:         peer3,
+		}
+		metaBytes, err := json.Marshal(meta)
+		require.NoError(t, err)
+		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, org1, metaBytes))
+
+		cfg := config.Observer{
+			Period:                monitorPeriod,
+			MetaDataChaincodeName: metaDataCCName,
+		}
+
+		txnChan := make(chan gossipapi.TxMetadata, 1)
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+
+		metaBytes, err = clients.offLedger.Get(metaDataCCName, MetaDataColName, org1)
+		require.NoError(t, err)
+
+		// The metadata should not have been persisted since the local peer is not the new lease owner
+		meta = &Metadata{}
+		require.NoError(t, json.Unmarshal(metaBytes, meta))
+		require.Equal(t, uint64(1000), meta.LastBlockProcessed)
+		require.Equal(t, peer3, meta.LeaseOwner)
 	})
 }
 
@@ -185,7 +278,7 @@ func TestObserver_Error(t *testing.T) {
 	})
 
 	t.Run("DCAS client error", func(t *testing.T) {
-		meta := &MetaData{
+		meta := &Metadata{
 			LastBlockProcessed: 1000,
 		}
 		metaBytes, err := json.Marshal(meta)
@@ -389,6 +482,32 @@ func TestObserver_Error(t *testing.T) {
 		time.Sleep(sleepTime)
 		m.Stop()
 	})
+
+	t.Run("Put metadata error", func(t *testing.T) {
+		roles.SetRoles(map[roles.Role]struct{}{roles.CommitterRole: {}, role.Observer: {}})
+		defer roles.SetRoles(nil)
+
+		require.True(t, roles.IsClustered())
+
+		clients := newMockClients()
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(&cb.Block{
+			Header: &cb.BlockHeader{
+				Number: 1002,
+			},
+			Data: &cb.BlockData{},
+		}, nil)
+
+		errExpected := errors.New("injected off-ledger client error")
+		clients.offLedger.PutErr = errExpected
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
 }
 
 type mockClients struct {
@@ -429,12 +548,19 @@ func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, c
 		Collection:    dcasColl,
 	}
 
+	gossip := peerextmocks.NewMockGossipAdapter()
+	gossip.Self(org1, p1Org1).Member(org1, p2Org1)
+
+	gossipProvider := &peerextmocks.GossipProvider{}
+	gossipProvider.GetGossipServiceReturns(gossip)
+
 	m := New(
 		channelID, peerCfg, cfg, dcasCfg,
 		&ClientProviders{
 			OffLedger:  clients.offLedgerProvider,
 			DCAS:       clients.dcasProvider,
 			Blockchain: clients.blockchainProvider,
+			Gossip:     gossipProvider,
 		},
 		opStoreProvider, txnChan,
 	)

@@ -12,6 +12,7 @@ import (
 
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/stretchr/testify/require"
+	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
@@ -31,7 +32,7 @@ const (
 // Ensure that the roles are loaded
 var _ = extroles.GetRoles()
 
-func TestMonitorController(t *testing.T) {
+func TestObserverController(t *testing.T) {
 	peerCfg := &peermocks.PeerConfig{}
 	peerCfg.PeerIDReturns(peer1)
 	peerCfg.MSPIDReturns(msp1)
@@ -39,6 +40,13 @@ func TestMonitorController(t *testing.T) {
 	monitorCfg := config.Observer{Period: time.Second}
 	dcasCfg := config.DCAS{}
 	providers := &observer.ClientProviders{}
+	gossip := extmocks.NewMockGossipAdapter()
+	gossip.Self(msp1, extmocks.NewMember(peer1, []byte("pkiid")))
+
+	gossipProvider := &extmocks.GossipProvider{}
+	gossipProvider.GetGossipServiceReturns(gossip)
+
+	providers.Gossip = gossipProvider
 
 	txnChan := make(chan gossipapi.TxMetadata)
 

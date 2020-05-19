@@ -34,10 +34,19 @@ func TestIsBatchWriter(t *testing.T) {
 func TestIsObserver(t *testing.T) {
 	require.False(t, IsObserver())
 
-	restore := setRoles(Observer)
-	defer restore()
+	t.Run("Active Observer", func(t *testing.T) {
+		restore := setRoles(Observer)
+		defer restore()
 
-	require.True(t, IsObserver())
+		require.True(t, IsObserver())
+	})
+
+	t.Run("Standby Observer", func(t *testing.T) {
+		restore := setRoles(ObserverStandby)
+		defer restore()
+
+		require.True(t, IsObserver())
+	})
 }
 
 func setRoles(roles ...extroles.Role) (restore func()) {
