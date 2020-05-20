@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/fabric-peer-ext/pkg/gossip/blockpublisher"
+	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
-
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
@@ -86,6 +86,13 @@ func TestProvider(t *testing.T) {
 	dcasProvider.ForChannelReturns(dcasClient, nil)
 
 	observerProviders := &observer.ClientProviders{}
+	gossip := extmocks.NewMockGossipAdapter()
+	gossip.Self(msp1, extmocks.NewMember(peer1, []byte("pkiid")))
+
+	gossipProvider := &extmocks.GossipProvider{}
+	gossipProvider.GetGossipServiceReturns(gossip)
+
+	observerProviders.Gossip = gossipProvider
 
 	providers := &providers{
 		ContextProviders: &ContextProviders{

@@ -88,3 +88,35 @@ Feature:
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-protocol-config.json --noprompt" then the error response should contain "algorithm not supported"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-config.json --noprompt" then the error response should contain "field 'BatchWriterTimeout' must contain a value greater than 0"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-peer-config.json --noprompt" then the error response should contain "field 'BasePath' must begin with '/'"
+
+  @observer_failover
+  Scenario: Active observer fails over to standby
+    Given variable "peer0.org1" is assigned the value "https://localhost:48326/sidetree/0.0.1"
+    And variable "peer1.org1" is assigned the value "https://localhost:48327/sidetree/0.0.1"
+    And variable "peer2.org1" is assigned the value "https://localhost:48328/sidetree/0.0.1"
+    And variable "peer0.org2" is assigned the value "https://localhost:48426/sidetree/0.0.1"
+    And variable "peer1.org2" is assigned the value "https://localhost:48427/sidetree/0.0.1"
+    And variable "peer2.org2" is assigned the value "https://localhost:48428/sidetree/0.0.1"
+
+    # Write several Sidetree transactions. Scatter the requests across different endpoints to generate multiple
+    # Sidetree transactions within the same block and across multiple blocks.
+    When client sends request to "${peer0.org1}/operations,${peer2.org1}/operations,${peer0.org2}/operations,${peer2.org2}/operations" to create 500 DID documents using 10 concurrent requests
+
+    # Take down the active observers in both orgs so that the standby observers can take over
+    Given container "peer1.org1.example.com" is stopped
+    And container "peer1.org2.example.com" is stopped
+    Then we wait 60 seconds
+
+    # Verify that all of the documents are there
+    Then client sends request to "${peer0.org1}/identifiers,${peer2.org1}/identifiers,${peer0.org2}/identifiers,${peer2.org2}/identifiers" to verify the DID documents that were created
+
+    Given container "peer1.org1.example.com" is started
+    And container "peer1.org2.example.com" is started
+    Then we wait 10 seconds
+
+    # Write a few more Sidetree transactions to ensure everything's back to normal
+    When client sends request to "${peer0.org1}/operations,${peer1.org1}/operations,${peer2.org1}/operations,${peer0.org2}/operations,${peer1.org2}/operations,${peer2.org2}/operations" to create 50 DID documents using 5 concurrent requests
+    Then we wait 10 seconds
+
+    # Verify that all of the documents are there
+    Then client sends request to "${peer0.org1}/identifiers,${peer1.org1}/identifiers,${peer2.org1}/identifiers,${peer0.org2}/identifiers,${peer1.org2}/identifiers,${peer2.org2}/identifiers" to verify the DID documents that were created

@@ -132,6 +132,14 @@ func TestChannelController_Update(t *testing.T) {
 
 	observerProviders := &observer.ClientProviders{}
 
+	gossip := extmocks.NewMockGossipAdapter()
+	gossip.Self(msp1, extmocks.NewMember(peer1, []byte("pkiid")))
+
+	gossipProvider := &extmocks.GossipProvider{}
+	gossipProvider.GetGossipServiceReturns(gossip)
+
+	observerProviders.Gossip = gossipProvider
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			DCASProvider:           dcasProvider,

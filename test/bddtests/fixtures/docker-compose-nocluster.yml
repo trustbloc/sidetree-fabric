@@ -41,7 +41,7 @@ services:
 
   peer0.org1.example.com:
     extends:
-      file: docker-compose-base.yml
+      file: docker-compose-nocluster-base.yml
       service: peer
     container_name: peer0.org1.example.com
     environment:
@@ -49,7 +49,7 @@ services:
       - CORE_PEER_LOCALMSPID=Org1MSP
       - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
-      - CORE_LEDGER_ROLES=committer,sidetree-batch-writer,sidetree-resolver,sidetree-observer-standby
+      - CORE_LEDGER_ROLES=committer,endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer
     ports:
       - 7051:7051
       - 48326:48326
@@ -62,7 +62,7 @@ services:
 
   peer1.org1.example.com:
     extends:
-      file: docker-compose-base.yml
+      file: docker-compose-nocluster-base.yml
       service: peer
     container_name: peer1.org1.example.com
     environment:
@@ -71,7 +71,7 @@ services:
       - CORE_PEER_ADDRESS=peer1.org1.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.org1.example.com:7051
-      - CORE_LEDGER_ROLES=endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer
+      - CORE_LEDGER_ROLES=committer,endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer
     ports:
       - 7151:7051
       - 48327:48326
@@ -84,7 +84,7 @@ services:
 
   peer2.org1.example.com:
     extends:
-      file: docker-compose-base.yml
+      file: docker-compose-nocluster-base.yml
       service: peer
     container_name: peer2.org1.example.com
     environment:
@@ -93,7 +93,7 @@ services:
       - CORE_PEER_ADDRESS=peer2.org1.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer2.org1.example.com:7051
-      - CORE_LEDGER_ROLES=endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer-standby
+      - CORE_LEDGER_ROLES=committer,endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer
     ports:
       - 7251:7051
       - 48328:48326
@@ -106,7 +106,7 @@ services:
 
   peer0.org2.example.com:
     extends:
-      file: docker-compose-base.yml
+      file: docker-compose-nocluster-base.yml
       service: peer
     container_name: peer0.org2.example.com
     environment:
@@ -114,7 +114,7 @@ services:
       - CORE_PEER_LOCALMSPID=Org2MSP
       - CORE_PEER_ADDRESS=peer0.org2.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:7051
-      - CORE_LEDGER_ROLES=committer,sidetree-batch-writer,sidetree-resolver,sidetree-observer-standby
+      - CORE_LEDGER_ROLES=committer,endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer
     ports:
       - 8051:7051
       - 48426:48326
@@ -127,7 +127,7 @@ services:
 
   peer1.org2.example.com:
     extends:
-      file: docker-compose-base.yml
+      file: docker-compose-nocluster-base.yml
       service: peer
     container_name: peer1.org2.example.com
     environment:
@@ -136,7 +136,7 @@ services:
       - CORE_PEER_ADDRESS=peer1.org2.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.org2.example.com:7051
-      - CORE_LEDGER_ROLES=endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer
+      - CORE_LEDGER_ROLES=committer,endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer
     ports:
       - 8151:7051
       - 48427:48326
@@ -149,7 +149,7 @@ services:
 
   peer2.org2.example.com:
     extends:
-      file: docker-compose-base.yml
+      file: docker-compose-nocluster-base.yml
       service: peer
     container_name: peer2.org2.example.com
     environment:
@@ -158,7 +158,7 @@ services:
       - CORE_PEER_ADDRESS=peer2.org2.example.com:7051
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:7051
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer2.org2.example.com:7051
-      - CORE_LEDGER_ROLES=endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer-standby
+      - CORE_LEDGER_ROLES=committer,endorser,sidetree-batch-writer,sidetree-resolver,sidetree-observer
     ports:
       - 8251:7051
       - 48428:48326

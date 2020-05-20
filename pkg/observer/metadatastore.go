@@ -23,8 +23,8 @@ const (
 
 var errMetaDataNotFound = errors.New("not found")
 
-// MetaDataStore manages the persistence and retrieval of peer-specific meta data
-type MetaDataStore struct {
+// MetadataStore manages the persistence and retrieval of peer-specific metadata
+type MetadataStore struct {
 	channelID         string
 	metadataKey       string
 	chaincodeName     string
@@ -32,7 +32,7 @@ type MetaDataStore struct {
 }
 
 // NewMetaDataStore returns a new meta data store
-func NewMetaDataStore(channelID string, peerConfig peerConfig, ccName string, offLedgerProvider common.OffLedgerClientProvider) *MetaDataStore {
+func NewMetaDataStore(channelID string, peerConfig peerConfig, ccName string, offLedgerProvider common.OffLedgerClientProvider) *MetadataStore {
 	var metadataKey string
 	if roles.IsClustered() {
 		metadataKey = peerConfig.MSPID()
@@ -40,7 +40,7 @@ func NewMetaDataStore(channelID string, peerConfig peerConfig, ccName string, of
 		metadataKey = peerConfig.PeerID()
 	}
 
-	return &MetaDataStore{
+	return &MetadataStore{
 		channelID:         channelID,
 		metadataKey:       metadataKey,
 		chaincodeName:     ccName,
@@ -49,7 +49,7 @@ func NewMetaDataStore(channelID string, peerConfig peerConfig, ccName string, of
 }
 
 // Get retrieves the meta-data for this peer
-func (m *MetaDataStore) Get() (*MetaData, error) {
+func (m *MetadataStore) Get() (*Metadata, error) {
 	client, err := m.offLedgerProvider.ForChannel(m.channelID)
 	if err != nil {
 		return nil, err
@@ -61,11 +61,11 @@ func (m *MetaDataStore) Get() (*MetaData, error) {
 	}
 
 	if len(data) == 0 {
-		logger.Debugf("[%s] No MetaData exists for [%s]", m.channelID, m.metadataKey)
+		logger.Debugf("[%s] No metadata exists for [%s]", m.channelID, m.metadataKey)
 		return nil, errMetaDataNotFound
 	}
 
-	metaData := &MetaData{}
+	metaData := &Metadata{}
 	err = json.Unmarshal(data, metaData)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error unmarshalling meta-data")
@@ -75,7 +75,7 @@ func (m *MetaDataStore) Get() (*MetaData, error) {
 }
 
 // Put persists the meta data for this peer
-func (m *MetaDataStore) Put(data *MetaData) error {
+func (m *MetadataStore) Put(data *Metadata) error {
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		return errors.WithMessage(err, "error marshalling meta-data")
