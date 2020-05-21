@@ -93,7 +93,11 @@ func (v *sidetreePeerValidator) validateHandlerConfig(kv *config.KeyValue) error
 
 func (v *sidetreePeerValidator) validateObserver(kv *config.KeyValue, cfg sidetreecfg.Observer) error {
 	if cfg.Period == 0 {
-		logger.Infof("The Sidetree monitor period is set to 0 and therefore the default value will be used for [%s].", kv.PeerID)
+		logger.Infof("The Sidetree observer period is set to 0 and therefore the default value will be used for [%s].", kv.PeerID)
+	}
+
+	if cfg.MaxAttempts == 0 {
+		logger.Infof("Sidetree observer MaxAttempts is set to 0 and therefore the default value will be used for [%s].", kv.PeerID)
 	}
 
 	if cfg.MetaDataChaincodeName == "" {

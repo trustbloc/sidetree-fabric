@@ -1,6 +1,7 @@
 {
   "Observer": {
-    "Period": "10s",
-    "MetaDataChaincodeName": "document"
+    "Period": "5s",
+    "MetaDataChaincodeName": "document",
+    "MaxAttempts": 3
   }
 }

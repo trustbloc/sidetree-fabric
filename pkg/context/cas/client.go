@@ -44,7 +44,7 @@ func (c *Client) Write(content []byte) (string, error) {
 
 	key, err := dcasClient.Put(c.ChaincodeName, c.Collection, content)
 	if err != nil {
-		return "", transienterr.New(err)
+		return "", transienterr.New(err, transienterr.CodeDB)
 	}
 
 	return key, nil
@@ -60,11 +60,11 @@ func (c *Client) Read(address string) ([]byte, error) {
 
 	data, err := dcasClient.Get(c.ChaincodeName, c.Collection, address)
 	if err != nil {
-		return nil, transienterr.New(err)
+		return nil, transienterr.New(err, transienterr.CodeDB)
 	}
 
 	if len(data) == 0 {
-		return nil, errors.Errorf("content not found for key [%s]", address)
+		return nil, transienterr.New(errors.Errorf("content not found for key [%s]", address), transienterr.CodeNotFound)
 	}
 
 	return data, nil

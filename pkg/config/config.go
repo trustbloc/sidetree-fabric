@@ -19,8 +19,14 @@ import (
 
 // Observer holds Sidetree Observer config
 type Observer struct {
-	Period                time.Duration
+	// Period is the scheduled period for processing blocks
+	Period time.Duration
+	// MetaDataChaincodeName is the name of the chaincode that stores metadata
 	MetaDataChaincodeName string
+	// MaxAttempts is the maximum number of attempts to process a transaction. When a transient error
+	// occurs then a retry is attempted at the next scheduled interval. After processing has failed
+	// MaxAttempts times, the batch is lost and processing continues at the next transaction in the block.
+	MaxAttempts int
 }
 
 // SidetreePeer holds peer-specific Sidetree config

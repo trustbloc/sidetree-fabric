@@ -31,12 +31,24 @@ var logger = flogging.MustGetLogger("sidetree_observer")
 
 const (
 	defaultMonitorPeriod = 10 * time.Second
+	defaultMaxAttempts   = 3
 )
 
 // Metadata contains meta-data for the document store
 type Metadata struct {
 	LastBlockProcessed uint64
+	LastTxNumProcessed int64
 	LeaseOwner         string
+	FailedAttempts     int
+	LastErrorCode      transienterr.Code
+}
+
+func newMetadata(leaseOwner string, lastBlockProcessed uint64) *Metadata {
+	return &Metadata{
+		LeaseOwner:         leaseOwner,
+		LastBlockProcessed: lastBlockProcessed,
+		LastTxNumProcessed: -1,
+	}
 }
 
 // ClientProviders contains the providers for off-ledger, DCAS, and blockchain clients
@@ -57,7 +69,7 @@ type Observer struct {
 	leaseProvider  *lease.Provider
 	channelID      string
 	period         time.Duration
-	blockVisitor   *blockvisitor.Visitor
+	maxAttempts    int
 	done           chan struct{}
 	txnProcessor   *observer.TxnProcessor
 	blockchain     common.BlockchainClientProvider
@@ -79,9 +91,15 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		period = defaultMonitorPeriod
 	}
 
+	maxAttempts := observerCfg.MaxAttempts
+	if maxAttempts == 0 {
+		maxAttempts = defaultMaxAttempts
+	}
+
 	m := &Observer{
 		channelID:     channelID,
 		period:        period,
+		maxAttempts:   maxAttempts,
 		blockchain:    clientProviders.Blockchain,
 		metadataStore: NewMetaDataStore(channelID, peerCfg, observerCfg.MetaDataChaincodeName, clientProviders.OffLedger),
 		leaseProvider: lease.NewProvider(channelID, clientProviders.Gossip.GetGossipService()),
@@ -96,11 +114,6 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		done:        make(chan struct{}, 1),
 		processChan: make(chan struct{}),
 	}
-
-	m.blockVisitor = blockvisitor.New(channelID,
-		blockvisitor.WithWriteHandler(m.handleWrite),
-		blockvisitor.WithErrorHandler(m.handleError),
-	)
 
 	return m
 }
@@ -193,34 +206,33 @@ func (m *Observer) process() {
 		return
 	}
 
-	lastBlockNum := metadata.LastBlockProcessed
 	toBlockNum := bcInfo.Height - 1
 
-	if lastBlockNum < toBlockNum {
-		logger.Debugf("[%s] Processing blocks [%d:%d]", m.channelID, lastBlockNum+1, toBlockNum)
+	var fromBlockNum uint64
+	if metadata.LastErrorCode != "" {
+		// Got an error processing this block - need to retry the same block
+		logger.Infof("[%s] Last processing of block:txNum [%d:%d] failed with error code [%s]. Will reprocess block [%d] starting at txNum [%d] - Attempt #%d", m.channelID, metadata.LastBlockProcessed, metadata.LastTxNumProcessed, metadata.LastErrorCode, metadata.LastBlockProcessed, metadata.LastTxNumProcessed, metadata.FailedAttempts+1)
+		fromBlockNum = metadata.LastBlockProcessed
 	} else {
-		logger.Debugf("[%s] No blocks to process. Last block processed: [%d]", m.channelID, lastBlockNum)
+		// The last block was successfully processed - start at the next block
+		fromBlockNum = metadata.LastBlockProcessed + 1
+		metadata.LastTxNumProcessed = -1
 	}
 
-	for bNum := lastBlockNum + 1; bNum <= toBlockNum; bNum++ {
-		logger.Debugf("[%s] Processing block [%d]", m.channelID, bNum)
+	if fromBlockNum <= toBlockNum {
+		logger.Debugf("[%s] Processing from block:txNum [%d:%d] to block [%d]", m.channelID, fromBlockNum, metadata.LastTxNumProcessed, toBlockNum)
+	} else {
+		logger.Debugf("[%s] No blocks to process. Last block processed: [%d]", m.channelID, metadata.LastBlockProcessed)
+	}
 
-		if err = m.processBlock(bNum); err != nil {
-			logger.Errorf("[%s] Error processing block [%d]: %s", m.channelID, bNum, err)
-			return
-		}
+	for bNum := fromBlockNum; bNum <= toBlockNum; bNum++ {
+		err := m.processBlock(bNum, bNum == toBlockNum, metadata)
 
-		metadata.LastBlockProcessed = bNum
+		m.putMetadata(metadata)
 
-		if bNum == toBlockNum {
-			metadata.LeaseOwner = m.leaseProvider.CreateLease(bNum + 1).Owner()
-
-			logger.Debugf("[%s] Done processing blocks [%d:%d]. Lease owner for the next block is [%s]", m.channelID, lastBlockNum+1, toBlockNum, metadata.LeaseOwner)
-		}
-
-		err = m.putMetadata(metadata)
 		if err != nil {
-			logger.Errorf("[%s] Error saving metadata for block [%d]: %s", m.channelID, bNum, err)
+			logger.Errorf("[%s] Error processing block [%d]: %s", m.channelID, bNum, err)
+
 			return
 		}
 	}
@@ -255,59 +267,120 @@ func (m *Observer) checkLeaseOwner(metadata *Metadata) bool {
 
 	metadata.LeaseOwner = newLease.Owner()
 
-	if err := m.putMetadata(metadata); err != nil {
-		logger.Errorf("[%s] Error saving metadata: %s", m.channelID, err)
-	}
+	m.putMetadata(metadata)
 
 	return false
 }
 
-func (m *Observer) processBlock(bNum uint64) error {
-	var block *cb.Block
-	var err error
-
-	if block, err = m.getBlockByNumber(bNum); err != nil {
-		return errors.WithMessagef(err, "error getting block [%d]", bNum)
+func (m *Observer) processBlock(bNum uint64, changeLeaseOwner bool, metadata *Metadata) error {
+	block, err := m.getBlockByNumber(bNum)
+	if err != nil {
+		return transienterr.New(errors.WithMessagef(err, "error getting block %d", bNum), transienterr.CodeDB)
 	}
 
-	return m.blockVisitor.Visit(block)
-}
+	logger.Debugf("[%s] Processing block [%d]", m.channelID, bNum)
 
-func (m *Observer) handleWrite(w *blockvisitor.Write) error {
-	if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
-		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
-		return nil
+	err = blockvisitor.New(m.channelID,
+		blockvisitor.WithWriteHandler(m.writeHandler(metadata)),
+		blockvisitor.WithErrorHandler(m.errorHandler(metadata))).Visit(block)
+	if err != nil {
+		return err
 	}
 
-	logger.Debugf("[%s] Handling write to anchor [%s] in block [%d] and TxNum [%d]", m.channelID, w.Write.Value, w.BlockNum, w.TxNum)
+	if changeLeaseOwner {
+		metadata.LeaseOwner = m.leaseProvider.CreateLease(bNum + 1).Owner()
 
-	sidetreeTxn := observer.SidetreeTxn{
-		TransactionTime:   w.BlockNum,
-		TransactionNumber: w.TxNum,
-		AnchorAddress:     string(w.Write.Value),
+		logger.Debugf("[%s] Done processing blocks. Lease owner for the next block [%d] is [%s]", m.channelID, bNum+1, metadata.LeaseOwner)
 	}
 
-	if err := m.txnProcessor.Process(sidetreeTxn); err != nil {
-		return errors.WithMessagef(err, "error processing Txn for anchor [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
-	}
+	metadata.LastBlockProcessed = bNum
+	metadata.LastTxNumProcessed = -1
+	metadata.LastErrorCode = ""
+	metadata.FailedAttempts = 0
 
 	return nil
 }
 
-func (m *Observer) handleError(err error, ctx *blockvisitor.Context) error {
-	if ctx.Category == blockvisitor.UnmarshalErr {
-		logger.Errorf("[%s] Ignoring persistent error: %s. Context: %s", m.channelID, err, ctx)
+func (m *Observer) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
+	return func(w *blockvisitor.Write) error {
+		if int64(w.TxNum) < metadata.LastTxNumProcessed {
+			logger.Debugf("[%s] Ignoring write to key [%s] since block:txNum [%d:%d] has already been processed", m.channelID, w.Write.Key, w.BlockNum, w.TxNum)
+			return nil
+		}
+
+		metadata.LastBlockProcessed = w.BlockNum
+		metadata.LastTxNumProcessed = int64(w.TxNum)
+
+		if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
+			logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
+
+			return nil
+		}
+
+		logger.Debugf("[%s] Handling write to anchor [%s] in block [%d] and TxNum [%d] on attempt #%d", m.channelID, w.Write.Value, w.BlockNum, w.TxNum, metadata.FailedAttempts+1)
+
+		sidetreeTxn := observer.SidetreeTxn{
+			TransactionTime:   w.BlockNum,
+			TransactionNumber: w.TxNum,
+			AnchorAddress:     string(w.Write.Value),
+		}
+
+		if err := m.txnProcessor.Process(sidetreeTxn); err != nil {
+			return errors.WithMessagef(err, "error processing Txn for anchor [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
+		}
+
 		return nil
 	}
+}
 
-	if !transienterr.Is(err) {
-		logger.Errorf("[%s] Ignoring persistent error: %s. Context: %s", m.channelID, err, ctx)
-		return nil
+func (m *Observer) errorHandler(metadata *Metadata) blockvisitor.ErrorHandler {
+	return func(err error, ctx *blockvisitor.Context) error {
+		if ctx.Category == blockvisitor.UnmarshalErr {
+			logger.Errorf("[%s] Ignoring persistent error in block:txNum [%d:%d]: %s. Context: %s", m.channelID, ctx.BlockNum, ctx.TxNum, err, ctx)
+
+			metadata.FailedAttempts = 0
+			metadata.LastErrorCode = ""
+
+			return nil
+		}
+
+		if !transienterr.Is(err) {
+			logger.Errorf("[%s] Ignoring persistent error in block:txNum [%d:%d]: %s. Context: %s", m.channelID, ctx.BlockNum, ctx.TxNum, err, ctx)
+
+			metadata.FailedAttempts = 0
+			metadata.LastErrorCode = ""
+
+			return nil
+		}
+
+		code := transienterr.GetCode(err)
+
+		logger.Debugf("[%s] Got error processing block:txNum [%d:%d] after attempt #%d: %s - Code: %s. Context: %s", m.channelID, ctx.BlockNum, ctx.TxNum, metadata.FailedAttempts+1, err, code, ctx)
+
+		if metadata.LastErrorCode == code && metadata.LastTxNumProcessed == int64(ctx.TxNum) {
+			metadata.FailedAttempts++
+
+			if metadata.FailedAttempts > m.maxAttempts {
+				logger.Errorf("[%s] Giving up processing block:txNum [%d:%d] after %d failed attempts on error: %s. Context: %s", m.channelID, ctx.BlockNum, ctx.TxNum, metadata.FailedAttempts+1, err, ctx)
+
+				metadata.FailedAttempts = 0
+				metadata.LastErrorCode = ""
+
+				return nil
+			}
+
+			logger.Warnf("[%s] Got same error as before processing block:txNum [%d:%d]: %s - Code: %s. Increasing failed attempts to %d", m.channelID, ctx.BlockNum, ctx.TxNum, err, code, metadata.FailedAttempts)
+		} else {
+			// Reset FailedAttempts since the error/txNum is different this time
+			metadata.FailedAttempts = 1
+
+			logger.Warnf("[%s] Got new error processing block:txNum [%d:%d]: %s - Code: %s", m.channelID, ctx.BlockNum, ctx.TxNum, err, code)
+		}
+
+		metadata.LastErrorCode = code
+
+		return err
 	}
-
-	logger.Warnf("[%s] Will retry on transient error [%s] in %s. Context: %s", m.channelID, err, m.period, ctx)
-
-	return err
 }
 
 func (m *Observer) getBlockchainInfo() (*cb.BlockchainInfo, error) {
@@ -342,10 +415,7 @@ func (m *Observer) getMetadata() (*Metadata, error) {
 	metadata, err := m.metadataStore.Get()
 	if err != nil {
 		if err == errMetaDataNotFound {
-			return &Metadata{
-				LastBlockProcessed: 0,
-				LeaseOwner:         m.leaseProvider.CreateLease(1).Owner(),
-			}, nil
+			return newMetadata(m.leaseProvider.CreateLease(1).Owner(), 0), nil
 		}
 
 		return nil, err
@@ -354,14 +424,12 @@ func (m *Observer) getMetadata() (*Metadata, error) {
 	return metadata, nil
 }
 
-func (m *Observer) putMetadata(metadata *Metadata) error {
+func (m *Observer) putMetadata(metadata *Metadata) {
 	logger.Debugf("[%s] Updating metadata: %+v", m.channelID, metadata)
 
 	if err := m.metadataStore.Put(metadata); err != nil {
-		return errors.WithMessage(err, "error persisting metadata")
+		logger.Errorf("[%s] Error saving metadata: %s", m.channelID, err)
 	}
-
-	return nil
 }
 
 func (m *Observer) started() bool {

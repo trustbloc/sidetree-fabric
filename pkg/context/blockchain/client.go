@@ -50,7 +50,7 @@ func (c *Client) WriteAnchor(anchor string) error {
 		Args:        [][]byte{[]byte(writeAnchorFcn), []byte(anchor)},
 	})
 	if err != nil {
-		return transienterr.New(errors.Wrap(err, "failed to store anchor file address"))
+		return transienterr.New(errors.Wrap(err, "failed to store anchor file address"), transienterr.CodeBlockchain)
 	}
 
 	return nil
