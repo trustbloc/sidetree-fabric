@@ -62,19 +62,16 @@ func TestLevelDBQueue(t *testing.T) {
 	require.Equal(t, op1, ops[0])
 	require.Equal(t, op2, ops[1])
 
-	ops, n, err = q.Remove(2)
+	removed, n, err := q.Remove(2)
 	require.NoError(t, err)
 	require.Equal(t, uint(1), n)
-	require.Len(t, ops, 2)
-	require.Equal(t, op1, ops[0])
-	require.Equal(t, op2, ops[1])
+	require.Equal(t, uint(2), removed)
 	require.Equal(t, uint(1), q.Len())
 
-	ops, n, err = q.Remove(2)
+	removed, n, err = q.Remove(2)
 	require.NoError(t, err)
 	require.Equal(t, uint(0), n)
-	require.Len(t, ops, 1)
-	require.Equal(t, op3, ops[0])
+	require.Equal(t, uint(1), removed)
 }
 
 func TestLevelDBQueue_Reload(t *testing.T) {
@@ -101,9 +98,9 @@ func TestLevelDBQueue_Reload(t *testing.T) {
 	require.Equal(t, uint(4), n)
 	require.Equal(t, uint(4), q.Len())
 
-	op, l, err := q.Remove(1)
+	removed, l, err := q.Remove(1)
 	require.NoError(t, err)
-	require.Equal(t, op1, op[0])
+	require.Equal(t, uint(1), removed)
 
 	require.Equal(t, uint(3), l)
 	require.Equal(t, uint(3), q.Len())
@@ -116,18 +113,15 @@ func TestLevelDBQueue_Reload(t *testing.T) {
 
 	require.Equal(t, uint(3), q2.Len())
 
-	op, l, err = q2.Remove(1)
+	removed, l, err = q2.Remove(1)
 	require.NoError(t, err)
 	require.Equal(t, uint(2), l)
-	require.Len(t, op, 1)
-	require.Equal(t, op2, op[0])
+	require.Equal(t, uint(1), removed)
 
-	op, l, err = q2.Remove(2)
+	removed, l, err = q2.Remove(2)
 	require.NoError(t, err)
 	require.Zero(t, l)
-	require.Len(t, op, 2)
-	require.Equal(t, op3, op[0])
-	require.Equal(t, op4, op[1])
+	require.Equal(t, uint(2), removed)
 
 	q2.Close()
 

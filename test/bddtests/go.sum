@@ -209,8 +209,8 @@ github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200517170823-9f98d46a0e0
 github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200517170823-9f98d46a0e0f/go.mod h1:LgoI0ccSEwewDjlxkI2yBQQUbu76Mdy4wFyylhOozUY=
 github.com/trustbloc/fabric-protos-go-ext v0.1.3 h1:f426k4Txm1O7zKHLmgLJ9wkUn0nQBKR9fFoZDItEfSw=
 github.com/trustbloc/fabric-protos-go-ext v0.1.3/go.mod h1:xVYTjK4DtZRBxZ2D9aE4y6AbLaPwue2o/criQyQbVD0=
-github.com/trustbloc/sidetree-core-go v0.1.4-0.20200519173902-cd4a2ee14c1b h1:J3IcuMqP1uRKOXQ6EaMiVo5oPfSFpZaZM2MJ5JIQjig=
-github.com/trustbloc/sidetree-core-go v0.1.4-0.20200519173902-cd4a2ee14c1b/go.mod h1:xCuMVdRtXiCghr58Dcd1RW9t0lCDXPPjkSiACzKGaZc=
+github.com/trustbloc/sidetree-core-go v0.1.4-0.20200521210520-09fe36d37f15 h1:+s9KX+mJGo5mEm2IK9IwvmXGH9jtZgVq8xnNmnLQJ74=
+github.com/trustbloc/sidetree-core-go v0.1.4-0.20200521210520-09fe36d37f15/go.mod h1:xCuMVdRtXiCghr58Dcd1RW9t0lCDXPPjkSiACzKGaZc=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/vishvananda/netlink v1.0.0 h1:bqNY2lgheFIu1meHUFSH3d7vG93AFyqg3oGbJCOJgSM=
 github.com/vishvananda/netlink v1.0.0/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
