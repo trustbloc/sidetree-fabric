@@ -35,16 +35,16 @@ func NewSidetreeDCASReader(channelID string, dcasCfg config.DCAS, dcasClientProv
 func (r *SidetreeDCASReader) Read(key string) ([]byte, error) {
 	dcasClient, err := r.dcasClient()
 	if err != nil {
-		return nil, transienterr.New(err)
+		return nil, transienterr.New(err, transienterr.CodeUnknown)
 	}
 
 	content, err := dcasClient.Get(r.ChaincodeName, r.Collection, key)
 	if err != nil {
-		return nil, transienterr.New(err)
+		return nil, transienterr.New(err, transienterr.CodeDB)
 	}
 
 	if len(content) == 0 {
-		return nil, errors.Errorf("content not found for key [%s]", key)
+		return nil, transienterr.New(errors.Errorf("content not found for key [%s]", key), transienterr.CodeNotFound)
 	}
 
 	return content, nil
