@@ -142,18 +142,18 @@ func (q *LevelDBQueue) Add(op *batch.OperationInfo) (uint, error) {
 
 // Remove removes the given number of operation from the head of the queue. The operation are returned
 // along with the new size of the queue and any error.
-func (q *LevelDBQueue) Remove(num uint) ([]*batch.OperationInfo, uint, error) {
+func (q *LevelDBQueue) Remove(num uint) (uint, uint, error) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
 	if q.closed {
-		return nil, 0, errClosed
+		return 0, 0, errClosed
 	}
 
 	size := q.tail - q.head
 
 	if size == 0 {
-		return nil, 0, nil
+		return 0, 0, nil
 	}
 
 	to := q.head + min(uint64(num), size)
@@ -167,31 +167,15 @@ func (q *LevelDBQueue) Remove(num uint) ([]*batch.OperationInfo, uint, error) {
 		}, nil)
 	defer it.Release()
 
-	var ops []*batch.OperationInfo
-	var keys [][]byte
+	var numRemoved uint
 	for it.Next() {
-		// Copy the key since the buffer is modified after each iteration
-		key := make([]byte, len(it.Key()))
-		copy(key, it.Key())
+		logger.Debugf("[%s-%s] Deleting key %v", q.channelID, q.namespace, it.Key())
 
-		op := &batch.OperationInfo{}
-		if err := unmarshal(it.Value(), op); err != nil {
-			return nil, 0, err
-		}
+		numRemoved++
 
-		logger.Debugf("[%s-%s] Removing operation at key %v: %s", q.channelID, q.namespace, key, op.UniqueSuffix)
-
-		ops = append(ops, op)
-		keys = append(keys, key)
-	}
-
-	// Delete the items
-	for i, key := range keys {
-		logger.Debugf("[%s-%s] Deleting key %v", q.channelID, q.namespace, key)
-
-		if err := q.db.Delete(key, nil); err != nil {
-			logger.Warnf("[%s-%s] Unable to delete the key %v for item %s", q.channelID, q.namespace, key, ops[i].UniqueSuffix)
-			return nil, 0, errors.WithMessagef(err, "unable to delete the key %v for item %s", key, ops[i].UniqueSuffix)
+		if err := q.db.Delete(it.Key(), nil); err != nil {
+			logger.Warnf("[%s-%s] Unable to delete the key %v", q.channelID, q.namespace, it.Key())
+			return 0, 0, errors.WithMessagef(err, "unable to delete the key %v", it.Key())
 		}
 	}
 
@@ -199,7 +183,7 @@ func (q *LevelDBQueue) Remove(num uint) ([]*batch.OperationInfo, uint, error) {
 
 	logger.Debugf("[%s-%s] New head:tail - [%d:%d]", q.channelID, q.namespace, q.head, q.tail)
 
-	return ops, uint(q.tail - q.head), nil
+	return numRemoved, uint(q.tail - q.head), nil
 }
 
 // Peek returns the given number of operation at the head of the queue without removing them.
