@@ -163,11 +163,21 @@ func TestChannelController_Update(t *testing.T) {
 	m := newChannelController(channel1, providers, stConfigService, ctrl)
 	require.NotNil(t, m)
 
+	// config has not been loaded yet to so error is expected
+	pc, err := m.ForNamespace(didTrustblocNamespace)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "protocol: context not found for namespace")
+
 	defer m.Close()
 
 	count := len(ctrl.Invocations()[eventMethod])
 	stConfigService.LoadSidetreePeerReturns(sidetreePeerCfg, nil)
 	require.NoError(t, m.load())
+
+	// config has been loaded for namespace - protocol client is available
+	pc, err = m.ForNamespace(didTrustblocNamespace)
+	require.NoError(t, err)
+	require.NotNil(t, pc)
 
 	time.Sleep(20 * time.Millisecond)
 	require.Len(t, ctrl.Invocations()[eventMethod], count+1)

@@ -4,136 +4,62 @@ package mocks
 import (
 	"sync"
 
+	"github.com/trustbloc/sidetree-core-go/pkg/api/cas"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
 )
 
 type BatchContext struct {
-	ProtocolStub        func() protocol.Client
-	protocolMutex       sync.RWMutex
-	protocolArgsForCall []struct{}
-	protocolReturns     struct {
-		result1 protocol.Client
-	}
-	protocolReturnsOnCall map[int]struct {
-		result1 protocol.Client
-	}
-	CASStub        func() batch.CASClient
-	cASMutex       sync.RWMutex
-	cASArgsForCall []struct{}
-	cASReturns     struct {
-		result1 batch.CASClient
-	}
-	cASReturnsOnCall map[int]struct {
-		result1 batch.CASClient
-	}
 	BlockchainStub        func() batch.BlockchainClient
 	blockchainMutex       sync.RWMutex
-	blockchainArgsForCall []struct{}
-	blockchainReturns     struct {
+	blockchainArgsForCall []struct {
+	}
+	blockchainReturns struct {
 		result1 batch.BlockchainClient
 	}
 	blockchainReturnsOnCall map[int]struct {
 		result1 batch.BlockchainClient
 	}
+	CASStub        func() cas.Client
+	cASMutex       sync.RWMutex
+	cASArgsForCall []struct {
+	}
+	cASReturns struct {
+		result1 cas.Client
+	}
+	cASReturnsOnCall map[int]struct {
+		result1 cas.Client
+	}
 	OperationQueueStub        func() cutter.OperationQueue
 	operationQueueMutex       sync.RWMutex
-	operationQueueArgsForCall []struct{}
-	operationQueueReturns     struct {
+	operationQueueArgsForCall []struct {
+	}
+	operationQueueReturns struct {
 		result1 cutter.OperationQueue
 	}
 	operationQueueReturnsOnCall map[int]struct {
 		result1 cutter.OperationQueue
 	}
+	ProtocolStub        func() protocol.Client
+	protocolMutex       sync.RWMutex
+	protocolArgsForCall []struct {
+	}
+	protocolReturns struct {
+		result1 protocol.Client
+	}
+	protocolReturnsOnCall map[int]struct {
+		result1 protocol.Client
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *BatchContext) Protocol() protocol.Client {
-	fake.protocolMutex.Lock()
-	ret, specificReturn := fake.protocolReturnsOnCall[len(fake.protocolArgsForCall)]
-	fake.protocolArgsForCall = append(fake.protocolArgsForCall, struct{}{})
-	fake.recordInvocation("Protocol", []interface{}{})
-	fake.protocolMutex.Unlock()
-	if fake.ProtocolStub != nil {
-		return fake.ProtocolStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.protocolReturns.result1
-}
-
-func (fake *BatchContext) ProtocolCallCount() int {
-	fake.protocolMutex.RLock()
-	defer fake.protocolMutex.RUnlock()
-	return len(fake.protocolArgsForCall)
-}
-
-func (fake *BatchContext) ProtocolReturns(result1 protocol.Client) {
-	fake.ProtocolStub = nil
-	fake.protocolReturns = struct {
-		result1 protocol.Client
-	}{result1}
-}
-
-func (fake *BatchContext) ProtocolReturnsOnCall(i int, result1 protocol.Client) {
-	fake.ProtocolStub = nil
-	if fake.protocolReturnsOnCall == nil {
-		fake.protocolReturnsOnCall = make(map[int]struct {
-			result1 protocol.Client
-		})
-	}
-	fake.protocolReturnsOnCall[i] = struct {
-		result1 protocol.Client
-	}{result1}
-}
-
-func (fake *BatchContext) CAS() batch.CASClient {
-	fake.cASMutex.Lock()
-	ret, specificReturn := fake.cASReturnsOnCall[len(fake.cASArgsForCall)]
-	fake.cASArgsForCall = append(fake.cASArgsForCall, struct{}{})
-	fake.recordInvocation("CAS", []interface{}{})
-	fake.cASMutex.Unlock()
-	if fake.CASStub != nil {
-		return fake.CASStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.cASReturns.result1
-}
-
-func (fake *BatchContext) CASCallCount() int {
-	fake.cASMutex.RLock()
-	defer fake.cASMutex.RUnlock()
-	return len(fake.cASArgsForCall)
-}
-
-func (fake *BatchContext) CASReturns(result1 batch.CASClient) {
-	fake.CASStub = nil
-	fake.cASReturns = struct {
-		result1 batch.CASClient
-	}{result1}
-}
-
-func (fake *BatchContext) CASReturnsOnCall(i int, result1 batch.CASClient) {
-	fake.CASStub = nil
-	if fake.cASReturnsOnCall == nil {
-		fake.cASReturnsOnCall = make(map[int]struct {
-			result1 batch.CASClient
-		})
-	}
-	fake.cASReturnsOnCall[i] = struct {
-		result1 batch.CASClient
-	}{result1}
 }
 
 func (fake *BatchContext) Blockchain() batch.BlockchainClient {
 	fake.blockchainMutex.Lock()
 	ret, specificReturn := fake.blockchainReturnsOnCall[len(fake.blockchainArgsForCall)]
-	fake.blockchainArgsForCall = append(fake.blockchainArgsForCall, struct{}{})
+	fake.blockchainArgsForCall = append(fake.blockchainArgsForCall, struct {
+	}{})
 	fake.recordInvocation("Blockchain", []interface{}{})
 	fake.blockchainMutex.Unlock()
 	if fake.BlockchainStub != nil {
@@ -142,7 +68,8 @@ func (fake *BatchContext) Blockchain() batch.BlockchainClient {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.blockchainReturns.result1
+	fakeReturns := fake.blockchainReturns
+	return fakeReturns.result1
 }
 
 func (fake *BatchContext) BlockchainCallCount() int {
@@ -151,7 +78,15 @@ func (fake *BatchContext) BlockchainCallCount() int {
 	return len(fake.blockchainArgsForCall)
 }
 
+func (fake *BatchContext) BlockchainCalls(stub func() batch.BlockchainClient) {
+	fake.blockchainMutex.Lock()
+	defer fake.blockchainMutex.Unlock()
+	fake.BlockchainStub = stub
+}
+
 func (fake *BatchContext) BlockchainReturns(result1 batch.BlockchainClient) {
+	fake.blockchainMutex.Lock()
+	defer fake.blockchainMutex.Unlock()
 	fake.BlockchainStub = nil
 	fake.blockchainReturns = struct {
 		result1 batch.BlockchainClient
@@ -159,6 +94,8 @@ func (fake *BatchContext) BlockchainReturns(result1 batch.BlockchainClient) {
 }
 
 func (fake *BatchContext) BlockchainReturnsOnCall(i int, result1 batch.BlockchainClient) {
+	fake.blockchainMutex.Lock()
+	defer fake.blockchainMutex.Unlock()
 	fake.BlockchainStub = nil
 	if fake.blockchainReturnsOnCall == nil {
 		fake.blockchainReturnsOnCall = make(map[int]struct {
@@ -170,10 +107,63 @@ func (fake *BatchContext) BlockchainReturnsOnCall(i int, result1 batch.Blockchai
 	}{result1}
 }
 
+func (fake *BatchContext) CAS() cas.Client {
+	fake.cASMutex.Lock()
+	ret, specificReturn := fake.cASReturnsOnCall[len(fake.cASArgsForCall)]
+	fake.cASArgsForCall = append(fake.cASArgsForCall, struct {
+	}{})
+	fake.recordInvocation("CAS", []interface{}{})
+	fake.cASMutex.Unlock()
+	if fake.CASStub != nil {
+		return fake.CASStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.cASReturns
+	return fakeReturns.result1
+}
+
+func (fake *BatchContext) CASCallCount() int {
+	fake.cASMutex.RLock()
+	defer fake.cASMutex.RUnlock()
+	return len(fake.cASArgsForCall)
+}
+
+func (fake *BatchContext) CASCalls(stub func() cas.Client) {
+	fake.cASMutex.Lock()
+	defer fake.cASMutex.Unlock()
+	fake.CASStub = stub
+}
+
+func (fake *BatchContext) CASReturns(result1 cas.Client) {
+	fake.cASMutex.Lock()
+	defer fake.cASMutex.Unlock()
+	fake.CASStub = nil
+	fake.cASReturns = struct {
+		result1 cas.Client
+	}{result1}
+}
+
+func (fake *BatchContext) CASReturnsOnCall(i int, result1 cas.Client) {
+	fake.cASMutex.Lock()
+	defer fake.cASMutex.Unlock()
+	fake.CASStub = nil
+	if fake.cASReturnsOnCall == nil {
+		fake.cASReturnsOnCall = make(map[int]struct {
+			result1 cas.Client
+		})
+	}
+	fake.cASReturnsOnCall[i] = struct {
+		result1 cas.Client
+	}{result1}
+}
+
 func (fake *BatchContext) OperationQueue() cutter.OperationQueue {
 	fake.operationQueueMutex.Lock()
 	ret, specificReturn := fake.operationQueueReturnsOnCall[len(fake.operationQueueArgsForCall)]
-	fake.operationQueueArgsForCall = append(fake.operationQueueArgsForCall, struct{}{})
+	fake.operationQueueArgsForCall = append(fake.operationQueueArgsForCall, struct {
+	}{})
 	fake.recordInvocation("OperationQueue", []interface{}{})
 	fake.operationQueueMutex.Unlock()
 	if fake.OperationQueueStub != nil {
@@ -182,7 +172,8 @@ func (fake *BatchContext) OperationQueue() cutter.OperationQueue {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.operationQueueReturns.result1
+	fakeReturns := fake.operationQueueReturns
+	return fakeReturns.result1
 }
 
 func (fake *BatchContext) OperationQueueCallCount() int {
@@ -191,7 +182,15 @@ func (fake *BatchContext) OperationQueueCallCount() int {
 	return len(fake.operationQueueArgsForCall)
 }
 
+func (fake *BatchContext) OperationQueueCalls(stub func() cutter.OperationQueue) {
+	fake.operationQueueMutex.Lock()
+	defer fake.operationQueueMutex.Unlock()
+	fake.OperationQueueStub = stub
+}
+
 func (fake *BatchContext) OperationQueueReturns(result1 cutter.OperationQueue) {
+	fake.operationQueueMutex.Lock()
+	defer fake.operationQueueMutex.Unlock()
 	fake.OperationQueueStub = nil
 	fake.operationQueueReturns = struct {
 		result1 cutter.OperationQueue
@@ -199,6 +198,8 @@ func (fake *BatchContext) OperationQueueReturns(result1 cutter.OperationQueue) {
 }
 
 func (fake *BatchContext) OperationQueueReturnsOnCall(i int, result1 cutter.OperationQueue) {
+	fake.operationQueueMutex.Lock()
+	defer fake.operationQueueMutex.Unlock()
 	fake.OperationQueueStub = nil
 	if fake.operationQueueReturnsOnCall == nil {
 		fake.operationQueueReturnsOnCall = make(map[int]struct {
@@ -210,17 +211,69 @@ func (fake *BatchContext) OperationQueueReturnsOnCall(i int, result1 cutter.Oper
 	}{result1}
 }
 
+func (fake *BatchContext) Protocol() protocol.Client {
+	fake.protocolMutex.Lock()
+	ret, specificReturn := fake.protocolReturnsOnCall[len(fake.protocolArgsForCall)]
+	fake.protocolArgsForCall = append(fake.protocolArgsForCall, struct {
+	}{})
+	fake.recordInvocation("Protocol", []interface{}{})
+	fake.protocolMutex.Unlock()
+	if fake.ProtocolStub != nil {
+		return fake.ProtocolStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.protocolReturns
+	return fakeReturns.result1
+}
+
+func (fake *BatchContext) ProtocolCallCount() int {
+	fake.protocolMutex.RLock()
+	defer fake.protocolMutex.RUnlock()
+	return len(fake.protocolArgsForCall)
+}
+
+func (fake *BatchContext) ProtocolCalls(stub func() protocol.Client) {
+	fake.protocolMutex.Lock()
+	defer fake.protocolMutex.Unlock()
+	fake.ProtocolStub = stub
+}
+
+func (fake *BatchContext) ProtocolReturns(result1 protocol.Client) {
+	fake.protocolMutex.Lock()
+	defer fake.protocolMutex.Unlock()
+	fake.ProtocolStub = nil
+	fake.protocolReturns = struct {
+		result1 protocol.Client
+	}{result1}
+}
+
+func (fake *BatchContext) ProtocolReturnsOnCall(i int, result1 protocol.Client) {
+	fake.protocolMutex.Lock()
+	defer fake.protocolMutex.Unlock()
+	fake.ProtocolStub = nil
+	if fake.protocolReturnsOnCall == nil {
+		fake.protocolReturnsOnCall = make(map[int]struct {
+			result1 protocol.Client
+		})
+	}
+	fake.protocolReturnsOnCall[i] = struct {
+		result1 protocol.Client
+	}{result1}
+}
+
 func (fake *BatchContext) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.protocolMutex.RLock()
-	defer fake.protocolMutex.RUnlock()
-	fake.cASMutex.RLock()
-	defer fake.cASMutex.RUnlock()
 	fake.blockchainMutex.RLock()
 	defer fake.blockchainMutex.RUnlock()
+	fake.cASMutex.RLock()
+	defer fake.cASMutex.RUnlock()
 	fake.operationQueueMutex.RLock()
 	defer fake.operationQueueMutex.RUnlock()
+	fake.protocolMutex.RLock()
+	defer fake.protocolMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

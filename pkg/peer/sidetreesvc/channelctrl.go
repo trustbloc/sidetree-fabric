@@ -14,6 +14,7 @@ import (
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
@@ -314,12 +315,21 @@ func (c *channelController) loadDCASConfig() (config.DCAS, error) {
 	return c.sidetreeCfgService.LoadDCAS()
 }
 
+func (c *channelController) ForNamespace(ns string) (protocol.Client, error) {
+	ctx, ok := c.contexts[ns]
+	if !ok {
+		return nil, errors.Errorf("protocol: context not found for namespace [%s]", ns)
+	}
+
+	return ctx.Protocol(), nil
+}
+
 func (c *channelController) restartObserver(observerCfg config.Observer, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
 	if c.observer != nil {
 		c.observer.Stop()
 	}
 
-	c.observer = newObserverController(c.channelID, c.PeerConfig, observerCfg, dcasCfg, c.ObserverProviders, storeProvider, c.txnChan)
+	c.observer = newObserverController(c.channelID, c.PeerConfig, observerCfg, dcasCfg, c.ObserverProviders, storeProvider, c.txnChan, c)
 
 	return c.observer.Start()
 }

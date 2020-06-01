@@ -16,7 +16,9 @@ import (
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/txn"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
+	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
@@ -85,7 +87,7 @@ type peerConfig interface {
 }
 
 // New returns a new Observer
-func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcasCfg config.DCAS, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata) *Observer {
+func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcasCfg config.DCAS, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata, pcp ctxcommon.ProtocolClientProvider) *Observer {
 	period := observerCfg.Period
 	if period == 0 {
 		period = defaultMonitorPeriod
@@ -105,7 +107,7 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		leaseProvider: lease.NewProvider(channelID, clientProviders.Gossip.GetGossipService()),
 		txnProcessor: observer.NewTxnProcessor(
 			&observer.Providers{
-				DCASClient:       NewSidetreeDCASReader(channelID, dcasCfg, clientProviders.DCAS),
+				TxnOpsProvider:   txnhandler.NewOperationProvider(NewSidetreeDCASReader(channelID, dcasCfg, clientProviders.DCAS), pcp),
 				OpStoreProvider:  asObserverStoreProvider(opStoreProvider),
 				OpFilterProvider: operationfilter.NewProvider(channelID, opStoreProvider),
 			},
@@ -319,7 +321,7 @@ func (m *Observer) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
 
 		logger.Debugf("[%s] Handling write to anchor [%s] in block [%d] and TxNum [%d] on attempt #%d", m.channelID, w.Write.Value, w.BlockNum, w.TxNum, metadata.FailedAttempts+1)
 
-		sidetreeTxn := observer.SidetreeTxn{
+		sidetreeTxn := txn.SidetreeTxn{
 			TransactionTime:   w.BlockNum,
 			TransactionNumber: w.TxNum,
 			AnchorAddress:     string(w.Write.Value),

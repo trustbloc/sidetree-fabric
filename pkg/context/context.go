@@ -10,6 +10,7 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
 
+	casApi "github.com/trustbloc/sidetree-core-go/pkg/api/cas"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
@@ -25,7 +26,7 @@ type SidetreeContext struct {
 	channelID        string
 	namespace        string
 	protocolClient   protocolApi.Client
-	casClient        batch.CASClient
+	casClient        casApi.Client
 	blockchainClient batch.BlockchainClient
 	opQueue          cutter.OperationQueue
 }
@@ -81,7 +82,7 @@ func (m *SidetreeContext) Blockchain() batch.BlockchainClient {
 }
 
 // CAS returns content addressable storage client
-func (m *SidetreeContext) CAS() batch.CASClient {
+func (m *SidetreeContext) CAS() casApi.Client {
 	return m.casClient
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
@@ -58,7 +59,7 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		m := newObserverController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{}, txnChan)
+		m := newObserverController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{}, txnChan, coremocks.NewMockProtocolClientProvider())
 		require.NotNil(t, m)
 
 		require.NoError(t, m.Start())
@@ -75,7 +76,7 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		m := newObserverController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{}, txnChan)
+		m := newObserverController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{}, txnChan, coremocks.NewMockProtocolClientProvider())
 		require.NotNil(t, m)
 
 		require.NoError(t, m.Start())
