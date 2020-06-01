@@ -8,6 +8,7 @@ package sidetreesvc
 
 import (
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
@@ -20,10 +21,10 @@ type observerController struct {
 	observer  *observer.Observer
 }
 
-func newObserverController(channelID string, peerConfig peerConfig, observerCfg config.Observer, dcasCfg config.DCAS, providers *observer.ClientProviders, opStoreProvider common.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata) *observerController {
+func newObserverController(channelID string, peerConfig peerConfig, observerCfg config.Observer, dcasCfg config.DCAS, providers *observer.ClientProviders, opStoreProvider common.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata, pcp protocol.ClientProvider) *observerController {
 	var o *observer.Observer
 	if role.IsObserver() {
-		o = observer.New(channelID, peerConfig, observerCfg, dcasCfg, providers, opStoreProvider, txnChan)
+		o = observer.New(channelID, peerConfig, observerCfg, dcasCfg, providers, opStoreProvider, txnChan, pcp)
 	}
 
 	return &observerController{

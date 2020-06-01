@@ -114,11 +114,11 @@ Feature:
 
     # Ensure that the anchor hash resolves to a valid value stored in DCAS
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_9}?max-size=1000000"
-    And the JSON path "batchFileHash" of the response is saved to variable "batchFileHash"
+    And the JSON path "mapFileHash" of the response is saved to variable "mapFileHash"
 
     # Ensure that the batch file hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${batchFileHash}?max-size=1000000"
-    And the JSON path "operations" of the array response is not empty
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${mapFileHash}?max-size=1000000"
+    And the JSON path "chunks" of the array response is not empty
 
     # Invalid since
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=xxx&transaction-time-hash=${timeHash_9}" and the returned status code is 400
@@ -152,7 +152,7 @@ Feature:
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
-    Then the JSON path "batchFileHash" of the response is not empty
+    Then the JSON path "mapFileHash" of the response is not empty
 
     # Retrieve the previous block using the previous hash from above
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Convert the string to base64URL-encoding.
@@ -167,7 +167,7 @@ Feature:
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
-    Then the JSON path "batchFileHash" of the response is not empty
+    Then the JSON path "mapFileHash" of the response is not empty
 
     # Retrieve the anchor file from the previous block hash
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${latest-previous-hash}"
@@ -176,7 +176,7 @@ Feature:
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
     # Retrieve the anchor file from DCAS
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
-    Then the JSON path "batchFileHash" of the response is not empty
+    Then the JSON path "mapFileHash" of the response is not empty
 
     # Get block by hash where the data is base64-encoded
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}?data-encoding=base64"

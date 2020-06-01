@@ -7,8 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
-	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -21,7 +21,8 @@ import (
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-	"github.com/trustbloc/sidetree-core-go/pkg/observer"
+	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
+	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler/models"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
@@ -60,6 +61,7 @@ var (
 
 func TestObserver(t *testing.T) {
 	opStoreProvider := &stmocks.OperationStoreProvider{}
+	opStoreProvider.ForNamespaceReturns(&stmocks.OperationStore{}, nil)
 
 	meta := newMetadata(peer1, 1001)
 	metaBytes, err := json.Marshal(meta)
@@ -209,6 +211,7 @@ func TestObserver_Error(t *testing.T) {
 		Write("some_key", []byte("some value"))
 
 	opStoreProvider := &stmocks.OperationStoreProvider{}
+	opStoreProvider.ForNamespaceReturns(&stmocks.OperationStore{}, nil)
 
 	txnChan := make(chan gossipapi.TxMetadata)
 
@@ -324,7 +327,7 @@ func TestObserver_Error(t *testing.T) {
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 
-		anchorFile := &observer.AnchorFile{}
+		anchorFile := &models.AnchorFile{}
 		anchorFileBytes, err := json.Marshal(anchorFile)
 		require.NoError(t, err)
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
@@ -343,65 +346,11 @@ func TestObserver_Error(t *testing.T) {
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 
-		anchorFile := &observer.AnchorFile{}
+		anchorFile := &models.AnchorFile{}
 		anchorFileBytes, err := json.Marshal(anchorFile)
 		require.NoError(t, err)
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
-
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
-
-		require.NoError(t, m.Start())
-		time.Sleep(sleepTime)
-		m.Stop()
-	})
-
-	t.Run("operation base64 error", func(t *testing.T) {
-		clients := newMockClients(t)
-		bcInfo := &cb.BlockchainInfo{Height: 1002}
-		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
-		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-
-		anchorFile := &observer.AnchorFile{}
-		anchorFileBytes, err := json.Marshal(anchorFile)
-		require.NoError(t, err)
-		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-
-		batchFile := &observer.BatchFile{
-			Operations: []string{"invalid base64 operation"},
-		}
-		batchFileBytes, err := json.Marshal(batchFile)
-		require.NoError(t, err)
-
-		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
-
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
-
-		require.NoError(t, m.Start())
-		time.Sleep(sleepTime)
-		m.Stop()
-	})
-
-	t.Run("operation unmarshal error", func(t *testing.T) {
-		clients := newMockClients(t)
-		bcInfo := &cb.BlockchainInfo{Height: 1002}
-		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
-		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-
-		anchorFile := &observer.AnchorFile{}
-		anchorFileBytes, err := json.Marshal(anchorFile)
-		require.NoError(t, err)
-		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-
-		b64Op1 := base64.URLEncoding.EncodeToString([]byte("invalid operation"))
-
-		batchFile := &observer.BatchFile{
-			Operations: []string{b64Op1},
-		}
-		batchFileBytes, err := json.Marshal(batchFile)
-		require.NoError(t, err)
-
-		clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
 
 		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
 
@@ -423,7 +372,7 @@ func TestObserver_Error(t *testing.T) {
 			},
 		}, nil)
 
-		anchorFile := &observer.AnchorFile{}
+		anchorFile := &models.AnchorFile{}
 		anchorFileBytes, err := json.Marshal(anchorFile)
 		require.NoError(t, err)
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
@@ -468,18 +417,20 @@ func TestObserver_Error(t *testing.T) {
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 
-		anchorFile := &observer.AnchorFile{}
-		anchorFileBytes, err := json.Marshal(anchorFile)
+		ops := getTestOperations(0, 0, 2, 0)
+		op1Bytes, err := json.Marshal(ops[0])
+		require.NoError(t, err)
+		op2Bytes, err := json.Marshal(ops[1])
 		require.NoError(t, err)
 
-		batchFileBytes, op1Bytes, op2Bytes := newBatchFileBytes(t)
+		anchorFileBytes, err := json.Marshal(models.CreateAnchorFile("", ops))
+		require.NoError(t, err)
 
 		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
 		clients.dcas.GetReturnsOnCall(1, nil, errors.New("get batch file error"))
 		clients.dcas.GetReturnsOnCall(2, anchorFileBytes, nil)
-		clients.dcas.GetReturnsOnCall(3, batchFileBytes, nil)
-		clients.dcas.GetReturnsOnCall(4, op1Bytes, nil)
-		clients.dcas.GetReturnsOnCall(5, op2Bytes, nil)
+		clients.dcas.GetReturnsOnCall(3, op1Bytes, nil)
+		clients.dcas.GetReturnsOnCall(4, op2Bytes, nil)
 
 		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
 
@@ -526,19 +477,21 @@ func newMockClients(t *testing.T) *mockClients {
 	tb1.ChaincodeAction("some_other_cc").
 		Write("some_key", []byte("some value"))
 
-	batchFileBytes, op1Bytes, op2Bytes := newBatchFileBytes(t)
+	const deactivateOpsNum = 2
+	ops := getTestOperations(0, 0, deactivateOpsNum, 0)
+	op1Bytes, err := json.Marshal(ops[0])
+	require.NoError(t, err)
+	op2Bytes, err := json.Marshal(ops[1])
+	require.NoError(t, err)
 
-	anchorFile := &observer.AnchorFile{}
-	anchorFileBytes, err := json.Marshal(anchorFile)
+	anchorFileBytes, err := json.Marshal(models.CreateAnchorFile("", ops))
 	require.NoError(t, err)
 
 	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 	clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-
 	clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-	clients.dcas.GetReturnsOnCall(1, batchFileBytes, nil)
-	clients.dcas.GetReturnsOnCall(2, op1Bytes, nil)
-	clients.dcas.GetReturnsOnCall(3, op2Bytes, nil)
+	clients.dcas.GetReturnsOnCall(1, op1Bytes, nil)
+	clients.dcas.GetReturnsOnCall(2, op2Bytes, nil)
 
 	return clients
 }
@@ -567,33 +520,37 @@ func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, c
 			Blockchain: clients.blockchainProvider,
 			Gossip:     gossipProvider,
 		},
-		opStoreProvider, txnChan,
+		opStoreProvider, txnChan, coremocks.NewMockProtocolClientProvider(),
 	)
 	require.NotNil(t, m)
 
 	return m
 }
 
-func newBatchFileBytes(t *testing.T) (batchFileBytes []byte, op1Bytes []byte, op2Bytes []byte) {
-	op1 := &batch.Operation{
-		ID: "did:sidetree:op1",
-	}
-	op1Bytes, err := json.Marshal(op1)
-	require.NoError(t, err)
-	b64Op1 := base64.URLEncoding.EncodeToString(op1Bytes)
+func getTestOperations(createOpsNum, updateOpsNum, deactivateOpsNum, recoverOpsNum int) []*batch.Operation {
+	var ops []*batch.Operation
+	ops = append(ops, generateOperations(createOpsNum, batch.OperationTypeCreate)...)
+	ops = append(ops, generateOperations(recoverOpsNum, batch.OperationTypeRecover)...)
+	ops = append(ops, generateOperations(deactivateOpsNum, batch.OperationTypeDeactivate)...)
+	ops = append(ops, generateOperations(updateOpsNum, batch.OperationTypeUpdate)...)
 
-	op2 := &batch.Operation{
-		ID: "did:sidetree:op2",
-	}
-	op2Bytes, err = json.Marshal(op2)
-	require.NoError(t, err)
-	b64Op2 := base64.URLEncoding.EncodeToString(op2Bytes)
+	return ops
+}
 
-	batchFile := &observer.BatchFile{
-		Operations: []string{b64Op1, b64Op2},
+func generateOperations(numOfOperations int, opType batch.OperationType) (ops []*batch.Operation) {
+	for j := 1; j <= numOfOperations; j++ {
+		ops = append(ops, generateOperation(j, opType))
 	}
-	batchFileBytes, err = json.Marshal(batchFile)
-	require.NoError(t, err)
-
 	return
+}
+
+func generateOperation(num int, opType batch.OperationType) *batch.Operation {
+	return &batch.Operation{
+		Type:              opType,
+		UniqueSuffix:      fmt.Sprintf("%s-%d", opType, num),
+		Namespace:         "did:sidetree",
+		EncodedSuffixData: "suffix-data",
+		EncodedDelta:      "delta",
+		SignedData:        "signed-data",
+	}
 }

@@ -11,6 +11,7 @@ import (
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
 
 // DCASClientProvider is a DCAS client provider
@@ -27,6 +28,11 @@ type OperationStore interface {
 // OperationStoreProvider returns an operation store for the given namespace
 type OperationStoreProvider interface {
 	ForNamespace(namespace string) (OperationStore, error)
+}
+
+// ProtocolClientProvider returns a protocol provider for the given namespace
+type ProtocolClientProvider interface {
+	ForNamespace(namespace string) (protocol.Client, error)
 }
 
 // BlockPublisherProvider provides a block publisher for a given channel

@@ -9,7 +9,7 @@ package blockchain
 import (
 	"github.com/pkg/errors"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
-	"github.com/trustbloc/sidetree-core-go/pkg/observer"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/txn"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 )
@@ -57,7 +57,7 @@ func (c *Client) WriteAnchor(anchor string) error {
 }
 
 // Read ledger transaction
-func (c *Client) Read(sinceTransactionNumber int) (bool, *observer.SidetreeTxn) {
+func (c *Client) Read(sinceTransactionNumber int) (bool, *txn.SidetreeTxn) {
 	// TODO: Not sure where/if this function is used
 	panic("not implemented")
 }
