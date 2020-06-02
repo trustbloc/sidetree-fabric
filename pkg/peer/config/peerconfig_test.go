@@ -9,6 +9,7 @@ package config
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	viper "github.com/spf13/viper2015"
 	"github.com/stretchr/testify/require"
@@ -95,5 +96,21 @@ func TestPeerConfig(t *testing.T) {
 		require.Equal(t, "token1", cfg.SidetreeAPIToken("tk1"))
 		require.Equal(t, "token2", cfg.SidetreeAPIToken("tk2"))
 		require.Empty(t, cfg.SidetreeAPIToken("tk3"))
+	})
+
+	t.Run("Discovery", func(t *testing.T) {
+		viper.Reset()
+		viper.Set("sidetree.discovery.cacheExpirationTime", "20m")
+		viper.Set("sidetree.discovery.gossip.timeout", "21m")
+		viper.Set("sidetree.discovery.gossip.maxPeers", 17)
+		viper.Set("sidetree.discovery.gossip.maxAttempts", 12)
+
+		cfg := NewPeer()
+		require.NotNil(t, cfg)
+
+		require.Equal(t, 20*time.Minute, cfg.DiscoveryCacheExpirationTime())
+		require.Equal(t, 21*time.Minute, cfg.DiscoveryGossipTimeout())
+		require.Equal(t, 17, cfg.DiscoveryGossipMaxPeers())
+		require.Equal(t, 12, cfg.DiscoveryGossipMaxAttempts())
 	})
 }
