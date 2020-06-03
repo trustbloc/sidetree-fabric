@@ -13,6 +13,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/discoveryhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
@@ -56,5 +57,6 @@ type SidetreeService interface {
 	LoadFileHandlers(mspID, peerID string) ([]filehandler.Config, error)
 	LoadDCASHandlers(mspID, peerID string) ([]dcashandler.Config, error)
 	LoadBlockchainHandlers(mspID, peerID string) ([]blockchainhandler.Config, error)
+	LoadDiscoveryHandlers(mspID, peerID string) ([]discoveryhandler.Config, error)
 	LoadDCAS() (DCAS, error)
 }

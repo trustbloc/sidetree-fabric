@@ -8,6 +8,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/discoveryhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
@@ -107,6 +108,20 @@ type SidetreeConfigService struct {
 	}
 	loadBlockchainHandlersReturnsOnCall map[int]struct {
 		result1 []blockchainhandler.Config
+		result2 error
+	}
+	LoadDiscoveryHandlersStub        func(mspID, peerID string) ([]discoveryhandler.Config, error)
+	loadDiscoveryHandlersMutex       sync.RWMutex
+	loadDiscoveryHandlersArgsForCall []struct {
+		mspID  string
+		peerID string
+	}
+	loadDiscoveryHandlersReturns struct {
+		result1 []discoveryhandler.Config
+		result2 error
+	}
+	loadDiscoveryHandlersReturnsOnCall map[int]struct {
+		result1 []discoveryhandler.Config
 		result2 error
 	}
 	LoadDCASStub        func() (config.DCAS, error)
@@ -486,6 +501,58 @@ func (fake *SidetreeConfigService) LoadBlockchainHandlersReturnsOnCall(i int, re
 	}{result1, result2}
 }
 
+func (fake *SidetreeConfigService) LoadDiscoveryHandlers(mspID string, peerID string) ([]discoveryhandler.Config, error) {
+	fake.loadDiscoveryHandlersMutex.Lock()
+	ret, specificReturn := fake.loadDiscoveryHandlersReturnsOnCall[len(fake.loadDiscoveryHandlersArgsForCall)]
+	fake.loadDiscoveryHandlersArgsForCall = append(fake.loadDiscoveryHandlersArgsForCall, struct {
+		mspID  string
+		peerID string
+	}{mspID, peerID})
+	fake.recordInvocation("LoadDiscoveryHandlers", []interface{}{mspID, peerID})
+	fake.loadDiscoveryHandlersMutex.Unlock()
+	if fake.LoadDiscoveryHandlersStub != nil {
+		return fake.LoadDiscoveryHandlersStub(mspID, peerID)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.loadDiscoveryHandlersReturns.result1, fake.loadDiscoveryHandlersReturns.result2
+}
+
+func (fake *SidetreeConfigService) LoadDiscoveryHandlersCallCount() int {
+	fake.loadDiscoveryHandlersMutex.RLock()
+	defer fake.loadDiscoveryHandlersMutex.RUnlock()
+	return len(fake.loadDiscoveryHandlersArgsForCall)
+}
+
+func (fake *SidetreeConfigService) LoadDiscoveryHandlersArgsForCall(i int) (string, string) {
+	fake.loadDiscoveryHandlersMutex.RLock()
+	defer fake.loadDiscoveryHandlersMutex.RUnlock()
+	return fake.loadDiscoveryHandlersArgsForCall[i].mspID, fake.loadDiscoveryHandlersArgsForCall[i].peerID
+}
+
+func (fake *SidetreeConfigService) LoadDiscoveryHandlersReturns(result1 []discoveryhandler.Config, result2 error) {
+	fake.LoadDiscoveryHandlersStub = nil
+	fake.loadDiscoveryHandlersReturns = struct {
+		result1 []discoveryhandler.Config
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *SidetreeConfigService) LoadDiscoveryHandlersReturnsOnCall(i int, result1 []discoveryhandler.Config, result2 error) {
+	fake.LoadDiscoveryHandlersStub = nil
+	if fake.loadDiscoveryHandlersReturnsOnCall == nil {
+		fake.loadDiscoveryHandlersReturnsOnCall = make(map[int]struct {
+			result1 []discoveryhandler.Config
+			result2 error
+		})
+	}
+	fake.loadDiscoveryHandlersReturnsOnCall[i] = struct {
+		result1 []discoveryhandler.Config
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *SidetreeConfigService) LoadDCAS() (config.DCAS, error) {
 	fake.loadDCASMutex.Lock()
 	ret, specificReturn := fake.loadDCASReturnsOnCall[len(fake.loadDCASArgsForCall)]
@@ -546,6 +613,8 @@ func (fake *SidetreeConfigService) Invocations() map[string][][]interface{} {
 	defer fake.loadDCASHandlersMutex.RUnlock()
 	fake.loadBlockchainHandlersMutex.RLock()
 	defer fake.loadBlockchainHandlersMutex.RUnlock()
+	fake.loadDiscoveryHandlersMutex.RLock()
+	defer fake.loadDiscoveryHandlersMutex.RUnlock()
 	fake.loadDCASMutex.RLock()
 	defer fake.loadDCASMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
