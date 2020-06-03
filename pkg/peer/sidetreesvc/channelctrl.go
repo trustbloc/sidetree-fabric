@@ -29,6 +29,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/discoveryhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -233,6 +234,7 @@ type restHandlerConfig struct {
 	file       []filehandler.Config
 	dcas       []dcashandler.Config
 	blockchain []blockchainhandler.Config
+	discovery  []discoveryhandler.Config
 }
 
 func (c *channelController) loadRESTHandlerConfig() (*restHandlerConfig, error) {
@@ -256,6 +258,11 @@ func (c *channelController) loadRESTHandlerConfig() (*restHandlerConfig, error) 
 	}
 
 	cfg.blockchain, err = c.loadBlockchainHandlerConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.discovery, err = c.loadDiscoveryHandlerConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -314,6 +321,21 @@ func (c *channelController) loadBlockchainHandlerConfig() ([]blockchainhandler.C
 
 	if errors.Cause(err) == cfgservice.ErrConfigNotFound {
 		logger.Info("No blockchain handler configuration found for this peer.")
+
+		return nil, nil
+	}
+
+	return nil, err
+}
+
+func (c *channelController) loadDiscoveryHandlerConfig() ([]discoveryhandler.Config, error) {
+	discoveryHandlerCfg, err := c.sidetreeCfgService.LoadDiscoveryHandlers(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
+	if err == nil {
+		return discoveryHandlerCfg, nil
+	}
+
+	if errors.Cause(err) == cfgservice.ErrConfigNotFound {
+		logger.Info("No discovery handler configuration found for this peer.")
 
 		return nil, nil
 	}
@@ -433,6 +455,8 @@ func (c *channelController) loadRESTServices(cfg *restHandlerConfig) error {
 
 	c.loadBlockchainServices(cfg.blockchain)
 
+	c.loadDiscoveryServices(cfg.discovery)
+
 	return nil
 }
 
@@ -511,6 +535,12 @@ func (c *channelController) loadBlockchainServices(handlerCfg []blockchainhandle
 	}
 }
 
+func (c *channelController) loadDiscoveryServices(handlerCfg []discoveryhandler.Config) {
+	for _, cfg := range handlerCfg {
+		c.services = append(c.services, c.loadDiscoveryService(cfg))
+	}
+}
+
 func (c *channelController) loadBlockchainService(cfg blockchainhandler.Config) *service {
 	logger.Debugf("[%s] Adding blockchain services for base path [%s]", c.channelID, cfg.BasePath)
 	logger.Debugf("[%s] Authorization tokens for blockchain services: %s", c.channelID, cfg.Authorization.ReadTokens)
@@ -532,6 +562,15 @@ func (c *channelController) loadBlockchainService(cfg blockchainhandler.Config) 
 		newEndpoint(configBlockPath, c.authHandler(readTokens, blockchainhandler.NewConfigBlockHandler(c.channelID, cfg, c.BlockchainProvider))),
 		newEndpoint(configBlockPath, c.authHandler(readTokens, blockchainhandler.NewConfigBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))),
 		newEndpoint(configBlockPath, c.authHandler(readTokens, blockchainhandler.NewConfigBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider))),
+	)
+}
+
+func (c *channelController) loadDiscoveryService(cfg discoveryhandler.Config) *service {
+	logger.Debugf("[%s] Adding discovery services for base path [%s]", c.channelID, cfg.BasePath)
+	logger.Debugf("[%s] Authorization tokens for discovery services: %s", c.channelID, cfg.Authorization.ReadTokens)
+
+	return newService("discovery", apiVersion, cfg.BasePath,
+		newEndpoint("", c.authHandler(cfg.Authorization.ReadTokens, discoveryhandler.New(c.channelID, cfg, c.DiscoveryProvider))),
 	)
 }
 

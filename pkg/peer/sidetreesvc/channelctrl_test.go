@@ -30,6 +30,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/discoveryhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -449,6 +450,72 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 	stConfigService.LoadBlockchainHandlersReturns(blockchainHandlers, nil)
 	require.NoError(t, c.load())
 	require.Len(t, c.RESTHandlers(), 14)
+}
+
+func TestChannelController_LoadDiscoveryHandlers(t *testing.T) {
+	peerConfig := &peermocks.PeerConfig{}
+	peerConfig.MSPIDReturns(msp1)
+	peerConfig.PeerIDReturns(peer1)
+
+	restCfg := &peermocks.RestConfig{}
+
+	configSvc := &peermocks.ConfigService{}
+	configProvider := &peermocks.ConfigServiceProvider{}
+	configProvider.ForChannelReturns(configSvc)
+
+	opQueue := &opqueue.MemQueue{}
+	opQueueProvider := &mocks.OperationQueueProvider{}
+	opQueueProvider.CreateReturns(opQueue, nil)
+
+	blockchainProvider := &mocks2.BlockchainClientProvider{}
+
+	discoveryProvider := &peermocks.DiscoveryProvider{}
+
+	providers := &providers{
+		ContextProviders: &ContextProviders{
+			OperationQueueProvider: opQueueProvider,
+			BlockchainProvider:     blockchainProvider,
+		},
+		PeerConfig:        peerConfig,
+		ConfigProvider:    configProvider,
+		BlockPublisher:    extmocks.NewBlockPublisherProvider(),
+		RESTConfig:        restCfg,
+		DiscoveryProvider: discoveryProvider,
+	}
+
+	stConfigService := &cfgmocks.SidetreeConfigService{}
+
+	ctrl := &peermocks.RESTServerController{}
+
+	c := newChannelController(channel1, providers, stConfigService, ctrl)
+	require.NotNil(t, c)
+
+	defer c.Close()
+
+	// No config
+	stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, cfgservice.ErrConfigNotFound)
+	require.NoError(t, c.load())
+	require.Empty(t, c.RESTHandlers())
+
+	// Just discovery handlers
+	discoveryHandlers := []discoveryhandler.Config{
+		{
+			BasePath: "/discovery",
+			Authorization: authhandler.Config{
+				ReadTokens: []string{"discovery_r"},
+			},
+		},
+	}
+
+	stConfigService.LoadDiscoveryHandlersReturns(nil, errors.New("injected error"))
+	require.Error(t, c.load())
+
+	stConfigService.LoadDiscoveryHandlersReturns(nil, cfgservice.ErrConfigNotFound)
+	require.NoError(t, c.load())
+
+	stConfigService.LoadDiscoveryHandlersReturns(discoveryHandlers, nil)
+	require.NoError(t, c.load())
+	require.Len(t, c.RESTHandlers(), 1)
 }
 
 func setRoles(roles ...extroles.Role) func() {

@@ -51,6 +51,8 @@ const (
 	dcasHandler2CfgJson              = `{"BasePath":"/0.1.3/cas","ChaincodeName":"cascc","Collection":"cas2"}`
 	blockchainHandler1CfgJson        = `{"BasePath":"/0.1.2/blockchain"}`
 	blockchainHandler2CfgJson        = `{"BasePath":"/0.1.3/blockchain"}`
+	discoveryHandler1CfgJson         = `{"BasePath":"/0.1.2/discovery"}`
+	discoveryHandler2CfgJson         = `{"BasePath":"/0.1.3/discovery"}`
 	dcasCfgJson                      = `{"ChaincodeName":"cc1","Collection":"dcas"}`
 	dcasCfgMissingCCJson             = `{"Collection":"dcas"}`
 	dcasCfgMissingCollJson           = `{"ChaincodeName":"cc1"}`
@@ -435,6 +437,69 @@ func TestNewSidetreeProvider(t *testing.T) {
 		require.Len(t, cfg, 2)
 		require.Equal(t, "/0.1.2/blockchain", cfg[0].BasePath)
 		require.Equal(t, "/0.1.3/blockchain", cfg[1].BasePath)
+	})
+
+	t.Run("LoadDiscoveryHandlers query error", func(t *testing.T) {
+		errExpected := errors.New("injected query error")
+
+		configService.QueryReturns(nil, errExpected)
+
+		cfg, err := s.LoadDiscoveryHandlers(mspID, peerID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+		require.Nil(t, cfg)
+	})
+
+	t.Run("LoadDiscoveryHandlers unmarshal error", func(t *testing.T) {
+		queryResults := []*ledgercfg.KeyValue{
+			{
+				Value: &ledgercfg.Value{
+					TxID:   "tx1",
+					Format: "json",
+					Config: `{`,
+				},
+			},
+		}
+
+		configService.QueryReturns(queryResults, nil)
+
+		cfg, err := s.LoadDiscoveryHandlers(mspID, peerID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "error reading config")
+		require.Nil(t, cfg)
+	})
+
+	t.Run("LoadDiscoveryHandlers -> success", func(t *testing.T) {
+		queryResults := []*ledgercfg.KeyValue{
+			{
+				Key: &ledgercfg.Key{
+					ComponentVersion: "1.0",
+				},
+				Value: &ledgercfg.Value{
+					TxID:   "tx1",
+					Format: "json",
+					Config: discoveryHandler1CfgJson,
+				},
+			},
+			{
+				Key: &ledgercfg.Key{
+					ComponentVersion: "1.0",
+				},
+				Value: &ledgercfg.Value{
+					TxID:   "tx2",
+					Format: "json",
+					Config: discoveryHandler2CfgJson,
+				},
+			},
+		}
+
+		configService.QueryReturns(queryResults, nil)
+
+		cfg, err := s.LoadDiscoveryHandlers(mspID, peerID)
+		require.NoError(t, err)
+		require.Len(t, cfg, 2)
+		require.Equal(t, "/0.1.2/discovery", cfg[0].BasePath)
+		require.Equal(t, "/0.1.3/discovery", cfg[1].BasePath)
 	})
 
 	t.Run("LoadDCAS", func(t *testing.T) {

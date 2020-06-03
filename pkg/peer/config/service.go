@@ -19,6 +19,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/discoveryhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
@@ -57,6 +58,7 @@ func NewSidetreeProvider(configProvider configServiceProvider, registry validato
 	registry.Register(&dcasValidator{})
 	registry.Register(newDCASHandlerValidator(tokenProvider))
 	registry.Register(newBlockchainHandlerValidator(tokenProvider))
+	registry.Register(newDiscoveryHandlerValidator(tokenProvider))
 
 	return &SidetreeProvider{
 		configProvider: configProvider,
@@ -244,6 +246,33 @@ func (c *sidetreeService) LoadBlockchainHandlers(mspID, peerID string) ([]blockc
 
 		if cfg.MaxBlocksInResponse == 0 {
 			cfg.MaxBlocksInResponse = defaultMaxBlockchainBlocksInResponse
+		}
+
+		handlers = append(handlers, cfg)
+	}
+
+	return handlers, nil
+}
+
+// LoadDiscoveryHandlers loads the discovery handler configuration
+func (c *sidetreeService) LoadDiscoveryHandlers(mspID, peerID string) ([]discoveryhandler.Config, error) {
+	criteria := &ledgerconfig.Criteria{
+		MspID:      mspID,
+		PeerID:     peerID,
+		AppName:    DiscoveryHandlerAppName,
+		AppVersion: DiscoveryHandlerAppVersion,
+	}
+
+	results, err := c.service.Query(criteria)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "error loading discovery handler config for criteria %s", criteria)
+	}
+
+	var handlers []discoveryhandler.Config
+	for _, kv := range results {
+		cfg := discoveryhandler.Config{}
+		if err := unmarshal(kv.Value, &cfg); err != nil {
+			return nil, err
 		}
 
 		handlers = append(handlers, cfg)

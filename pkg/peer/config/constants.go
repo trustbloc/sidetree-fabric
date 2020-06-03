@@ -49,6 +49,15 @@ const (
 	// BlockchainHandlerComponentVersion is the supported version of the blockchain handler config application
 	BlockchainHandlerComponentVersion = "0.1.3"
 
+	// DiscoveryHandlerAppName is the name of the Discovery handler config application
+	DiscoveryHandlerAppName = "discovery-handler"
+
+	// DiscoveryHandlerAppVersion is the version of the Discovery handler config application
+	DiscoveryHandlerAppVersion = "1"
+
+	// DiscoveryHandlerComponentVersion is the supported version of the Discovery handler config application
+	DiscoveryHandlerComponentVersion = "0.1.4"
+
 	// DCASAppName is the name of the DCAS config application
 	DCASAppName = "sidetree-dcas"
 
