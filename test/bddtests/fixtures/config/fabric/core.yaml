@@ -9,6 +9,19 @@ sidetree:
         # example token1=xxx:token2=yyy
         tokens:
 
+    # REST service discovery
+    discovery:
+        # Cache expiration
+        cacheExpirationTime: 5m
+        # Gossip retrieval
+        gossip:
+            # Timeout for retrieving services from other peers
+            timeout: 5s
+            # Maximum number of peers to query in each attempt
+            maxPeers: 3
+            # Maximum number of attempts
+            maxAttempts: 5
+
 ###############################################################################
 #
 #    Peer section

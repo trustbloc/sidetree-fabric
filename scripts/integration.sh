@@ -10,7 +10,7 @@ declare -a tests=(
    "sidetreetxn"
    "blockchain-handler,dcas-handler"
    "did-sidetree"
-   "file-handler"
+   "file-handler,discovery-handler"
 )
 
 PWD=`pwd`

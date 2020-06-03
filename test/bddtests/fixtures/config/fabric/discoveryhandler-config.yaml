@@ -1,0 +1,11 @@
+#
+# Copyright SecureKey Technologies Inc. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+basePath: /discovery/0.0.1
+
+authorization:
+  readTokens:
+    - discovery_r
