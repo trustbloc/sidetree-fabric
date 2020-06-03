@@ -96,24 +96,25 @@ Feature:
     And the JSON path "transactions.0.transaction_time" of the numeric response is saved to variable "time_0"
     And the JSON path "transactions.0.transaction_time_hash" of the response is saved to variable "timeHash_0"
     And the JSON path "transactions.0.transaction_number" of the numeric response is saved to variable "txnNum_0"
-    And the JSON path "transactions.0.anchor_string" of the response is saved to variable "anchor_0"
+    And the JSON path "transactions.0.anchor_string" of the response is saved to variable "anchor_string_0"
     And the JSON path "transactions.9.transaction_time_hash" of the response is not empty
     And the JSON path "transactions.9.anchor_string" of the response is not empty
     And the JSON path "transactions.9.transaction_time" of the numeric response is saved to variable "time_9"
     And the JSON path "transactions.9.transaction_time_hash" of the response is saved to variable "timeHash_9"
     And the JSON path "transactions.9.transaction_number" of the numeric response is saved to variable "txnNum_9"
-    And the JSON path "transactions.9.anchor_string" of the response is saved to variable "anchor_9"
+    And the JSON path "transactions.9.anchor_string" of the response is saved to variable "anchor_string_9"
+    And anchor address is parsed from anchor string "anchor_string_9" and saved to variable "anchor_address_9"
 
     # Get more transactions from where we left off
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=${txnNum_9}&transaction-time-hash=${timeHash_9}"
     And the JSON path "transactions.0.transaction_time" of the numeric response equals "${time_9}"
     And the JSON path "transactions.0.transaction_time_hash" of the response equals "${timeHash_9}"
     And the JSON path "transactions.0.transaction_number" of the numeric response equals "${txnNum_9}"
-    And the JSON path "transactions.0.anchor_string" of the response equals "${anchor_9}"
+    And the JSON path "transactions.0.anchor_string" of the response equals "${anchor_string_9}"
     And the JSON path "transactions" of the raw response is saved to variable "transactions"
 
     # Ensure that the anchor hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_9}?max-size=1000000"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_address_9}?max-size=1000000"
     And the JSON path "mapFileHash" of the response is saved to variable "mapFileHash"
 
     # Ensure that the batch file hash resolves to a valid value stored in DCAS
@@ -136,7 +137,7 @@ Feature:
     Then the JSON path "transaction_time" of the numeric response equals "${time_9}"
     And the JSON path "transaction_time_hash" of the response equals "${timeHash_9}"
     And the JSON path "transaction_number" of the numeric response equals "${txnNum_9}"
-    And the JSON path "anchor_string" of the response equals "${anchor_9}"
+    And the JSON path "anchor_string" of the response equals "${anchor_string_9}"
 
     # Invalid transactions
     Given variable "invalidTransactions" is assigned the JSON value '[{"transaction_number":3,"transaction_time":10,"transaction_time_hash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
@@ -150,8 +151,9 @@ Feature:
     And the JSON path "1.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.2.rwset.writes.0.value" of the response is saved to variable "anchor-string"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
+    And anchor address is parsed from anchor string "url-encoded-anchor-string" and saved to variable "url-encoded-anchor-address"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
     Then the JSON path "mapFileHash" of the response is not empty
 
     # Retrieve the previous block using the previous hash from above
@@ -165,8 +167,9 @@ Feature:
     Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.2.rwset.writes.0.value" of the response is saved to variable "anchor-string"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
+    And anchor address is parsed from anchor string "url-encoded-anchor-string" and saved to variable "url-encoded-anchor-address"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
     Then the JSON path "mapFileHash" of the response is not empty
 
     # Retrieve the anchor file from the previous block hash
@@ -174,8 +177,9 @@ Feature:
     Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.2.rwset.writes.0.value" of the response is saved to variable "anchor-string"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${anchor-string}" is decoded and saved to variable "url-encoded-anchor-string"
+    And anchor address is parsed from anchor string "url-encoded-anchor-string" and saved to variable "url-encoded-anchor-address"
     # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-string}?max-size=1000000"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
     Then the JSON path "mapFileHash" of the response is not empty
 
     # Get block by hash where the data is base64-encoded
