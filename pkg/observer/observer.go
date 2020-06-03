@@ -324,7 +324,7 @@ func (m *Observer) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
 		sidetreeTxn := txn.SidetreeTxn{
 			TransactionTime:   w.BlockNum,
 			TransactionNumber: w.TxNum,
-			AnchorAddress:     string(w.Write.Value),
+			AnchorString:      string(w.Write.Value),
 		}
 
 		if err := m.txnProcessor.Process(sidetreeTxn); err != nil {

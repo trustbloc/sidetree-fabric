@@ -10,10 +10,12 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/cucumber/godog"
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
+	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler"
 )
 
 // BlockchainSteps
@@ -94,8 +96,27 @@ func (d *BlockchainSteps) hashOfBase64URLEncodedValueEquals(base64URLEncodedValu
 	return nil
 }
 
+func (d *BlockchainSteps) getAnchorAddress(anchorStringVar, anchorAddressVar string) error {
+	anchorString, ok := bddtests.GetVar(anchorStringVar)
+	if !ok {
+		return fmt.Errorf("var[%s] not set", anchorStringVar)
+	}
+
+	ad, err := txnhandler.ParseAnchorData(anchorString)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("Saving anchor address [%s] to variable [%s]", ad.AnchorAddress, anchorAddressVar)
+
+	bddtests.SetVar(anchorAddressVar, ad.AnchorAddress)
+
+	return nil
+}
+
 // RegisterSteps registers did sidetree steps
 func (d *BlockchainSteps) RegisterSteps(s *godog.Suite) {
+	s.Step(`^anchor address is parsed from anchor string "([^"]*)" and saved to variable "([^"]*)"$`, d.getAnchorAddress)
 	s.Step(`^the hash of the base64-encoded value "([^"]*)" equals "([^"]*)"$`, d.hashOfBase64EncodedValueEquals)
 	s.Step(`^the hash of the base64URL-encoded value "([^"]*)" equals "([^"]*)"$`, d.hashOfBase64URLEncodedValueEquals)
 }
