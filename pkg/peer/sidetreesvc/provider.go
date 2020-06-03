@@ -10,17 +10,16 @@ import (
 	"sync"
 
 	"github.com/hyperledger/fabric/common/flogging"
-
 	dcas "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
-
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
+	"github.com/trustbloc/sidetree-fabric/pkg/peer/discovery"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")
@@ -35,6 +34,7 @@ type configServiceProvider interface {
 
 type peerConfig interface {
 	PeerID() string
+	PeerAddress() string
 	MSPID() string
 }
 
@@ -44,6 +44,7 @@ type dcasClientProvider interface {
 
 type restConfig interface {
 	SidetreeListenURL() (string, error)
+	SidetreeListenPort() int
 	SidetreeTLSCertificate() string
 	SidetreeTLSKey() string
 	SidetreeAPIToken(name string) string
@@ -57,6 +58,11 @@ type operationQueueProvider interface {
 	Create(channelID string, namespace string) (cutter.OperationQueue, error)
 }
 
+type discoveryProvider interface {
+	UpdateLocalServicesForChannel(channelID string, services []discovery.Service)
+	ServicesForChannel(channelID string) []discovery.Service
+}
+
 type providers struct {
 	*ContextProviders
 
@@ -65,6 +71,7 @@ type providers struct {
 	ConfigProvider    configServiceProvider
 	ObserverProviders *observer.ClientProviders
 	BlockPublisher    ctxcommon.BlockPublisherProvider
+	DiscoveryProvider discoveryProvider
 }
 
 // Provider implements a Sidetree services provider which is responsible for managing Sidetree

@@ -94,6 +94,8 @@ func TestProvider(t *testing.T) {
 
 	observerProviders.Gossip = gossipProvider
 
+	discoveryProvider := &peermocks.DiscoveryProvider{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			OperationQueueProvider: opQueueProvider,
@@ -104,6 +106,7 @@ func TestProvider(t *testing.T) {
 		ConfigProvider:    configProvider,
 		BlockPublisher:    blockpublisher.NewProvider(),
 		ObserverProviders: observerProviders,
+		DiscoveryProvider: discoveryProvider,
 	}
 
 	fileHandler1 := filehandler.Config{

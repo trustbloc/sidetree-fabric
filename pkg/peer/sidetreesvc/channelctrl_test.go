@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
-	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
+	cfgservice "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
@@ -25,6 +25,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	mocks2 "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/peer/discovery"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
@@ -36,9 +37,13 @@ import (
 
 //go:generate counterfeiter -o ../mocks/restservercontroller.gen.go --fake-name RESTServerController . restServiceController
 //go:generate counterfeiter -o ../mocks/configserviceprovider.gen.go --fake-name ConfigServiceProvider . configServiceProvider
+//go:generate counterfeiter -o ../mocks/discoveryprovider.gen.go --fake-name DiscoveryProvider . discoveryProvider
 //go:generate counterfeiter -o ../mocks/configservice.gen.go --fake-name ConfigService github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config.Service
 
 const (
+	peer1Address = "peer1.example.com:80"
+	domain1      = "example.com"
+
 	didTrustblocNamespace = "did:bloc:trustbloc.dev"
 	didTrustblocBasePath  = "/trustbloc.dev"
 
@@ -115,6 +120,7 @@ func TestChannelController_Update(t *testing.T) {
 	peerConfig := &peermocks.PeerConfig{}
 	peerConfig.MSPIDReturns(msp1)
 	peerConfig.PeerIDReturns(peer1)
+	peerConfig.PeerAddressReturns(peer1Address)
 
 	restCfg := &peermocks.RestConfig{}
 
@@ -140,6 +146,8 @@ func TestChannelController_Update(t *testing.T) {
 
 	observerProviders.Gossip = gossipProvider
 
+	discoveryProvider := &peermocks.DiscoveryProvider{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			DCASProvider:           dcasProvider,
@@ -150,6 +158,7 @@ func TestChannelController_Update(t *testing.T) {
 		BlockPublisher:    extmocks.NewBlockPublisherProvider(),
 		RESTConfig:        restCfg,
 		ObserverProviders: observerProviders,
+		DiscoveryProvider: discoveryProvider,
 	}
 
 	stConfigService := &cfgmocks.SidetreeConfigService{}
@@ -182,6 +191,36 @@ func TestChannelController_Update(t *testing.T) {
 	time.Sleep(20 * time.Millisecond)
 	require.Len(t, ctrl.Invocations()[eventMethod], count+1)
 	require.Len(t, m.RESTHandlers(), 11)
+
+	localServices := m.localServices()
+	require.Len(t, localServices, 4)
+
+	serviceMap := make(map[string]discovery.Service)
+
+	for _, s := range localServices {
+		serviceMap[s.Service] = s
+	}
+
+	require.Len(t, serviceMap, 4)
+	s, ok := serviceMap["cas"]
+	require.True(t, ok)
+	require.Equal(t, domain1, s.Domain)
+	require.Equal(t, apiVersion, s.APIVersion)
+
+	s, ok = serviceMap["schema"]
+	require.True(t, ok)
+	require.Equal(t, domain1, s.Domain)
+	require.Equal(t, "", s.APIVersion)
+
+	s, ok = serviceMap[didTrustblocNamespace]
+	require.True(t, ok)
+	require.Equal(t, domain1, s.Domain)
+	require.Equal(t, apiVersion, s.APIVersion)
+
+	s, ok = serviceMap[fileIndexNamespace]
+	require.True(t, ok)
+	require.Equal(t, domain1, s.Domain)
+	require.Equal(t, apiVersion, s.APIVersion)
 
 	t.Run("Update peer config -> success", func(t *testing.T) {
 		count := len(ctrl.Invocations()[eventMethod])
@@ -228,7 +267,7 @@ func TestChannelController_Update(t *testing.T) {
 
 	t.Run("Peer config not found", func(t *testing.T) {
 		stConfigService := &cfgmocks.SidetreeConfigService{}
-		stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, service.ErrConfigNotFound)
+		stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, cfgservice.ErrConfigNotFound)
 
 		m := newChannelController(channel1, providers, stConfigService, ctrl)
 		require.NotNil(t, m)
@@ -247,7 +286,7 @@ func TestChannelController_Update(t *testing.T) {
 
 	t.Run("File handler config not found", func(t *testing.T) {
 		stConfigService := &cfgmocks.SidetreeConfigService{}
-		stConfigService.LoadFileHandlersReturns(nil, service.ErrConfigNotFound)
+		stConfigService.LoadFileHandlersReturns(nil, cfgservice.ErrConfigNotFound)
 
 		m := newChannelController(channel1, providers, stConfigService, ctrl)
 		require.NotNil(t, m)
@@ -266,7 +305,7 @@ func TestChannelController_Update(t *testing.T) {
 
 	t.Run("Sidetree handler config not found", func(t *testing.T) {
 		stConfigService := &cfgmocks.SidetreeConfigService{}
-		stConfigService.LoadSidetreeHandlersReturns(nil, service.ErrConfigNotFound)
+		stConfigService.LoadSidetreeHandlersReturns(nil, cfgservice.ErrConfigNotFound)
 
 		m := newChannelController(channel1, providers, stConfigService, ctrl)
 		require.NotNil(t, m)
@@ -303,15 +342,18 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 	dcasProvider := &mocks.DCASClientProvider{}
 	dcasProvider.ForChannelReturns(dcas, nil)
 
+	discoveryProvider := &peermocks.DiscoveryProvider{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			DCASProvider:           dcasProvider,
 			OperationQueueProvider: opQueueProvider,
 		},
-		PeerConfig:     peerConfig,
-		ConfigProvider: configProvider,
-		BlockPublisher: extmocks.NewBlockPublisherProvider(),
-		RESTConfig:     restCfg,
+		PeerConfig:        peerConfig,
+		ConfigProvider:    configProvider,
+		BlockPublisher:    extmocks.NewBlockPublisherProvider(),
+		RESTConfig:        restCfg,
+		DiscoveryProvider: discoveryProvider,
 	}
 
 	stConfigService := &cfgmocks.SidetreeConfigService{}
@@ -324,7 +366,7 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 	defer c.Close()
 
 	// No config
-	stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, service.ErrConfigNotFound)
+	stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, cfgservice.ErrConfigNotFound)
 	require.NoError(t, c.load())
 	require.Empty(t, c.RESTHandlers())
 
@@ -359,15 +401,18 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 
 	blockchainProvider := &mocks2.BlockchainClientProvider{}
 
+	discoveryProvider := &peermocks.DiscoveryProvider{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			OperationQueueProvider: opQueueProvider,
 			BlockchainProvider:     blockchainProvider,
 		},
-		PeerConfig:     peerConfig,
-		ConfigProvider: configProvider,
-		BlockPublisher: extmocks.NewBlockPublisherProvider(),
-		RESTConfig:     restCfg,
+		PeerConfig:        peerConfig,
+		ConfigProvider:    configProvider,
+		BlockPublisher:    extmocks.NewBlockPublisherProvider(),
+		RESTConfig:        restCfg,
+		DiscoveryProvider: discoveryProvider,
 	}
 
 	stConfigService := &cfgmocks.SidetreeConfigService{}
@@ -380,7 +425,7 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 	defer c.Close()
 
 	// No config
-	stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, service.ErrConfigNotFound)
+	stConfigService.LoadSidetreePeerReturns(config.SidetreePeer{}, cfgservice.ErrConfigNotFound)
 	require.NoError(t, c.load())
 	require.Empty(t, c.RESTHandlers())
 
@@ -398,7 +443,7 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 	stConfigService.LoadBlockchainHandlersReturns(nil, errors.New("injected error"))
 	require.Error(t, c.load())
 
-	stConfigService.LoadBlockchainHandlersReturns(nil, service.ErrConfigNotFound)
+	stConfigService.LoadBlockchainHandlersReturns(nil, cfgservice.ErrConfigNotFound)
 	require.NoError(t, c.load())
 
 	stConfigService.LoadBlockchainHandlersReturns(blockchainHandlers, nil)

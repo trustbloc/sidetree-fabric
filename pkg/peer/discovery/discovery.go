@@ -205,7 +205,7 @@ func (c *channelDiscovery) updateLocalServices(services []Service) {
 	}
 }
 
-func (c *channelDiscovery) uptadeRemoteServices(endpoint string, services []Service) {
+func (c *channelDiscovery) updateRemoteServices(endpoint string, services []Service) {
 	logger.Debugf("[%s] Updating services for [%s]: %v", c.channelID, endpoint, services)
 
 	if err := c.servicesCache.SetWithExpire(endpoint, services, c.cacheExpirationTime); err != nil {
@@ -284,7 +284,7 @@ func (c *channelDiscovery) servicesForPeers(peerEndpoints []string) []Service {
 
 			logger.Debugf("[%s] Caching services for peer [%s]", c.channelID, endpoint)
 
-			c.uptadeRemoteServices(endpoint, peerServices)
+			c.updateRemoteServices(endpoint, peerServices)
 		}
 	}
 
