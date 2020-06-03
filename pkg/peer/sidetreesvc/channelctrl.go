@@ -7,12 +7,14 @@ SPDX-License-Identifier: Apache-2.0
 package sidetreesvc
 
 import (
+	"fmt"
+	"strings"
 	"sync"
 
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/pkg/errors"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
-	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
+	cfgservice "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
@@ -23,12 +25,24 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/context/store"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/notifier"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	"github.com/trustbloc/sidetree-fabric/pkg/peer/discovery"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/blockchainhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
+)
+
+const (
+	apiVersion = "0.0.1"
+
+	versionPath      = "/version"
+	timePath         = "/time"
+	transactionsPath = "/transactions"
+	firstValidPath   = "/first-valid"
+	blocksPath       = "/blocks"
+	configBlockPath  = "/config-block"
 )
 
 type restServiceController interface {
@@ -45,7 +59,7 @@ type channelController struct {
 	notifier  *notifier.Notifier
 	observer  *observerController
 	contexts  map[string]*context
-	handlers  map[string][]common.HTTPHandler
+	services  []*service
 	cfgTxID   string
 	txnChan   chan gossipapi.TxMetadata
 }
@@ -57,7 +71,6 @@ func newChannelController(channelID string, providers *providers, configService 
 		channelID:             channelID,
 		contexts:              make(map[string]*context),
 		sidetreeCfgService:    configService,
-		handlers:              make(map[string][]common.HTTPHandler),
 	}
 
 	if role.IsObserver() {
@@ -98,18 +111,13 @@ func (c *channelController) RESTHandlers() []common.HTTPHandler {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	var restHandlers []common.HTTPHandler
-	for _, ctx := range c.contexts {
-		if ctx.rest != nil {
-			restHandlers = append(restHandlers, ctx.rest.HTTPHandlers()...)
-		}
+	var handlers []common.HTTPHandler
+
+	for _, s := range c.services {
+		handlers = append(handlers, s.endpoints.Handlers()...)
 	}
 
-	for _, h := range c.handlers {
-		restHandlers = append(restHandlers, h...)
-	}
-
-	return restHandlers
+	return handlers
 }
 
 func (c *channelController) load() error {
@@ -117,7 +125,7 @@ func (c *channelController) load() error {
 
 	cfg, err := c.sidetreeCfgService.LoadSidetreePeer(c.PeerConfig.MSPID(), c.PeerConfig.PeerID())
 	if err != nil {
-		if errors.Cause(err) != service.ErrConfigNotFound {
+		if errors.Cause(err) != cfgservice.ErrConfigNotFound {
 			return err
 		}
 
@@ -145,7 +153,7 @@ func (c *channelController) load() error {
 		return err
 	}
 
-	if err := c.loadRESTHandlers(restHandlerCfg); err != nil {
+	if err := c.loadRESTServices(restHandlerCfg); err != nil {
 		return err
 	}
 
@@ -154,6 +162,8 @@ func (c *channelController) load() error {
 	}
 
 	c.restServiceController.RestartRESTService()
+
+	c.DiscoveryProvider.UpdateLocalServicesForChannel(c.channelID, c.localServices())
 
 	logger.Debugf("[%s] Successfully started Sidetree channelController.", c.channelID)
 
@@ -259,7 +269,7 @@ func (c *channelController) loadSidetreeHandlerConfig() ([]sidetreehandler.Confi
 		return sidetreeHandlerCfg, nil
 	}
 
-	if errors.Cause(err) == service.ErrConfigNotFound {
+	if errors.Cause(err) == cfgservice.ErrConfigNotFound {
 		logger.Info("No Sidetree handler configuration found for this peer.")
 		return nil, nil
 	}
@@ -273,7 +283,7 @@ func (c *channelController) loadFileHandlerConfig() ([]filehandler.Config, error
 		return fileHandlerCfg, nil
 	}
 
-	if errors.Cause(err) == service.ErrConfigNotFound {
+	if errors.Cause(err) == cfgservice.ErrConfigNotFound {
 		logger.Info("No file handler configuration found for this peer.")
 		return nil, nil
 	}
@@ -287,7 +297,7 @@ func (c *channelController) loadDCASHandlerConfig() ([]dcashandler.Config, error
 		return dcasHandlerCfg, nil
 	}
 
-	if errors.Cause(err) == service.ErrConfigNotFound {
+	if errors.Cause(err) == cfgservice.ErrConfigNotFound {
 		logger.Info("No DCAS handler configuration found for this peer.")
 
 		return nil, nil
@@ -302,7 +312,7 @@ func (c *channelController) loadBlockchainHandlerConfig() ([]blockchainhandler.C
 		return blockchainHandlerCfg, nil
 	}
 
-	if errors.Cause(err) == service.ErrConfigNotFound {
+	if errors.Cause(err) == cfgservice.ErrConfigNotFound {
 		logger.Info("No blockchain handler configuration found for this peer.")
 
 		return nil, nil
@@ -406,34 +416,42 @@ func (c *channelController) shouldUpdate(kv *ledgerconfig.KeyValue) bool {
 	return false
 }
 
-func (c *channelController) loadRESTHandlers(cfg *restHandlerConfig) error {
-	if err := c.loadFileHandlers(cfg.file); err != nil {
+func (c *channelController) loadRESTServices(cfg *restHandlerConfig) error {
+	c.services = nil
+
+	for _, ctx := range c.contexts {
+		if ctx.rest.service != nil {
+			c.services = append(c.services, ctx.rest.service)
+		}
+	}
+
+	if err := c.loadFileServices(cfg.file); err != nil {
 		return err
 	}
 
-	c.loadDCASHandlers(cfg.dcas)
+	c.loadDCASServices(cfg.dcas)
 
-	c.loadBlockchainHandlers(cfg.blockchain)
+	c.loadBlockchainServices(cfg.blockchain)
 
 	return nil
 }
 
-func (c *channelController) loadFileHandlers(handlerCfg []filehandler.Config) error {
+func (c *channelController) loadFileServices(handlerCfg []filehandler.Config) error {
 	for _, cfg := range handlerCfg {
-		h, err := c.loadFileHandler(cfg)
+		h, err := c.loadFileService(cfg)
 		if err != nil {
 			return err
 		}
 
 		if h != nil {
-			c.handlers[cfg.BasePath] = h.HTTPHandlers()
+			c.services = append(c.services, h)
 		}
 	}
 
 	return nil
 }
 
-func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandlers, error) {
+func (c *channelController) loadFileService(cfg filehandler.Config) (*service, error) {
 	if !role.IsResolver() && !role.IsBatchWriter() {
 		return nil, nil
 	}
@@ -443,14 +461,14 @@ func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandle
 		return nil, errors.WithMessagef(err, "unable to get document handler for index document [%s]", cfg.IndexDocID)
 	}
 
-	handlers := &fileHandlers{}
+	s := newService(cfg.BasePath[1:], "", cfg.BasePath)
+
 	if role.IsResolver() && cfg.IndexDocID != "" {
 		logger.Debugf("[%s] Adding file read handler for base path [%s]", c.channelID, cfg.BasePath)
 		logger.Debugf("[%s] Authorization tokens for file read handler: %s", c.channelID, cfg.Authorization.ReadTokens)
 
-		handlers.readHandler = c.authHandler(
-			cfg.Authorization.ReadTokens,
-			filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DCASProvider),
+		s.endpoints = append(s.endpoints,
+			newEndpoint("", c.authHandler(cfg.Authorization.ReadTokens, filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DCASProvider))),
 		)
 	}
 
@@ -458,60 +476,63 @@ func (c *channelController) loadFileHandler(cfg filehandler.Config) (*fileHandle
 		logger.Debugf("[%s] Adding file upload handler for base path [%s]", c.channelID, cfg.BasePath)
 		logger.Debugf("[%s] Authorization tokens for file upload handler: %s", c.channelID, cfg.Authorization.WriteTokens)
 
-		handlers.writeHandler = c.authHandler(
-			cfg.Authorization.WriteTokens,
-			filehandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider),
+		s.endpoints = append(s.endpoints,
+			newEndpoint("", c.authHandler(cfg.Authorization.WriteTokens, filehandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider))),
 		)
 	}
 
-	return handlers, nil
+	return s, nil
 }
 
-func (c *channelController) loadDCASHandlers(handlerCfg []dcashandler.Config) {
+func (c *channelController) loadDCASServices(handlerCfg []dcashandler.Config) {
 	for _, cfg := range handlerCfg {
-		c.handlers[cfg.BasePath] = c.loadDCASHandler(cfg)
+		c.services = append(c.services, c.loadDCASService(cfg))
 	}
 }
 
-func (c *channelController) loadDCASHandler(cfg dcashandler.Config) []common.HTTPHandler {
-	logger.Debugf("[%s] Adding DCAS handlers for base path [%s]", c.channelID, cfg.BasePath)
-	logger.Debugf("[%s] Authorization tokens for DCAS handlers - read: %s, write: %s", c.channelID, cfg.Authorization.ReadTokens, cfg.Authorization.WriteTokens)
+func (c *channelController) loadDCASService(cfg dcashandler.Config) *service {
+	logger.Debugf("[%s] Adding DCAS services for base path [%s]", c.channelID, cfg.BasePath)
+	logger.Debugf("[%s] Authorization tokens for DCAS services - read: %s, write: %s", c.channelID, cfg.Authorization.ReadTokens, cfg.Authorization.WriteTokens)
 
-	return []common.HTTPHandler{
-		c.authHandler(cfg.Authorization.ReadTokens, dcashandler.NewVersionHandler(c.channelID, cfg)),
-		c.authHandler(cfg.Authorization.ReadTokens, dcashandler.NewRetrieveHandler(c.channelID, cfg, c.DCASProvider)),
-		c.authHandler(cfg.Authorization.WriteTokens, dcashandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider)),
-	}
+	s := newService("cas", apiVersion, cfg.BasePath)
+
+	s.endpoints = append(s.endpoints,
+		newEndpoint(versionPath, c.authHandler(cfg.Authorization.ReadTokens, dcashandler.NewVersionHandler(c.channelID, cfg))),
+		newEndpoint("", c.authHandler(cfg.Authorization.ReadTokens, dcashandler.NewRetrieveHandler(c.channelID, cfg, c.DCASProvider))),
+		newEndpoint("", c.authHandler(cfg.Authorization.WriteTokens, dcashandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider))),
+	)
+
+	return s
 }
 
-func (c *channelController) loadBlockchainHandlers(handlerCfg []blockchainhandler.Config) {
+func (c *channelController) loadBlockchainServices(handlerCfg []blockchainhandler.Config) {
 	for _, cfg := range handlerCfg {
-		c.handlers[cfg.BasePath] = c.loadBlockchainHandler(cfg)
+		c.services = append(c.services, c.loadBlockchainService(cfg))
 	}
 }
 
-func (c *channelController) loadBlockchainHandler(cfg blockchainhandler.Config) []common.HTTPHandler {
-	logger.Debugf("[%s] Adding blockchain handlers for base path [%s]", c.channelID, cfg.BasePath)
-	logger.Debugf("[%s] Authorization tokens for blockchain handlers: %s", c.channelID, cfg.Authorization.ReadTokens)
+func (c *channelController) loadBlockchainService(cfg blockchainhandler.Config) *service {
+	logger.Debugf("[%s] Adding blockchain services for base path [%s]", c.channelID, cfg.BasePath)
+	logger.Debugf("[%s] Authorization tokens for blockchain services: %s", c.channelID, cfg.Authorization.ReadTokens)
 
 	readTokens := cfg.Authorization.ReadTokens
 
-	return []common.HTTPHandler{
-		c.authHandler(readTokens, blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewTimeByHashHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewVersionHandler(c.channelID, cfg)),
-		c.authHandler(readTokens, blockchainhandler.NewTransactionsSinceHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewTransactionsHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewFirstValidHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewBlocksFromNumHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewBlocksFromNumHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewConfigBlockHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewConfigBlockHandler(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewConfigBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider)),
-		c.authHandler(readTokens, blockchainhandler.NewConfigBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider)),
-	}
+	return newService("blockchain", apiVersion, cfg.BasePath,
+		newEndpoint(versionPath, c.authHandler(readTokens, blockchainhandler.NewVersionHandler(c.channelID, cfg))),
+		newEndpoint(timePath, c.authHandler(readTokens, blockchainhandler.NewTimeHandler(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(timePath, c.authHandler(readTokens, blockchainhandler.NewTimeByHashHandler(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(transactionsPath, c.authHandler(readTokens, blockchainhandler.NewTransactionsSinceHandler(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(transactionsPath, c.authHandler(readTokens, blockchainhandler.NewTransactionsHandler(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(firstValidPath, c.authHandler(readTokens, blockchainhandler.NewFirstValidHandler(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(blocksPath, c.authHandler(readTokens, blockchainhandler.NewBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(blocksPath, c.authHandler(readTokens, blockchainhandler.NewBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(blocksPath, c.authHandler(readTokens, blockchainhandler.NewBlocksFromNumHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(blocksPath, c.authHandler(readTokens, blockchainhandler.NewBlocksFromNumHandler(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(configBlockPath, c.authHandler(readTokens, blockchainhandler.NewConfigBlockHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(configBlockPath, c.authHandler(readTokens, blockchainhandler.NewConfigBlockHandler(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(configBlockPath, c.authHandler(readTokens, blockchainhandler.NewConfigBlockByHashHandlerWithEncoding(c.channelID, cfg, c.BlockchainProvider))),
+		newEndpoint(configBlockPath, c.authHandler(readTokens, blockchainhandler.NewConfigBlockByHashHandler(c.channelID, cfg, c.BlockchainProvider))),
+	)
 }
 
 func (c *channelController) getDocHandler(ns string) (*dochandler.DocumentHandler, error) {
@@ -549,4 +570,50 @@ func (c *channelController) authHandler(tokenNames []string, handler common.HTTP
 	}
 
 	return authhandler.New(c.channelID, tokens, handler)
+}
+
+func (c *channelController) localServices() []discovery.Service {
+	var services []discovery.Service
+
+	for _, s := range c.services {
+		rootEndpoint, domain := c.rootEndpointAndDomain(s)
+
+		sv := discovery.NewService(s.name, s.apiVersion, domain, rootEndpoint, uniqueEndpoints(s)...)
+
+		services = append(services, sv)
+	}
+
+	return services
+}
+
+func (c *channelController) rootEndpointAndDomain(service *service) (string, string) {
+	peerAddress := c.PeerConfig.PeerAddress()
+
+	if i := strings.LastIndex(peerAddress, ":"); i > 0 {
+		peerAddress = peerAddress[:i]
+	}
+
+	var domain string
+
+	if i := strings.Index(peerAddress, "."); i > 0 {
+		domain = peerAddress[i+1:]
+	}
+
+	return fmt.Sprintf("https://%s:%d%s", peerAddress, c.RESTConfig.SidetreeListenPort(), service.basePath), domain
+}
+
+func uniqueEndpoints(service *service) []discovery.Endpoint {
+	m := make(map[discovery.Endpoint]struct{})
+
+	for _, endpoint := range service.endpoints {
+		m[discovery.NewEndpoint(endpoint.name, endpoint.method)] = struct{}{}
+	}
+
+	var endpoints []discovery.Endpoint
+
+	for endpoint := range m {
+		endpoints = append(endpoints, endpoint)
+	}
+
+	return endpoints
 }

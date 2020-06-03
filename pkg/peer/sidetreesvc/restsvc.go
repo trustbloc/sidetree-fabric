@@ -72,10 +72,10 @@ func (s *restService) Stop() {
 }
 
 type restHandlers struct {
-	channelID    string
-	namespace    string
-	httpHandlers []common.HTTPHandler
-	docHandler   *dochandler.DocumentHandler
+	channelID  string
+	namespace  string
+	service    *service
+	docHandler *dochandler.DocumentHandler
 }
 
 type protocolProvider interface {
@@ -116,17 +116,14 @@ func newRESTHandlers(
 		processor.New(channelID+"_"+cfg.Namespace, opStore),
 	)
 
-	var handlers []common.HTTPHandler
+	service := newService(cfg.Namespace, apiVersion, cfg.BasePath)
 
 	if role.IsResolver() {
 		logger.Debugf("[%s] Adding a Sidetree document resolver REST endpoint for namespace [%s].", channelID, cfg.Namespace)
 		logger.Debugf("[%s] Authorization tokens for document resolver REST endpoint for namespace [%s]: %s", channelID, cfg.Namespace, cfg.Authorization.ReadTokens)
 
-		handlers = append(handlers,
-			authhandler.New(
-				channelID,
-				authTokens(cfg.Authorization.ReadTokens, tokenProvider),
-				getResolveHandler(cfg, docHandler)),
+		service.endpoints = append(service.endpoints,
+			newEndpoint("/identifiers", authhandler.New(channelID, authTokens(cfg.Authorization.ReadTokens, tokenProvider), getResolveHandler(cfg, docHandler))),
 		)
 	}
 
@@ -134,27 +131,21 @@ func newRESTHandlers(
 		logger.Debugf("[%s] Adding a Sidetree document update REST endpoint for namespace [%s].", channelID, cfg.Namespace)
 		logger.Debugf("[%s] Authorization tokens for document update REST endpoint for namespace [%s]: %s", channelID, cfg.Namespace, cfg.Authorization.WriteTokens)
 
-		handlers = append(handlers,
-			authhandler.New(
-				channelID,
-				authTokens(cfg.Authorization.WriteTokens, tokenProvider),
-				getUpdateHandler(cfg, docHandler)),
+		service.endpoints = append(service.endpoints,
+			newEndpoint("/operations", authhandler.New(channelID, authTokens(cfg.Authorization.WriteTokens, tokenProvider), getUpdateHandler(cfg, docHandler))),
 		)
 	}
 
-	handlers = append(handlers, sidetreehandler.NewVersionHandler(channelID, cfg))
+	service.endpoints = append(service.endpoints,
+		newEndpoint("/version", sidetreehandler.NewVersionHandler(channelID, cfg)),
+	)
 
 	return &restHandlers{
-		channelID:    channelID,
-		namespace:    cfg.Namespace,
-		httpHandlers: handlers,
-		docHandler:   docHandler,
+		channelID:  channelID,
+		namespace:  cfg.Namespace,
+		service:    service,
+		docHandler: docHandler,
 	}, nil
-}
-
-// HTTPHandlers returns the HTTP handlers
-func (h *restHandlers) HTTPHandlers() []common.HTTPHandler {
-	return h.httpHandlers
 }
 
 type validatorProvider func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator

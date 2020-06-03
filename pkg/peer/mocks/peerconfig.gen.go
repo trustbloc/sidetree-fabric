@@ -15,6 +15,15 @@ type PeerConfig struct {
 	peerIDReturnsOnCall map[int]struct {
 		result1 string
 	}
+	PeerAddressStub        func() string
+	peerAddressMutex       sync.RWMutex
+	peerAddressArgsForCall []struct{}
+	peerAddressReturns     struct {
+		result1 string
+	}
+	peerAddressReturnsOnCall map[int]struct {
+		result1 string
+	}
 	MSPIDStub        func() string
 	mSPIDMutex       sync.RWMutex
 	mSPIDArgsForCall []struct{}
@@ -68,6 +77,46 @@ func (fake *PeerConfig) PeerIDReturnsOnCall(i int, result1 string) {
 	}{result1}
 }
 
+func (fake *PeerConfig) PeerAddress() string {
+	fake.peerAddressMutex.Lock()
+	ret, specificReturn := fake.peerAddressReturnsOnCall[len(fake.peerAddressArgsForCall)]
+	fake.peerAddressArgsForCall = append(fake.peerAddressArgsForCall, struct{}{})
+	fake.recordInvocation("PeerAddress", []interface{}{})
+	fake.peerAddressMutex.Unlock()
+	if fake.PeerAddressStub != nil {
+		return fake.PeerAddressStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.peerAddressReturns.result1
+}
+
+func (fake *PeerConfig) PeerAddressCallCount() int {
+	fake.peerAddressMutex.RLock()
+	defer fake.peerAddressMutex.RUnlock()
+	return len(fake.peerAddressArgsForCall)
+}
+
+func (fake *PeerConfig) PeerAddressReturns(result1 string) {
+	fake.PeerAddressStub = nil
+	fake.peerAddressReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *PeerConfig) PeerAddressReturnsOnCall(i int, result1 string) {
+	fake.PeerAddressStub = nil
+	if fake.peerAddressReturnsOnCall == nil {
+		fake.peerAddressReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.peerAddressReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
 func (fake *PeerConfig) MSPID() string {
 	fake.mSPIDMutex.Lock()
 	ret, specificReturn := fake.mSPIDReturnsOnCall[len(fake.mSPIDArgsForCall)]
@@ -113,6 +162,8 @@ func (fake *PeerConfig) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.peerIDMutex.RLock()
 	defer fake.peerIDMutex.RUnlock()
+	fake.peerAddressMutex.RLock()
+	defer fake.peerAddressMutex.RUnlock()
 	fake.mSPIDMutex.RLock()
 	defer fake.mSPIDMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
