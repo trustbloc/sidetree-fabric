@@ -9,7 +9,6 @@ require (
 	github.com/Shopify/sarama v1.22.1 // indirect
 	github.com/bluele/gcache v0.0.0-20190301044115-79ae3b2d8680
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/golang/protobuf v1.3.2
 	github.com/gorilla/mux v1.7.3
@@ -29,11 +28,11 @@ require (
 	github.com/trustbloc/sidetree-core-go v0.1.4-0.20200603131611-12bccb6926ed
 )
 
-replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.4-0.20200530023642-3b102ea024c5
+replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.4-0.20200604234820-c9c017a66039
 
-replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200601192515-6327aae17a72
+replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200605015306-f0d83470dceb
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.4-0.20200601192515-6327aae17a72
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.4-0.20200605015306-f0d83470dceb
 
 replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.4-0.20200529174943-b277c62ed131
 
