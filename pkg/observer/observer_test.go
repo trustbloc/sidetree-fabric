@@ -12,16 +12,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
+
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	gcommon "github.com/hyperledger/fabric/gossip/common"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
+	"github.com/trustbloc/sidetree-core-go/pkg/operation"
+	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler/models"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
@@ -42,10 +47,13 @@ const (
 	peer3 = "peer3.org1.com"
 
 	txID1          = "tx1"
-	anchor1        = "anchor1"
+	anchor1        = "1.anchor1"
+	namespace      = "did:sidetree"
 	monitorPeriod  = 50 * time.Millisecond
 	sleepTime      = 200 * time.Millisecond
 	metaDataCCName = "document"
+
+	sha2_256 = 18
 )
 
 var (
@@ -202,10 +210,18 @@ func TestObserver_Error(t *testing.T) {
 		MetaDataChaincodeName: metaDataCCName,
 	}
 
+	txn := common.TxnInfo{
+		AnchorString: anchor1,
+		Namespace:    namespace,
+	}
+
+	txnBytes, err := json.Marshal(txn)
+	require.NoError(t, err)
+
 	b := peerextmocks.NewBlockBuilder(channel1, 1001)
 	tb1 := b.Transaction(txID1, pb.TxValidationCode_VALID)
 	tb1.ChaincodeAction(sideTreeTxnCCName).
-		Write(common.AnchorAddrPrefix+anchor1, []byte(anchor1)).
+		Write(common.AnchorPrefix+txn.AnchorString, txnBytes).
 		Write("non_anchor_key", []byte("some value"))
 	tb1.ChaincodeAction("some_other_cc").
 		Write("some_key", []byte("some value"))
@@ -417,7 +433,9 @@ func TestObserver_Error(t *testing.T) {
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 
-		ops := getTestOperations(0, 0, 2, 0)
+		ops, err := getTestOperations(2)
+		require.NoError(t, err)
+
 		op1Bytes, err := json.Marshal(ops[0])
 		require.NoError(t, err)
 		op2Bytes, err := json.Marshal(ops[1])
@@ -469,29 +487,46 @@ func newMockClients(t *testing.T) *mockClients {
 		Height: 1003,
 	}
 
+	txn := common.TxnInfo{
+		AnchorString: anchor1,
+		Namespace:    namespace,
+	}
+
+	txnBytes, err := json.Marshal(txn)
+	require.NoError(t, err)
+
 	b := peerextmocks.NewBlockBuilder(channel1, 1002)
 	tb1 := b.Transaction(txID1, pb.TxValidationCode_VALID)
 	tb1.ChaincodeAction(sideTreeTxnCCName).
-		Write(common.AnchorAddrPrefix+anchor1, []byte(anchor1)).
+		Write(common.AnchorPrefix+txn.AnchorString, txnBytes).
 		Write("non_anchor_key", []byte("some value"))
 	tb1.ChaincodeAction("some_other_cc").
 		Write("some_key", []byte("some value"))
 
-	const deactivateOpsNum = 2
-	ops := getTestOperations(0, 0, deactivateOpsNum, 0)
+	ops, err := getTestOperations(2)
+	require.NoError(t, err)
+
 	op1Bytes, err := json.Marshal(ops[0])
 	require.NoError(t, err)
 	op2Bytes, err := json.Marshal(ops[1])
 	require.NoError(t, err)
 
-	anchorFileBytes, err := json.Marshal(models.CreateAnchorFile("", ops))
+	anchorFileBytes, err := json.Marshal(models.CreateAnchorFile("map", ops))
+	require.NoError(t, err)
+
+	mapFileBytes, err := json.Marshal(models.CreateMapFile([]string{"chunk"}, ops))
+	require.NoError(t, err)
+
+	chunkFileBytes, err := json.Marshal(models.CreateChunkFile(ops))
 	require.NoError(t, err)
 
 	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 	clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 	clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-	clients.dcas.GetReturnsOnCall(1, op1Bytes, nil)
-	clients.dcas.GetReturnsOnCall(2, op2Bytes, nil)
+	clients.dcas.GetReturnsOnCall(1, mapFileBytes, nil)
+	clients.dcas.GetReturnsOnCall(2, chunkFileBytes, nil)
+	clients.dcas.GetReturnsOnCall(3, op1Bytes, nil)
+	clients.dcas.GetReturnsOnCall(4, op2Bytes, nil)
 
 	return clients
 }
@@ -527,30 +562,36 @@ func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, c
 	return m
 }
 
-func getTestOperations(createOpsNum, updateOpsNum, deactivateOpsNum, recoverOpsNum int) []*batch.Operation {
+func getTestOperations(createOpsNum int) ([]*batch.Operation, error) {
 	var ops []*batch.Operation
-	ops = append(ops, generateOperations(createOpsNum, batch.OperationTypeCreate)...)
-	ops = append(ops, generateOperations(recoverOpsNum, batch.OperationTypeRecover)...)
-	ops = append(ops, generateOperations(deactivateOpsNum, batch.OperationTypeDeactivate)...)
-	ops = append(ops, generateOperations(updateOpsNum, batch.OperationTypeUpdate)...)
+	for j := 1; j <= createOpsNum; j++ {
+		op, err := generateCreateOperations(j)
+		if err != nil {
+			return nil, err
+		}
 
-	return ops
+		ops = append(ops, op)
+	}
+
+	return ops, nil
 }
 
-func generateOperations(numOfOperations int, opType batch.OperationType) (ops []*batch.Operation) {
-	for j := 1; j <= numOfOperations; j++ {
-		ops = append(ops, generateOperation(j, opType))
-	}
-	return
-}
+func generateCreateOperations(num int) (*batch.Operation, error) {
+	doc := fmt.Sprintf(`{"test":%d}`, num)
+	info := &helper.CreateRequestInfo{OpaqueDocument: doc,
+		RecoveryKey: &jws.JWK{
+			Crv: "crv",
+			Kty: "kty",
+			X:   "x",
+		},
+		MultihashCode: sha2_256}
 
-func generateOperation(num int, opType batch.OperationType) *batch.Operation {
-	return &batch.Operation{
-		Type:              opType,
-		UniqueSuffix:      fmt.Sprintf("%s-%d", opType, num),
-		Namespace:         "did:sidetree",
-		EncodedSuffixData: "suffix-data",
-		EncodedDelta:      "delta",
-		SignedData:        "signed-data",
+	request, err := helper.NewCreateRequest(info)
+	if err != nil {
+		return nil, err
 	}
+
+	return operation.ParseOperation(namespace, request, protocol.Protocol{
+		HashAlgorithmInMultiHashCode: sha2_256,
+	})
 }

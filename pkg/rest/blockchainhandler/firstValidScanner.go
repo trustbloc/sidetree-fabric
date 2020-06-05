@@ -124,8 +124,8 @@ func (v *txnValidator) isValid() (bool, error) {
 }
 
 func (v *txnValidator) handleWrite(w *blockvisitor.Write) error {
-	if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
-		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", v.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
+	if !strings.HasPrefix(w.Write.Key, common.AnchorPrefix) {
+		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", v.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorPrefix)
 
 		return nil
 	}
@@ -136,7 +136,11 @@ func (v *txnValidator) handleWrite(w *blockvisitor.Write) error {
 		return nil
 	}
 
-	anchorString := string(w.Write.Value)
+	anchorString, err := getAnchorString(w.Write.Value)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get anchor string [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
+	}
+
 	if anchorString != v.desc.Transaction().AnchorString {
 		logger.Debugf("[%s] AnchorString [%s] for block [%d] and TxnNumber [%d] does not match the provided AnchorString [%s]", v.channelID, anchorString, v.desc.BlockNum(), v.desc.TxnNum(), v.desc.Transaction().AnchorString)
 

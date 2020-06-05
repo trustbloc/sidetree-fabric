@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/cucumber/godog"
@@ -21,6 +22,12 @@ import (
 // BlockchainSteps
 type BlockchainSteps struct {
 	bddContext *bddtests.BDDContext
+}
+
+//TxnInfo
+type TxnInfo struct {
+	AnchorString string `json:"anchor_string"`
+	Namespace    string `json:"namespace"`
 }
 
 // NewBlockchainSteps
@@ -96,6 +103,29 @@ func (d *BlockchainSteps) hashOfBase64URLEncodedValueEquals(base64URLEncodedValu
 	return nil
 }
 
+func (d *BlockchainSteps) getAnchorAddressFromTxnInfo(txInfoVar, anchorAddressVar string) error {
+	jsonTxn, ok := bddtests.GetVar(txInfoVar)
+	if !ok {
+		return fmt.Errorf("var[%s] not set", txInfoVar)
+	}
+
+	var txnInfo TxnInfo
+	if err := json.Unmarshal([]byte(jsonTxn), &txnInfo); err != nil {
+		return err
+	}
+
+	ad, err := txnhandler.ParseAnchorData(txnInfo.AnchorString)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("Saving anchor address [%s] to variable [%s]", ad.AnchorAddress, anchorAddressVar)
+
+	bddtests.SetVar(anchorAddressVar, ad.AnchorAddress)
+
+	return nil
+}
+
 func (d *BlockchainSteps) getAnchorAddress(anchorStringVar, anchorAddressVar string) error {
 	anchorString, ok := bddtests.GetVar(anchorStringVar)
 	if !ok {
@@ -116,6 +146,7 @@ func (d *BlockchainSteps) getAnchorAddress(anchorStringVar, anchorAddressVar str
 
 // RegisterSteps registers did sidetree steps
 func (d *BlockchainSteps) RegisterSteps(s *godog.Suite) {
+	s.Step(`^anchor address is parsed from transaction info "([^"]*)" and saved to variable "([^"]*)"$`, d.getAnchorAddressFromTxnInfo)
 	s.Step(`^anchor address is parsed from anchor string "([^"]*)" and saved to variable "([^"]*)"$`, d.getAnchorAddress)
 	s.Step(`^the hash of the base64-encoded value "([^"]*)" equals "([^"]*)"$`, d.hashOfBase64EncodedValueEquals)
 	s.Step(`^the hash of the base64URL-encoded value "([^"]*)" equals "([^"]*)"$`, d.hashOfBase64URLEncodedValueEquals)

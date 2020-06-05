@@ -8,6 +8,7 @@ package blockchainhandler
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"strings"
 
 	cb "github.com/hyperledger/fabric-protos-go/common"
@@ -82,8 +83,8 @@ func (h *txnBlockScanner) scan() ([]Transaction, bool, error) {
 }
 
 func (h *txnBlockScanner) handleWrite(w *blockvisitor.Write) error {
-	if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
-		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", h.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
+	if !strings.HasPrefix(w.Write.Key, common.AnchorPrefix) {
+		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", h.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorPrefix)
 
 		return nil
 	}
@@ -98,11 +99,16 @@ func (h *txnBlockScanner) handleWrite(w *blockvisitor.Write) error {
 		return errReachedMaxTxns
 	}
 
+	anchorString, err := getAnchorString(w.Write.Value)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to get anchor string [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
+	}
+
 	txn := Transaction{
 		TransactionNumber:   w.TxNum,
 		TransactionTime:     w.BlockNum,
 		TransactionTimeHash: h.transactionTimeHash,
-		AnchorString:        string(w.Write.Value),
+		AnchorString:        anchorString,
 	}
 
 	logger.Debugf("[%s] Adding transaction %+v", h.channelID, txn)
@@ -121,4 +127,13 @@ func (h *txnBlockScanner) handleError(err error, ctx *blockvisitor.Context) erro
 
 	logger.Errorf("[%s] Error processing block: %s. Context: %s. Block will be ignored.", h.channelID, err, ctx)
 	return nil
+}
+
+func getAnchorString(value []byte) (string, error) {
+	var txnInfo common.TxnInfo
+	if err := json.Unmarshal(value, &txnInfo); err != nil {
+		return "", err
+	}
+
+	return txnInfo.AnchorString, nil
 }

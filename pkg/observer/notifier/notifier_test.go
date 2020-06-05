@@ -47,7 +47,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 				}
 			}
 		}()
-		require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: common.AnchorAddrPrefix + k1, IsDelete: true, Value: []byte(v1)}))
+		require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: common.AnchorPrefix + k1, IsDelete: true, Value: []byte(v1)}))
 		result := <-done
 		require.Empty(t, result)
 	})
@@ -68,7 +68,7 @@ func TestRegisterForAnchorFileAddress(t *testing.T) {
 				}
 			}
 		}()
-		require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: common.AnchorAddrPrefix + k1, IsDelete: false, Value: []byte(v1)}))
+		require.NoError(t, p.HandleWrite(gossipapi.TxMetadata{BlockNum: 1, ChannelID: testChannel, TxID: "tx1"}, sideTreeTxnCCName, &kvrwset.KVWrite{Key: common.AnchorPrefix + k1, IsDelete: false, Value: []byte(v1)}))
 		result := <-done
 		require.Equal(t, uint64(1), result.BlockNum)
 	})

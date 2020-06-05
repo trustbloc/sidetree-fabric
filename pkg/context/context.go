@@ -61,7 +61,7 @@ func New(
 		namespace:        namespace,
 		protocolClient:   protocol.New(protocolVersions),
 		casClient:        cas.New(channelID, dcasCfg, dcasProvider),
-		blockchainClient: blockchain.New(channelID, dcasCfg.ChaincodeName, txnProvider),
+		blockchainClient: blockchain.New(channelID, dcasCfg.ChaincodeName, namespace, txnProvider),
 		opQueue:          opQueue,
 	}, nil
 }

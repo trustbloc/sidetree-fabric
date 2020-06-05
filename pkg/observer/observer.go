@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
+	"encoding/json"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -313,10 +314,15 @@ func (m *Observer) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
 		metadata.LastBlockProcessed = w.BlockNum
 		metadata.LastTxNumProcessed = int64(w.TxNum)
 
-		if !strings.HasPrefix(w.Write.Key, common.AnchorAddrPrefix) {
-			logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorAddrPrefix)
+		if !strings.HasPrefix(w.Write.Key, common.AnchorPrefix) {
+			logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorPrefix)
 
 			return nil
+		}
+
+		var txnInfo common.TxnInfo
+		if err := json.Unmarshal(w.Write.Value, &txnInfo); err != nil {
+			return errors.WithMessagef(err, "unmarshal transaction info error for anchor [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
 		}
 
 		logger.Debugf("[%s] Handling write to anchor [%s] in block [%d] and TxNum [%d] on attempt #%d", m.channelID, w.Write.Value, w.BlockNum, w.TxNum, metadata.FailedAttempts+1)
@@ -324,7 +330,8 @@ func (m *Observer) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
 		sidetreeTxn := txn.SidetreeTxn{
 			TransactionTime:   w.BlockNum,
 			TransactionNumber: w.TxNum,
-			AnchorString:      string(w.Write.Value),
+			AnchorString:      txnInfo.AnchorString,
+			Namespace:         txnInfo.Namespace,
 		}
 
 		if err := m.txnProcessor.Process(sidetreeTxn); err != nil {

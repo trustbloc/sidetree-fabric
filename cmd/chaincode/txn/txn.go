@@ -184,7 +184,7 @@ func (cc *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]
 	}
 
 	// record anchor file address on the ledger (Sidetree Transaction)
-	err = stub.PutState(common.AnchorAddrPrefix+anchorAddr, []byte(anchorAddr))
+	err = stub.PutState(common.AnchorPrefix+anchorAddr, []byte(anchorAddr))
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to write anchor address: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)
@@ -194,21 +194,22 @@ func (cc *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]
 	return shim.Success(nil)
 }
 
-// writeAnchor will record anchor file address on the ledger
+// writeAnchor will record anchor info on the ledger
 func (cc *SidetreeTxnCC) writeAnchor(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
 	txID := stub.GetTxID()
-	if len(args) != 1 || len(args[0]) == 0 {
-		errMsg := "missing anchor file address"
+	if len(args) != 2 || len(args[0]) == 0 || len(args[1]) == 0 {
+		errMsg := "missing anchor string and/or txn info"
 		logger.Debugf("[txID %s] %s", txID, errMsg)
 		return shim.Error(errMsg)
 	}
 
-	anchorAddr := string(args[0])
+	anchorString := string(args[0])
+	txnInfo := args[1]
 
-	// record anchor file address on the ledger (Sidetree Transaction)
-	err := stub.PutState(common.AnchorAddrPrefix+anchorAddr, []byte(anchorAddr))
+	// record anchor string on the ledger plus Sidetree transaction info (anchor string, namespace)
+	err := stub.PutState(common.AnchorPrefix+anchorString, txnInfo)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to write anchor address: %s", err.Error())
+		errMsg := fmt.Sprintf("failed to write anchor string: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)
 		return shim.Error(errMsg)
 	}
