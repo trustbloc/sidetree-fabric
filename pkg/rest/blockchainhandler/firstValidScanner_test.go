@@ -46,7 +46,7 @@ func TestTxnValidator_Scan(t *testing.T) {
 	t.Run("Found valid", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum1)
 		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write("some key", []byte("some value"))
-		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor2))
+		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor2))
 
 		block := bb.Build()
 		blockHash := base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(block.Header))
@@ -71,6 +71,32 @@ func TestTxnValidator_Scan(t *testing.T) {
 		require.Equal(t, desc.Transaction(), txns[0])
 	})
 
+	t.Run("Invalid transaction info", func(t *testing.T) {
+		bb := mocks.NewBlockBuilder(channel1, blockNum1)
+		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, []byte(anchor2))
+
+		block := bb.Build()
+		blockHash := base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(block.Header))
+
+		bcClient := &obmocks.BlockchainClient{}
+		bcClient.GetBlockByNumberReturns(block, nil)
+
+		desc := &firstValidDesc{Transaction{
+			TransactionTime:     blockNum1,
+			TransactionTimeHash: blockHash,
+			TransactionNumber:   0,
+			AnchorString:        anchor2,
+		}}
+
+		v := newFirstValidScanner(channel1, bcClient)
+		require.NotNil(t, v)
+
+		txns, foundValid, err := v.Scan(desc, 0)
+		require.NoError(t, err)
+		require.Empty(t, txns)
+		require.False(t, foundValid)
+	})
+
 	t.Run("Invalid block number", func(t *testing.T) {
 		bcClient := &obmocks.BlockchainClient{}
 		bcClient.GetBlockByNumberReturns(nil, errors.New("not found"))
@@ -90,7 +116,7 @@ func TestTxnValidator_Scan(t *testing.T) {
 
 	t.Run("Invalid base64 encoded block hash", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum1)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
 
 		bcClient := &obmocks.BlockchainClient{}
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
@@ -111,10 +137,10 @@ func TestTxnValidator_Scan(t *testing.T) {
 
 	t.Run("Invalid block hash", func(t *testing.T) {
 		bb1 := mocks.NewBlockBuilder(channel1, blockNum1)
-		bb1.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
+		bb1.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
 
 		bb2 := mocks.NewBlockBuilder(channel1, blockNum2)
-		bb2.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor2))
+		bb2.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor2))
 
 		block1 := bb1.Build()
 		block2 := bb2.Build()
@@ -140,7 +166,7 @@ func TestTxnValidator_Scan(t *testing.T) {
 
 	t.Run("Invalid TransactionNumber", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum1)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
 
 		block := bb.Build()
 		blockHash := base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(block.Header))
@@ -165,7 +191,7 @@ func TestTxnValidator_Scan(t *testing.T) {
 
 	t.Run("Invalid anchor_string", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum1)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
 
 		block := bb.Build()
 		blockHash := base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(block.Header))

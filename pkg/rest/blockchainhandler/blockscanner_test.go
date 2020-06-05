@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package blockchainhandler
 
 import (
+	"fmt"
 	"testing"
 
 	cb "github.com/hyperledger/fabric-protos-go/common"
@@ -32,8 +33,8 @@ func TestBlockScanner(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor2))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor2))
 
 		bcClient := &obmocks.BlockchainClient{}
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
@@ -53,11 +54,32 @@ func TestBlockScanner(t *testing.T) {
 		require.False(t, reachedMax)
 	})
 
+	t.Run("Error - unmarshall transaction info", func(t *testing.T) {
+		bb := mocks.NewBlockBuilder(channel1, blockNum)
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, []byte(anchor1))
+
+		bcClient := &obmocks.BlockchainClient{}
+		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
+
+		scanner := newBlockScanner(channel1, bcClient)
+		require.NotNil(t, scanner)
+
+		desc := &blockDesc{
+			blockNum: blockNum,
+			txnNum:   0,
+		}
+
+		txns, reachedMax, err := scanner.Scan(desc, maxTxns)
+		require.NoError(t, err)
+		require.Len(t, txns, 0)
+		require.False(t, reachedMax)
+	})
+
 	t.Run("Maximum reached", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
-		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor2))
-		bb.Transaction(txn3, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor3))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
+		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor2))
+		bb.Transaction(txn3, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor3))
 
 		bcClient := &obmocks.BlockchainClient{}
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
@@ -78,7 +100,7 @@ func TestBlockScanner(t *testing.T) {
 
 	t.Run("Irrelevant transaction", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write("xxx", []byte("xxx"))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write("xxx", getTxnInfo("xxx"))
 
 		bcClient := &obmocks.BlockchainClient{}
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
@@ -125,4 +147,8 @@ func TestBlockScanner(t *testing.T) {
 		require.Empty(t, txns)
 		require.False(t, reachedMax)
 	})
+}
+
+func getTxnInfo(anchor string) []byte {
+	return []byte(fmt.Sprintf(`{"anchor_string":"%s", "namespace": "ns"}`, anchor))
 }

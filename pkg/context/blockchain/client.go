@@ -7,9 +7,12 @@ SPDX-License-Identifier: Apache-2.0
 package blockchain
 
 import (
+	"encoding/json"
+
 	"github.com/pkg/errors"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/txn"
+	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 )
@@ -27,27 +30,39 @@ type Client struct {
 	channelID     string
 	chaincodeName string
 	txnProvider   txnServiceProvider
+	namespace     string
 }
 
 // New returns a new blockchain client
-func New(channelID, chaincodeName string, txnProvider txnServiceProvider) *Client {
+func New(channelID, chaincodeName, namespace string, txnProvider txnServiceProvider) *Client {
 	return &Client{
 		channelID:     channelID,
 		chaincodeName: chaincodeName,
 		txnProvider:   txnProvider,
+		namespace:     namespace,
 	}
 }
 
-// WriteAnchor writes anchor file address to blockchain
+// WriteAnchor writes anchor string to blockchain
 func (c *Client) WriteAnchor(anchor string) error {
 	txnService, err := c.txnProvider.ForChannel(c.channelID)
 	if err != nil {
 		return err
 	}
 
+	txnInfo := common.TxnInfo{
+		AnchorString: anchor,
+		Namespace:    c.namespace,
+	}
+
+	txnInfoBytes, err := json.Marshal(txnInfo)
+	if err != nil {
+		return err
+	}
+
 	_, err = txnService.EndorseAndCommit(&txnapi.Request{
 		ChaincodeID: c.chaincodeName,
-		Args:        [][]byte{[]byte(writeAnchorFcn), []byte(anchor)},
+		Args:        [][]byte{[]byte(writeAnchorFcn), []byte(anchor), txnInfoBytes},
 	})
 	if err != nil {
 		return transienterr.New(errors.Wrap(err, "failed to store anchor file address"), transienterr.CodeBlockchain)

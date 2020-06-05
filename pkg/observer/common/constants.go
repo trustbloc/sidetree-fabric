@@ -7,6 +7,12 @@ SPDX-License-Identifier: Apache-2.0
 package common
 
 const (
-	// AnchorAddrPrefix is the anchor address prefix that is used to persist anchors
-	AnchorAddrPrefix = "sidetreeanchor_"
+	// AnchorPrefix is the prefix that is that is used to persist anchors
+	AnchorPrefix = "sidetreeanchor_"
 )
+
+// TxnInfo contains info that gets recorded on blockchain as part of Sidetree transaction
+type TxnInfo struct {
+	AnchorString string `json:"anchor_string"`
+	Namespace    string `json:"namespace"`
+}

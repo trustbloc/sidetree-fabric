@@ -63,7 +63,7 @@ func TestTransactions_All(t *testing.T) {
 		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor))
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
 		bcProvider.ForChannelReturns(bcClient, nil)
@@ -88,7 +88,7 @@ func TestTransactions_All(t *testing.T) {
 		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor))
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
 		bcProvider.ForChannelReturns(bcClient, nil)
@@ -114,7 +114,7 @@ func TestTransactions_All(t *testing.T) {
 		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
 
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor))
 		bcClient.GetBlockByNumberReturns(bb.Build(), nil)
 
 		bcProvider.ForChannelReturns(bcClient, nil)
@@ -191,7 +191,7 @@ func TestTransactions_Since(t *testing.T) {
 		defer restoreParams()
 
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor))
 
 		bcClient := &obmocks.BlockchainClient{}
 		bcClient.GetBlockchainInfoReturns(bcInfo, nil)
@@ -323,7 +323,7 @@ func TestTransactions_Since(t *testing.T) {
 		defer restoreParams()
 
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor))
 
 		errExpected := errors.New("injected blockchain client error")
 		bcClient := &obmocks.BlockchainClient{}

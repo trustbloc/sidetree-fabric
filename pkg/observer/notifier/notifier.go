@@ -51,7 +51,7 @@ func New(channelID string, bpProvider blockPublisherProvider, txnChan chan<- gos
 }
 
 func (n *Notifier) handleWrite(txMetadata gossipapi.TxMetadata, namespace string, kvWrite *kvrwset.KVWrite) error {
-	if kvWrite.IsDelete || !strings.HasPrefix(kvWrite.Key, common.AnchorAddrPrefix) {
+	if kvWrite.IsDelete || !strings.HasPrefix(kvWrite.Key, common.AnchorPrefix) {
 		return nil
 	}
 

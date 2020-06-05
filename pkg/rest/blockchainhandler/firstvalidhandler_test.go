@@ -53,9 +53,9 @@ func TestFirstValid_Handler(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
-		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor2))
-		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor3))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
+		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor2))
+		bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor3))
 
 		block := bb.Build()
 		blockHash := base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(block.Header))
@@ -107,7 +107,7 @@ func TestFirstValid_Handler(t *testing.T) {
 
 	t.Run("No valid transactions", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
 
 		block := bb.Build()
 		blockHash := base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(block.Header))
@@ -181,7 +181,7 @@ func TestFirstValid_Handler(t *testing.T) {
 
 	t.Run("Marshal error", func(t *testing.T) {
 		bb := mocks.NewBlockBuilder(channel1, blockNum)
-		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor1))
+		bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor1))
 
 		block := bb.Build()
 		blockHash := base64.URLEncoding.EncodeToString(protoutil.BlockHeaderHash(block.Header))

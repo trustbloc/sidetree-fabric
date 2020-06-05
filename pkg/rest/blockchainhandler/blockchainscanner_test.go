@@ -23,11 +23,11 @@ func TestBlockchainScanner(t *testing.T) {
 	const blockNum = 1000
 	const txn1 = "tx1"
 	const txn2 = "tx2"
-	const anchor = "xxx"
+	const anchor = "1.anchor"
 
 	bb := mocks.NewBlockBuilder(channel1, blockNum)
-	bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor))
-	bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorAddrPrefix, []byte(anchor))
+	bb.Transaction(txn1, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor))
+	bb.Transaction(txn2, pb.TxValidationCode_VALID).ChaincodeAction("sidetree").Write(common.AnchorPrefix, getTxnInfo(anchor))
 
 	bcInfo := &cb.BlockchainInfo{
 		Height: 2,

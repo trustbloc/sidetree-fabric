@@ -128,24 +128,43 @@ func TestWriteAnchor(t *testing.T) {
 
 	stub := prepareStub()
 
-	anchorAddress := []byte("Addr")
-	payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), anchorAddress})
+	anchor := []byte("anchor")
+	txnInfo := []byte("txn")
+	payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), anchor, txnInfo})
 	require.Nil(t, err)
 	require.Nil(t, payload)
 
-	result, err := stub.GetState(common.AnchorAddrPrefix + string(anchorAddress))
+	result, err := stub.GetState(common.AnchorPrefix + string(anchor))
 	require.Nil(t, err)
-	require.Equal(t, anchorAddress, result)
+	require.Equal(t, txnInfo, result)
 }
 
-func TestWriteAnchor_MissingAnchorAddress(t *testing.T) {
-
+func TestWriteAnchor_CheckRequiredArguments(t *testing.T) {
 	stub := prepareStub()
 
-	payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), []byte("")})
+	// missing args
+	payload, err := invoke(stub, [][]byte{[]byte(writeAnchor)})
 	require.NotNil(t, err)
 	require.Nil(t, payload)
-	require.Contains(t, err.Error(), "missing anchor file address")
+	require.Contains(t, err.Error(), "missing anchor string and/or txn info")
+
+	// empty anchor
+	payload, err = invoke(stub, [][]byte{[]byte(writeAnchor), []byte("")})
+	require.NotNil(t, err)
+	require.Nil(t, payload)
+	require.Contains(t, err.Error(), "missing anchor string and/or txn info")
+
+	// empty txn info
+	payload, err = invoke(stub, [][]byte{[]byte(writeAnchor), []byte("address"), []byte("")})
+	require.NotNil(t, err)
+	require.Nil(t, payload)
+	require.Contains(t, err.Error(), "missing anchor string and/or txn info")
+
+	// suc
+	payload, err = invoke(stub, [][]byte{[]byte(writeAnchor), []byte("address"), []byte("")})
+	require.NotNil(t, err)
+	require.Nil(t, payload)
+	require.Contains(t, err.Error(), "missing anchor string and/or txn info")
 }
 
 func TestAnchorBatch(t *testing.T) {
@@ -158,7 +177,7 @@ func TestAnchorBatch(t *testing.T) {
 	require.Nil(t, err)
 	require.Nil(t, payload)
 
-	result, err := stub.GetState(common.AnchorAddrPrefix + encodedSHA256Hash(anchor))
+	result, err := stub.GetState(common.AnchorPrefix + encodedSHA256Hash(anchor))
 	require.Nil(t, err)
 	require.Equal(t, string(result), encodedSHA256Hash(anchor))
 
