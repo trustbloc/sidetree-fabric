@@ -2,5 +2,9 @@
   "startingBlockchainTime": 100,
   "hashAlgorithmInMultihashCode": 18,
   "maxDeltaByteSize": 200000,
-  "maxOperationsPerBatch": 30
+  "maxOperationsPerBatch": 30,
+  "compressionAlgorithm": "GZIP",
+  "maxAnchorFileSize": 1000000,
+  "maxMapFileSize": 1000000,
+  "maxChunkFileSize": 10000000
 }

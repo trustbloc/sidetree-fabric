@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/txn"
+	"github.com/trustbloc/sidetree-core-go/pkg/compression"
 	"github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler"
 
@@ -99,6 +100,9 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		maxAttempts = defaultMaxAttempts
 	}
 
+	dcasReader := NewSidetreeDCASReader(channelID, dcasCfg, clientProviders.DCAS)
+	compressionProvider := compression.New(compression.WithDefaultAlgorithms())
+
 	m := &Observer{
 		channelID:     channelID,
 		period:        period,
@@ -108,7 +112,7 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		leaseProvider: lease.NewProvider(channelID, clientProviders.Gossip.GetGossipService()),
 		txnProcessor: observer.NewTxnProcessor(
 			&observer.Providers{
-				TxnOpsProvider:   txnhandler.NewOperationProvider(NewSidetreeDCASReader(channelID, dcasCfg, clientProviders.DCAS), pcp),
+				TxnOpsProvider:   txnhandler.NewOperationProvider(dcasReader, pcp, compressionProvider),
 				OpStoreProvider:  asObserverStoreProvider(opStoreProvider),
 				OpFilterProvider: operationfilter.NewProvider(channelID, opStoreProvider),
 			},
