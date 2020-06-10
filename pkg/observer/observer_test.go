@@ -23,6 +23,8 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-core-go/pkg/compression"
+	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/operation"
@@ -511,13 +513,13 @@ func newMockClients(t *testing.T) *mockClients {
 	op2Bytes, err := json.Marshal(ops[1])
 	require.NoError(t, err)
 
-	anchorFileBytes, err := json.Marshal(models.CreateAnchorFile("map", ops))
+	anchorFileBytes, err := compress(models.CreateAnchorFile("map", ops))
 	require.NoError(t, err)
 
-	mapFileBytes, err := json.Marshal(models.CreateMapFile([]string{"chunk"}, ops))
+	mapFileBytes, err := compress(models.CreateMapFile([]string{"chunk"}, ops))
 	require.NoError(t, err)
 
-	chunkFileBytes, err := json.Marshal(models.CreateChunkFile(ops))
+	chunkFileBytes, err := compress(models.CreateChunkFile(ops))
 	require.NoError(t, err)
 
 	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
@@ -529,6 +531,17 @@ func newMockClients(t *testing.T) *mockClients {
 	clients.dcas.GetReturnsOnCall(4, op2Bytes, nil)
 
 	return clients
+}
+
+func compress(model interface{}) ([]byte, error) {
+	bytes, err := docutil.MarshalCanonical(model)
+	if err != nil {
+		return nil, err
+	}
+
+	cp := compression.New(compression.WithDefaultAlgorithms())
+
+	return cp.Compress("GZIP", bytes)
 }
 
 func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, clients *mockClients, opStoreProvider ctxcommon.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata) *Observer {

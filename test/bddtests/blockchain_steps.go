@@ -16,6 +16,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
+	"github.com/trustbloc/sidetree-core-go/pkg/compression"
 	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler"
 )
 
@@ -144,8 +145,22 @@ func (d *BlockchainSteps) getAnchorAddress(anchorStringVar, anchorAddressVar str
 	return nil
 }
 
+func (d *BlockchainSteps) decompressResponse(alg string) error {
+	cp := compression.New(compression.WithDefaultAlgorithms())
+
+	value, err := cp.Decompress(alg, []byte(bddtests.GetResponse()))
+	if err != nil {
+		return err
+	}
+
+	bddtests.SetResponse(string(value))
+
+	return nil
+}
+
 // RegisterSteps registers did sidetree steps
 func (d *BlockchainSteps) RegisterSteps(s *godog.Suite) {
+	s.Step(`^response is decompressed using "([^"]*)"$`, d.decompressResponse)
 	s.Step(`^anchor address is parsed from transaction info "([^"]*)" and saved to variable "([^"]*)"$`, d.getAnchorAddressFromTxnInfo)
 	s.Step(`^anchor address is parsed from anchor string "([^"]*)" and saved to variable "([^"]*)"$`, d.getAnchorAddress)
 	s.Step(`^the hash of the base64-encoded value "([^"]*)" equals "([^"]*)"$`, d.hashOfBase64EncodedValueEquals)
