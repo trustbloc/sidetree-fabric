@@ -60,7 +60,7 @@ func (c *Client) WriteAnchor(anchor string) error {
 		return err
 	}
 
-	_, err = txnService.EndorseAndCommit(&txnapi.Request{
+	_, _, err = txnService.EndorseAndCommit(&txnapi.Request{
 		ChaincodeID: c.chaincodeName,
 		Args:        [][]byte{[]byte(writeAnchorFcn), []byte(anchor), txnInfoBytes},
 	})

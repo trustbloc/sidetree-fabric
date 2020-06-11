@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	"github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
 )
 
@@ -22,17 +23,58 @@ type TxnService struct {
 		result1 *channel.Response
 		result2 error
 	}
-	EndorseAndCommitStub        func(req *api.Request) (resp *channel.Response, err error)
+	EndorseAndCommitStub        func(req *api.Request) (resp *channel.Response, committed bool, err error)
 	endorseAndCommitMutex       sync.RWMutex
 	endorseAndCommitArgsForCall []struct {
 		req *api.Request
 	}
 	endorseAndCommitReturns struct {
 		result1 *channel.Response
-		result2 error
+		result2 bool
+		result3 error
 	}
 	endorseAndCommitReturnsOnCall map[int]struct {
 		result1 *channel.Response
+		result2 bool
+		result3 error
+	}
+	CommitEndorsementsStub        func(req *api.CommitRequest) (*channel.Response, bool, error)
+	commitEndorsementsMutex       sync.RWMutex
+	commitEndorsementsArgsForCall []struct {
+		req *api.CommitRequest
+	}
+	commitEndorsementsReturns struct {
+		result1 *channel.Response
+		result2 bool
+		result3 error
+	}
+	commitEndorsementsReturnsOnCall map[int]struct {
+		result1 *channel.Response
+		result2 bool
+		result3 error
+	}
+	SigningIdentityStub        func() ([]byte, error)
+	signingIdentityMutex       sync.RWMutex
+	signingIdentityArgsForCall []struct{}
+	signingIdentityReturns     struct {
+		result1 []byte
+		result2 error
+	}
+	signingIdentityReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 error
+	}
+	GetPeerStub        func(endpoint string) (fab.Peer, error)
+	getPeerMutex       sync.RWMutex
+	getPeerArgsForCall []struct {
+		endpoint string
+	}
+	getPeerReturns struct {
+		result1 fab.Peer
+		result2 error
+	}
+	getPeerReturnsOnCall map[int]struct {
+		result1 fab.Peer
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -90,7 +132,7 @@ func (fake *TxnService) EndorseReturnsOnCall(i int, result1 *channel.Response, r
 	}{result1, result2}
 }
 
-func (fake *TxnService) EndorseAndCommit(req *api.Request) (resp *channel.Response, err error) {
+func (fake *TxnService) EndorseAndCommit(req *api.Request) (resp *channel.Response, committed bool, err error) {
 	fake.endorseAndCommitMutex.Lock()
 	ret, specificReturn := fake.endorseAndCommitReturnsOnCall[len(fake.endorseAndCommitArgsForCall)]
 	fake.endorseAndCommitArgsForCall = append(fake.endorseAndCommitArgsForCall, struct {
@@ -102,9 +144,9 @@ func (fake *TxnService) EndorseAndCommit(req *api.Request) (resp *channel.Respon
 		return fake.EndorseAndCommitStub(req)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1, ret.result2, ret.result3
 	}
-	return fake.endorseAndCommitReturns.result1, fake.endorseAndCommitReturns.result2
+	return fake.endorseAndCommitReturns.result1, fake.endorseAndCommitReturns.result2, fake.endorseAndCommitReturns.result3
 }
 
 func (fake *TxnService) EndorseAndCommitCallCount() int {
@@ -119,24 +161,175 @@ func (fake *TxnService) EndorseAndCommitArgsForCall(i int) *api.Request {
 	return fake.endorseAndCommitArgsForCall[i].req
 }
 
-func (fake *TxnService) EndorseAndCommitReturns(result1 *channel.Response, result2 error) {
+func (fake *TxnService) EndorseAndCommitReturns(result1 *channel.Response, result2 bool, result3 error) {
 	fake.EndorseAndCommitStub = nil
 	fake.endorseAndCommitReturns = struct {
 		result1 *channel.Response
-		result2 error
-	}{result1, result2}
+		result2 bool
+		result3 error
+	}{result1, result2, result3}
 }
 
-func (fake *TxnService) EndorseAndCommitReturnsOnCall(i int, result1 *channel.Response, result2 error) {
+func (fake *TxnService) EndorseAndCommitReturnsOnCall(i int, result1 *channel.Response, result2 bool, result3 error) {
 	fake.EndorseAndCommitStub = nil
 	if fake.endorseAndCommitReturnsOnCall == nil {
 		fake.endorseAndCommitReturnsOnCall = make(map[int]struct {
 			result1 *channel.Response
-			result2 error
+			result2 bool
+			result3 error
 		})
 	}
 	fake.endorseAndCommitReturnsOnCall[i] = struct {
 		result1 *channel.Response
+		result2 bool
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *TxnService) CommitEndorsements(req *api.CommitRequest) (*channel.Response, bool, error) {
+	fake.commitEndorsementsMutex.Lock()
+	ret, specificReturn := fake.commitEndorsementsReturnsOnCall[len(fake.commitEndorsementsArgsForCall)]
+	fake.commitEndorsementsArgsForCall = append(fake.commitEndorsementsArgsForCall, struct {
+		req *api.CommitRequest
+	}{req})
+	fake.recordInvocation("CommitEndorsements", []interface{}{req})
+	fake.commitEndorsementsMutex.Unlock()
+	if fake.CommitEndorsementsStub != nil {
+		return fake.CommitEndorsementsStub(req)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	return fake.commitEndorsementsReturns.result1, fake.commitEndorsementsReturns.result2, fake.commitEndorsementsReturns.result3
+}
+
+func (fake *TxnService) CommitEndorsementsCallCount() int {
+	fake.commitEndorsementsMutex.RLock()
+	defer fake.commitEndorsementsMutex.RUnlock()
+	return len(fake.commitEndorsementsArgsForCall)
+}
+
+func (fake *TxnService) CommitEndorsementsArgsForCall(i int) *api.CommitRequest {
+	fake.commitEndorsementsMutex.RLock()
+	defer fake.commitEndorsementsMutex.RUnlock()
+	return fake.commitEndorsementsArgsForCall[i].req
+}
+
+func (fake *TxnService) CommitEndorsementsReturns(result1 *channel.Response, result2 bool, result3 error) {
+	fake.CommitEndorsementsStub = nil
+	fake.commitEndorsementsReturns = struct {
+		result1 *channel.Response
+		result2 bool
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *TxnService) CommitEndorsementsReturnsOnCall(i int, result1 *channel.Response, result2 bool, result3 error) {
+	fake.CommitEndorsementsStub = nil
+	if fake.commitEndorsementsReturnsOnCall == nil {
+		fake.commitEndorsementsReturnsOnCall = make(map[int]struct {
+			result1 *channel.Response
+			result2 bool
+			result3 error
+		})
+	}
+	fake.commitEndorsementsReturnsOnCall[i] = struct {
+		result1 *channel.Response
+		result2 bool
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *TxnService) SigningIdentity() ([]byte, error) {
+	fake.signingIdentityMutex.Lock()
+	ret, specificReturn := fake.signingIdentityReturnsOnCall[len(fake.signingIdentityArgsForCall)]
+	fake.signingIdentityArgsForCall = append(fake.signingIdentityArgsForCall, struct{}{})
+	fake.recordInvocation("SigningIdentity", []interface{}{})
+	fake.signingIdentityMutex.Unlock()
+	if fake.SigningIdentityStub != nil {
+		return fake.SigningIdentityStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.signingIdentityReturns.result1, fake.signingIdentityReturns.result2
+}
+
+func (fake *TxnService) SigningIdentityCallCount() int {
+	fake.signingIdentityMutex.RLock()
+	defer fake.signingIdentityMutex.RUnlock()
+	return len(fake.signingIdentityArgsForCall)
+}
+
+func (fake *TxnService) SigningIdentityReturns(result1 []byte, result2 error) {
+	fake.SigningIdentityStub = nil
+	fake.signingIdentityReturns = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *TxnService) SigningIdentityReturnsOnCall(i int, result1 []byte, result2 error) {
+	fake.SigningIdentityStub = nil
+	if fake.signingIdentityReturnsOnCall == nil {
+		fake.signingIdentityReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 error
+		})
+	}
+	fake.signingIdentityReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *TxnService) GetPeer(endpoint string) (fab.Peer, error) {
+	fake.getPeerMutex.Lock()
+	ret, specificReturn := fake.getPeerReturnsOnCall[len(fake.getPeerArgsForCall)]
+	fake.getPeerArgsForCall = append(fake.getPeerArgsForCall, struct {
+		endpoint string
+	}{endpoint})
+	fake.recordInvocation("GetPeer", []interface{}{endpoint})
+	fake.getPeerMutex.Unlock()
+	if fake.GetPeerStub != nil {
+		return fake.GetPeerStub(endpoint)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.getPeerReturns.result1, fake.getPeerReturns.result2
+}
+
+func (fake *TxnService) GetPeerCallCount() int {
+	fake.getPeerMutex.RLock()
+	defer fake.getPeerMutex.RUnlock()
+	return len(fake.getPeerArgsForCall)
+}
+
+func (fake *TxnService) GetPeerArgsForCall(i int) string {
+	fake.getPeerMutex.RLock()
+	defer fake.getPeerMutex.RUnlock()
+	return fake.getPeerArgsForCall[i].endpoint
+}
+
+func (fake *TxnService) GetPeerReturns(result1 fab.Peer, result2 error) {
+	fake.GetPeerStub = nil
+	fake.getPeerReturns = struct {
+		result1 fab.Peer
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *TxnService) GetPeerReturnsOnCall(i int, result1 fab.Peer, result2 error) {
+	fake.GetPeerStub = nil
+	if fake.getPeerReturnsOnCall == nil {
+		fake.getPeerReturnsOnCall = make(map[int]struct {
+			result1 fab.Peer
+			result2 error
+		})
+	}
+	fake.getPeerReturnsOnCall[i] = struct {
+		result1 fab.Peer
 		result2 error
 	}{result1, result2}
 }
@@ -148,6 +341,12 @@ func (fake *TxnService) Invocations() map[string][][]interface{} {
 	defer fake.endorseMutex.RUnlock()
 	fake.endorseAndCommitMutex.RLock()
 	defer fake.endorseAndCommitMutex.RUnlock()
+	fake.commitEndorsementsMutex.RLock()
+	defer fake.commitEndorsementsMutex.RUnlock()
+	fake.signingIdentityMutex.RLock()
+	defer fake.signingIdentityMutex.RUnlock()
+	fake.getPeerMutex.RLock()
+	defer fake.getPeerMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
