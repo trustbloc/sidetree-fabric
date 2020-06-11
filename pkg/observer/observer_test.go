@@ -29,6 +29,7 @@ import (
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
+	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler/models"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
@@ -49,7 +50,7 @@ const (
 	peer3 = "peer3.org1.com"
 
 	txID1          = "tx1"
-	anchor1        = "1.anchor1"
+	anchor1        = "anchor1"
 	namespace      = "did:sidetree"
 	monitorPeriod  = 50 * time.Millisecond
 	sleepTime      = 200 * time.Millisecond
@@ -212,8 +213,13 @@ func TestObserver_Error(t *testing.T) {
 		MetaDataChaincodeName: metaDataCCName,
 	}
 
+	ad := txnhandler.AnchorData{
+		AnchorAddress:      anchor1,
+		NumberOfOperations: 1,
+	}
+
 	txn := common.TxnInfo{
-		AnchorString: anchor1,
+		AnchorString: ad.GetAnchorString(),
 		Namespace:    namespace,
 	}
 
@@ -489,8 +495,14 @@ func newMockClients(t *testing.T) *mockClients {
 		Height: 1003,
 	}
 
+	const numOfOps = 2
+	ad := &txnhandler.AnchorData{
+		AnchorAddress:      anchor1,
+		NumberOfOperations: numOfOps,
+	}
+
 	txn := common.TxnInfo{
-		AnchorString: anchor1,
+		AnchorString: ad.GetAnchorString(),
 		Namespace:    namespace,
 	}
 
@@ -505,7 +517,7 @@ func newMockClients(t *testing.T) *mockClients {
 	tb1.ChaincodeAction("some_other_cc").
 		Write("some_key", []byte("some value"))
 
-	ops, err := getTestOperations(2)
+	ops, err := getTestOperations(numOfOps)
 	require.NoError(t, err)
 
 	op1Bytes, err := json.Marshal(ops[0])
