@@ -55,7 +55,7 @@ func TestWriteAnchorError(t *testing.T) {
 	testErr := errors.New("channel error")
 
 	txnService := &stmocks.TxnService{}
-	txnService.EndorseAndCommitReturns(nil, testErr)
+	txnService.EndorseAndCommitReturns(nil, false, testErr)
 
 	txnProvider := &stmocks.TxnServiceProvider{}
 	txnProvider.ForChannelReturns(txnService, nil)
