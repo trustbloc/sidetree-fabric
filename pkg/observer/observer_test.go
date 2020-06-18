@@ -9,6 +9,7 @@ package observer
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"testing"
 	"time"
 
@@ -602,14 +603,22 @@ func getTestOperations(createOpsNum int) ([]*batch.Operation, error) {
 }
 
 func generateCreateOperations(num int) (*batch.Operation, error) {
+	testKey := &jws.JWK{
+		Crv: "crv",
+		Kty: "kty",
+		X:   "x",
+	}
+
+	c, err := commitment.Calculate(testKey, sha2_256)
+	if err != nil {
+		return nil, err
+	}
+
 	doc := fmt.Sprintf(`{"test":%d}`, num)
 	info := &helper.CreateRequestInfo{OpaqueDocument: doc,
-		RecoveryKey: &jws.JWK{
-			Crv: "crv",
-			Kty: "kty",
-			X:   "x",
-		},
-		MultihashCode: sha2_256}
+		RecoveryCommitment: c,
+		UpdateCommitment:   c,
+		MultihashCode:      sha2_256}
 
 	request, err := helper.NewCreateRequest(info)
 	if err != nil {

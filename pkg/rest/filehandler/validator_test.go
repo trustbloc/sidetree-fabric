@@ -162,13 +162,12 @@ func TestDocumentValidator_TransformDocument(t *testing.T) {
 		require.Equal(t, doc, transformed.Document)
 	})
 
-	t.Run("document with operation keys", func(t *testing.T) {
-		doc, err := document.FromBytes([]byte(validDocWithOpsKeysOnly))
+	t.Run("document with no keys", func(t *testing.T) {
+		doc, err := document.FromBytes([]byte(validDocNoKeys))
 		require.NoError(t, err)
 
 		result, err := v.TransformDocument(doc)
 		require.NoError(t, err)
-		require.Equal(t, 1, len(result.MethodMetadata.OperationPublicKeys))
 
 		jsonTransformed, err := json.Marshal(result.Document)
 		require.NoError(t, err)
@@ -177,20 +176,19 @@ func TestDocumentValidator_TransformDocument(t *testing.T) {
 		require.Equal(t, 0, len(didDoc.PublicKeys()))
 	})
 
-	t.Run("document with mixed operation and general keys", func(t *testing.T) {
+	t.Run("document with two general keys", func(t *testing.T) {
 		// most likely this scenario will not be used
-		doc, err := document.FromBytes([]byte(validDocWithMixedKeys))
+		doc, err := document.FromBytes([]byte(validDocWithKeys))
 		require.NoError(t, err)
 
 		result, err := v.TransformDocument(doc)
 		require.NoError(t, err)
-		require.Equal(t, 1, len(result.MethodMetadata.OperationPublicKeys))
 
 		jsonTransformed, err := json.Marshal(result.Document)
 		require.NoError(t, err)
 		didDoc, err := document.DidDocumentFromBytes(jsonTransformed)
 		require.NoError(t, err)
-		require.Equal(t, 1, len(didDoc.PublicKeys()))
+		require.Equal(t, 2, len(didDoc.PublicKeys()))
 	})
 }
 
@@ -297,22 +295,9 @@ func newJSONPatch(patches string) (patch.Patch, error) {
 	return p, nil
 }
 
-const validDocWithOpsKeysOnly = `
+const validDocNoKeys = `
 {
   "id" : "doc:method:abc",
-  "publicKey": [
-    {
-      "id": "update-key",
-      "type": "JwsVerificationKey2020",
-      "usage": ["ops"],
-      "jwk": {
-        "kty": "EC",
-        "crv": "P-256K",
-        "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
-        "y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
-      }
-    }
-  ],
   "other": [
     {
       "name": "name"
@@ -320,14 +305,15 @@ const validDocWithOpsKeysOnly = `
   ]
 }`
 
-const validDocWithMixedKeys = `
+// TODO: Revisit if keys are needed for generic documents
+const validDocWithKeys = `
 {
   "id" : "doc:method:abc",
   "publicKey": [
     {
-      "id": "update-key",
+      "id": "auth-key",
       "type": "JwsVerificationKey2020",
-      "usage": ["ops"],
+      "usage": ["general"],
       "jwk": {
         "kty": "EC",
         "crv": "P-256K",

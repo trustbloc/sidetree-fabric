@@ -97,17 +97,16 @@ func (v *Validator) TransformDocument(doc document.Document) (*document.Resoluti
 		MethodMetadata: document.MethodMetadata{},
 	}
 
-	processKeys(doc, resolutionResult)
+	processKeys(doc)
 
 	return resolutionResult, nil
 }
 
 // generic documents will most likely only contain operation keys
 // operation keys are not part of external document but resolution result
-func processKeys(internal document.Document, resolutionResult *document.ResolutionResult) {
-	var operationPublicKeys []document.PublicKey
+func processKeys(internal document.Document) {
+	var pubKeys []document.PublicKey
 
-	var nonOperationsKeys []document.PublicKey
 	for _, pk := range internal.PublicKeys() {
 		externalPK := make(document.PublicKey)
 		externalPK[document.IDProperty] = internal.ID() + "#" + pk.ID()
@@ -115,23 +114,16 @@ func processKeys(internal document.Document, resolutionResult *document.Resoluti
 		externalPK[document.ControllerProperty] = internal[document.IDProperty]
 		externalPK[document.PublicKeyJwkProperty] = pk.JWK()
 
-		usages := pk.Usage()
 		delete(pk, document.UsageProperty)
 
-		if document.IsOperationsKey(usages) {
-			operationPublicKeys = append(operationPublicKeys, externalPK)
-		} else {
-			nonOperationsKeys = append(nonOperationsKeys, externalPK)
-		}
+		pubKeys = append(pubKeys, externalPK)
 	}
 
-	if len(nonOperationsKeys) > 0 {
-		internal[document.PublicKeyProperty] = nonOperationsKeys
+	if len(pubKeys) > 0 {
+		internal[document.PublicKeyProperty] = pubKeys
 	} else {
 		delete(internal, document.PublicKeyProperty)
 	}
-
-	resolutionResult.MethodMetadata.OperationPublicKeys = operationPublicKeys
 }
 
 func validatePatch(p patch.Patch) error {

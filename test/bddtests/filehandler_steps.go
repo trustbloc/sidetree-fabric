@@ -44,8 +44,8 @@ type FileHandlerSteps struct {
 	httpSteps
 
 	bddContext        *bddtests.BDDContext
-	recoveryKeySigner helper.Signer
-	recoveryPublicKey *jws.JWK
+	recoveryKey   *ecdsa.PrivateKey
+	updateKey   *ecdsa.PrivateKey
 	updateKeySigner   helper.Signer
 	updatePublicKey   *jws.JWK
 }
@@ -140,26 +140,36 @@ func (d *httpSteps) httpGetWithRetryOnNotFound(url string) error {
 }
 
 func (d *FileHandlerSteps) getCreateRequest(doc []byte) ([]byte, error) {
-	if d.recoveryKeySigner == nil {
-		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if d.recoveryKey == nil {
+		recoveryKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		if err != nil {
 			return nil, err
 		}
 
-		d.recoveryKeySigner = ecsigner.New(privateKey, "ES256", "")
-
-		d.recoveryPublicKey, err = pubkey.GetPublicKeyJWK(&privateKey.PublicKey)
+		updateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		if err != nil {
 			return nil, err
 		}
+
+		d.recoveryKey = recoveryKey
+		d.updateKey = updateKey
+	}
+
+	recoveryCommitment, err := getCommitment(&d.recoveryKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	updateCommitment, err := getCommitment(&d.updateKey.PublicKey)
+	if err != nil {
+		return nil, err
 	}
 
 	return helper.NewCreateRequest(&helper.CreateRequestInfo{
-		OpaqueDocument:          string(doc),
-		RecoveryKey:             d.recoveryPublicKey,
-		NextRecoveryRevealValue: []byte(recoveryOTP),
-		NextUpdateRevealValue:   []byte(updateOTP),
-		MultihashCode:           sha2_256,
+		OpaqueDocument:     string(doc),
+		RecoveryCommitment: recoveryCommitment,
+		UpdateCommitment:   updateCommitment,
+		MultihashCode:      sha2_256,
 	})
 }
 
@@ -279,14 +289,34 @@ func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch strin
 		return nil, err
 	}
 
-	return helper.NewUpdateRequest(&helper.UpdateRequestInfo{
-		DidSuffix:             uniqueSuffix,
-		Patch:                 updatePatch,
-		UpdateRevealValue:     []byte(updateOTP),
-		NextUpdateRevealValue: []byte(updateOTP),
-		MultihashCode:         sha2_256,
-		Signer:                d.updateKeySigner,
+	updateKey, updateCommitment, err := generateKeyAndCommitment()
+	if err != nil {
+		return nil, err
+	}
+
+	// update key and signer passed in are generated during previous operations
+	updatePubKey, err := pubkey.GetPublicKeyJWK(&d.updateKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := helper.NewUpdateRequest(&helper.UpdateRequestInfo{
+		DidSuffix:        uniqueSuffix,
+		UpdateCommitment: updateCommitment,
+		UpdateKey:        updatePubKey,
+		Patch:            updatePatch,
+		MultihashCode:    sha2_256,
+		Signer:           ecsigner.New(d.updateKey, "ES256", "update-kid"),
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// update update key for subsequent update requests
+	d.updateKey = updateKey
+
+	return req, nil
 }
 
 func getFile(path string) []byte {
