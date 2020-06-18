@@ -114,7 +114,7 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 			&observer.Providers{
 				TxnOpsProvider:   txnhandler.NewOperationProvider(dcasReader, pcp, compressionProvider),
 				OpStoreProvider:  asObserverStoreProvider(opStoreProvider),
-				OpFilterProvider: operationfilter.NewProvider(channelID, opStoreProvider),
+				OpFilterProvider: operationfilter.NewProvider(channelID, opStoreProvider, pcp),
 			},
 		),
 		txnChan:     txnChan,

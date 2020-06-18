@@ -113,7 +113,7 @@ func newRESTHandlers(
 		protocolProvider.Protocol(),
 		getValidator(opStore),
 		batchWriter,
-		processor.New(channelID+"_"+cfg.Namespace, opStore),
+		processor.New(channelID+"_"+cfg.Namespace, opStore, protocolProvider.Protocol()),
 	)
 
 	service := newService(cfg.Namespace, apiVersion, cfg.BasePath)

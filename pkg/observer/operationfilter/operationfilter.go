@@ -9,7 +9,6 @@ package operationfilter
 import (
 	sidetreeobserver "github.com/trustbloc/sidetree-core-go/pkg/observer"
 	"github.com/trustbloc/sidetree-core-go/pkg/processor"
-
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 )
 
@@ -17,13 +16,15 @@ import (
 type Provider struct {
 	channelID       string
 	opStoreProvider common.OperationStoreProvider
+	pcp             common.ProtocolClientProvider
 }
 
 // NewProvider returns a new operation filter provider
-func NewProvider(channelID string, opStoreProvider common.OperationStoreProvider) *Provider {
+func NewProvider(channelID string, opStoreProvider common.OperationStoreProvider, pcp common.ProtocolClientProvider) *Provider {
 	return &Provider{
 		channelID:       channelID,
 		opStoreProvider: opStoreProvider,
+		pcp:             pcp,
 	}
 }
 
@@ -34,5 +35,10 @@ func (f *Provider) Get(namespace string) (sidetreeobserver.OperationFilter, erro
 		return nil, err
 	}
 
-	return processor.NewOperationFilter(f.channelID+"_"+namespace, opStore), nil
+	pc, err := f.pcp.ForNamespace(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return processor.NewOperationFilter(f.channelID+"_"+namespace, opStore, pc), nil
 }
