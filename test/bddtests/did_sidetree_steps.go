@@ -43,7 +43,7 @@ const (
 const addPublicKeysTemplate = `[{
       "id": "%s",
       "type": "JwsVerificationKey2020",
-      "usage": ["general"],
+      "purpose": ["general"],
       "jwk": {
         	"kty": "EC",
         	"crv": "P-256K",
@@ -59,7 +59,7 @@ const addServicesTemplate = `[
     {
        	"id": "%s",
        	"type": "SecureDataStore",
-		"serviceEndpoint": "http://hub.my-personal-server.com"
+		"endpoint": "http://hub.my-personal-server.com"
     }
   ]`
 
@@ -70,13 +70,13 @@ const docTemplate = `{
    {
      "id": "%s",
      "type": "JwsVerificationKey2020",
-     "usage": ["auth", "general"],
+     "purpose": ["auth", "general"],
      "jwk": %s
    },
    {
      "id": "dual-assertion-gen",
      "type": "Ed25519VerificationKey2018",
-     "usage": ["assertion", "general"],
+     "purpose": ["assertion", "general"],
      "jwk": %s
    }
   ],
@@ -84,12 +84,12 @@ const docTemplate = `{
 	{
 	   "id": "oidc",
 	   "type": "OpenIdConnectVersion1.0Service",
-	   "serviceEndpoint": "https://openid.example.com/"
+	   "endpoint": "https://openid.example.com/"
 	}, 
 	{
 	   "id": "hub",
 	   "type": "HubService",
-	   "serviceEndpoint": "https://hub.example.com/.identity/did:example:0123456789abcdef/"
+	   "endpoint": "https://hub.example.com/.identity/did:example:0123456789abcdef/"
 	}
   ]
 }`

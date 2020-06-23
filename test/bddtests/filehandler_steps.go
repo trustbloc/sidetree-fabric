@@ -34,7 +34,7 @@ const publicKeyTemplate = `[
 	{
   		"id": "%s",
   		"type": "JwsVerificationKey2020",
-		"usage": ["ops"],
+		"purpose": ["ops"],
   		"jwk": %s
 	}
   ]`

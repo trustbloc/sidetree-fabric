@@ -313,7 +313,7 @@ const validDocWithKeys = `
     {
       "id": "auth-key",
       "type": "JwsVerificationKey2020",
-      "usage": ["general"],
+      "purpose": ["general"],
       "jwk": {
         "kty": "EC",
         "crv": "P-256K",
@@ -324,7 +324,7 @@ const validDocWithKeys = `
     {
       "id": "general-key",
       "type": "JwsVerificationKey2020",
-      "usage": ["general"],
+      "purpose": ["general"],
       "jwk": {
         "kty": "EC",
         "crv": "P-256K",
