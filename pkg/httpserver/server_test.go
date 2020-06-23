@@ -313,7 +313,7 @@ const validDoc = `{
 	"publicKey": [{
       	"id": "dual-key",
       	"type": "JwsVerificationKey2020",
-      	"usage": ["auth", "general"],
+      	"purpose": ["auth", "general"],
       	"jwk": {
         	"kty": "EC",
         	"crv": "P-256K",
