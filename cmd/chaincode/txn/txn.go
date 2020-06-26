@@ -28,7 +28,6 @@ const (
 	writeContent = "writeContent"
 	readContent  = "readContent"
 	writeAnchor  = "writeAnchor"
-	anchorBatch  = "anchorBatch"
 	warmup       = "warmup"
 )
 
@@ -51,7 +50,6 @@ func New(name string) *SidetreeTxnCC {
 	cc.functions[writeContent] = cc.write
 	cc.functions[readContent] = cc.read
 	cc.functions[writeAnchor] = cc.writeAnchor
-	cc.functions[anchorBatch] = cc.anchorBatch
 	cc.functions[warmup] = cc.warmup
 
 	return cc
@@ -152,46 +150,6 @@ func (cc *SidetreeTxnCC) read(stub shim.ChaincodeStubInterface, args [][]byte) p
 	}
 
 	return shim.Success(payload)
-}
-
-// anchorBatch will store batch and anchor files using cas client and
-// record anchor file address on the ledger in one call
-func (cc *SidetreeTxnCC) anchorBatch(stub shim.ChaincodeStubInterface, args [][]byte) pb.Response {
-	txID := stub.GetTxID()
-
-	if len(args) != 3 || len(args[0]) == 0 || len(args[1]) == 0 || len(args[2]) == 0 {
-		errMsg := "collection, batch, and anchor files are required"
-		logger.Debugf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	client := cas.New(stub, string(args[0]))
-
-	// write batch file
-	_, err := client.Write(args[1])
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to write batch content: %s", err.Error())
-		logger.Errorf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	// write anchor file
-	anchorAddr, err := client.Write(args[2])
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to write anchor content: %s", err.Error())
-		logger.Errorf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	// record anchor file address on the ledger (Sidetree Transaction)
-	err = stub.PutState(common.AnchorPrefix+anchorAddr, []byte(anchorAddr))
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to write anchor address: %s", err.Error())
-		logger.Errorf("[txID %s] %s", txID, errMsg)
-		return shim.Error(errMsg)
-	}
-
-	return shim.Success(nil)
 }
 
 // writeAnchor will record anchor info on the ledger
