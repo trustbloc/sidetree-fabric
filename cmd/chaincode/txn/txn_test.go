@@ -167,57 +167,6 @@ func TestWriteAnchor_CheckRequiredArguments(t *testing.T) {
 	require.Contains(t, err.Error(), "missing anchor string and/or txn info")
 }
 
-func TestAnchorBatch(t *testing.T) {
-
-	stub := prepareStub()
-
-	batch := []byte("Ops")
-	anchor := []byte("anchor")
-	payload, err := invoke(stub, [][]byte{[]byte(anchorBatch), []byte(coll1), batch, anchor})
-	require.Nil(t, err)
-	require.Nil(t, payload)
-
-	result, err := stub.GetState(common.AnchorPrefix + encodedSHA256Hash(anchor))
-	require.Nil(t, err)
-	require.Equal(t, string(result), encodedSHA256Hash(anchor))
-
-}
-
-func TestAnchorBatch_CASClientError(t *testing.T) {
-
-	stub := prepareStub()
-	stub.PutPrivateErr = fmt.Errorf("write error")
-
-	payload, err := invoke(stub, [][]byte{[]byte(anchorBatch), []byte(coll1), []byte("Ops"), []byte("anchor")})
-	require.NotNil(t, err)
-	require.Nil(t, payload)
-	require.Contains(t, err.Error(), "write error")
-}
-
-func TestAnchorBatch_PutStateError(t *testing.T) {
-
-	stub := prepareStub()
-	stub.MockStub.TxID = ""
-
-	res := stub.MockInvoke("", [][]byte{[]byte(anchorBatch), []byte(coll1), []byte("Ops"), []byte("anchor")})
-	require.NotEqual(t, res.Status, shim.OK)
-}
-
-func TestAnchorBatch_MissingRequiredParameters(t *testing.T) {
-
-	stub := prepareStub()
-
-	payload, err := invoke(stub, [][]byte{[]byte(anchorBatch), []byte(coll1), []byte("")})
-	require.NotNil(t, err)
-	require.Nil(t, payload)
-	require.Contains(t, err.Error(), "collection, batch, and anchor files are required")
-
-	payload, err = invoke(stub, [][]byte{[]byte(anchorBatch), []byte(coll1), []byte("Ops"), []byte("")})
-	require.NotNil(t, err)
-	require.Nil(t, payload)
-	require.Contains(t, err.Error(), "collection, batch, and anchor files are required")
-}
-
 func TestWarmup(t *testing.T) {
 
 	stub := prepareStub()
