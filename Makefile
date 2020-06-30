@@ -26,7 +26,7 @@ ALPINE_VER ?= 3.10
 DBUILD_CMD ?= docker build
 
 # defined in github.com/hyperledger/fabric/common/metadata/metadata.go
-FABRIC_METADATA_VAR = Version=2.0.0
+FABRIC_METADATA_VAR = Version=2.1.1
 
 # Build flags
 GO_TAGS    ?=
