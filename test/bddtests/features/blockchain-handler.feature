@@ -50,7 +50,7 @@ Feature:
 
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/version"
     Then the JSON path "name" of the response equals "Hyperledger Fabric"
-    And the JSON path "version" of the response equals "2.0.0"
+    And the JSON path "version" of the response equals "2.1.1"
 
     Given variable "peer0.org1" is assigned the value "https://localhost:48326/sidetree/0.0.1"
     And variable "peer1.org1" is assigned the value "https://localhost:48327/sidetree/0.0.1"
@@ -150,7 +150,7 @@ Feature:
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the response equals "${time_0}"
     And the JSON path "1.header.previous_hash" of the response is saved to variable "previous-hash"
-    And the JSON path "1.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.2.rwset.writes.0.value" of the response is saved to variable "txn-info"
+    And the JSON path "1.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.1.rwset.writes.0.value" of the response is saved to variable "txn-info"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${txn-info}" is decoded and saved to variable "url-encoded-txn-info"
     And anchor address is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-anchor-address"
@@ -167,7 +167,7 @@ Feature:
 
     # Retrieve the anchor file from the current block hash
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${latest-hash}"
-    Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.2.rwset.writes.0.value" of the response is saved to variable "txn-info"
+    Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.1.rwset.writes.0.value" of the response is saved to variable "txn-info"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${txn-info}" is decoded and saved to variable "url-encoded-txn-info"
     And anchor address is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-anchor-address"
@@ -179,7 +179,7 @@ Feature:
 
     # Retrieve the anchor file from the previous block hash
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${latest-previous-hash}"
-    Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.2.rwset.writes.0.value" of the response is saved to variable "txn-info"
+    Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.1.rwset.writes.0.value" of the response is saved to variable "txn-info"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${txn-info}" is decoded and saved to variable "url-encoded-txn-info"
     And anchor address is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-anchor-address"

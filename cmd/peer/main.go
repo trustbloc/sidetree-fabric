@@ -10,8 +10,10 @@ import (
 	"strings"
 
 	"github.com/hyperledger/fabric/peer/node"
+	"github.com/spf13/cobra"
 	viper "github.com/spf13/viper2015"
 	extpeer "github.com/trustbloc/fabric-peer-ext/pkg/peer"
+
 	sidetreepeer "github.com/trustbloc/sidetree-fabric/pkg/peer"
 )
 
@@ -33,7 +35,7 @@ func setup() {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(replacer)
 
-	node.InitCmd(nil, nil)
+	node.InitCmd(&cobra.Command{}, nil)
 }
 
 func startPeer() error {

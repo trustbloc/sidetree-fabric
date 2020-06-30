@@ -4,6 +4,7 @@ package mocks
 import (
 	"sync"
 
+	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
 	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	"github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
@@ -75,6 +76,31 @@ type TxnService struct {
 	}
 	getPeerReturnsOnCall map[int]struct {
 		result1 fab.Peer
+		result2 error
+	}
+	VerifyProposalSignatureStub        func(signedProposal *pb.SignedProposal) error
+	verifyProposalSignatureMutex       sync.RWMutex
+	verifyProposalSignatureArgsForCall []struct {
+		signedProposal *pb.SignedProposal
+	}
+	verifyProposalSignatureReturns struct {
+		result1 error
+	}
+	verifyProposalSignatureReturnsOnCall map[int]struct {
+		result1 error
+	}
+	ValidateProposalResponsesStub        func(signedProposal *pb.SignedProposal, proposalResponses []*pb.ProposalResponse) (pb.TxValidationCode, error)
+	validateProposalResponsesMutex       sync.RWMutex
+	validateProposalResponsesArgsForCall []struct {
+		signedProposal    *pb.SignedProposal
+		proposalResponses []*pb.ProposalResponse
+	}
+	validateProposalResponsesReturns struct {
+		result1 pb.TxValidationCode
+		result2 error
+	}
+	validateProposalResponsesReturnsOnCall map[int]struct {
+		result1 pb.TxValidationCode
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -334,6 +360,111 @@ func (fake *TxnService) GetPeerReturnsOnCall(i int, result1 fab.Peer, result2 er
 	}{result1, result2}
 }
 
+func (fake *TxnService) VerifyProposalSignature(signedProposal *pb.SignedProposal) error {
+	fake.verifyProposalSignatureMutex.Lock()
+	ret, specificReturn := fake.verifyProposalSignatureReturnsOnCall[len(fake.verifyProposalSignatureArgsForCall)]
+	fake.verifyProposalSignatureArgsForCall = append(fake.verifyProposalSignatureArgsForCall, struct {
+		signedProposal *pb.SignedProposal
+	}{signedProposal})
+	fake.recordInvocation("VerifyProposalSignature", []interface{}{signedProposal})
+	fake.verifyProposalSignatureMutex.Unlock()
+	if fake.VerifyProposalSignatureStub != nil {
+		return fake.VerifyProposalSignatureStub(signedProposal)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.verifyProposalSignatureReturns.result1
+}
+
+func (fake *TxnService) VerifyProposalSignatureCallCount() int {
+	fake.verifyProposalSignatureMutex.RLock()
+	defer fake.verifyProposalSignatureMutex.RUnlock()
+	return len(fake.verifyProposalSignatureArgsForCall)
+}
+
+func (fake *TxnService) VerifyProposalSignatureArgsForCall(i int) *pb.SignedProposal {
+	fake.verifyProposalSignatureMutex.RLock()
+	defer fake.verifyProposalSignatureMutex.RUnlock()
+	return fake.verifyProposalSignatureArgsForCall[i].signedProposal
+}
+
+func (fake *TxnService) VerifyProposalSignatureReturns(result1 error) {
+	fake.VerifyProposalSignatureStub = nil
+	fake.verifyProposalSignatureReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *TxnService) VerifyProposalSignatureReturnsOnCall(i int, result1 error) {
+	fake.VerifyProposalSignatureStub = nil
+	if fake.verifyProposalSignatureReturnsOnCall == nil {
+		fake.verifyProposalSignatureReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.verifyProposalSignatureReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *TxnService) ValidateProposalResponses(signedProposal *pb.SignedProposal, proposalResponses []*pb.ProposalResponse) (pb.TxValidationCode, error) {
+	var proposalResponsesCopy []*pb.ProposalResponse
+	if proposalResponses != nil {
+		proposalResponsesCopy = make([]*pb.ProposalResponse, len(proposalResponses))
+		copy(proposalResponsesCopy, proposalResponses)
+	}
+	fake.validateProposalResponsesMutex.Lock()
+	ret, specificReturn := fake.validateProposalResponsesReturnsOnCall[len(fake.validateProposalResponsesArgsForCall)]
+	fake.validateProposalResponsesArgsForCall = append(fake.validateProposalResponsesArgsForCall, struct {
+		signedProposal    *pb.SignedProposal
+		proposalResponses []*pb.ProposalResponse
+	}{signedProposal, proposalResponsesCopy})
+	fake.recordInvocation("ValidateProposalResponses", []interface{}{signedProposal, proposalResponsesCopy})
+	fake.validateProposalResponsesMutex.Unlock()
+	if fake.ValidateProposalResponsesStub != nil {
+		return fake.ValidateProposalResponsesStub(signedProposal, proposalResponses)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.validateProposalResponsesReturns.result1, fake.validateProposalResponsesReturns.result2
+}
+
+func (fake *TxnService) ValidateProposalResponsesCallCount() int {
+	fake.validateProposalResponsesMutex.RLock()
+	defer fake.validateProposalResponsesMutex.RUnlock()
+	return len(fake.validateProposalResponsesArgsForCall)
+}
+
+func (fake *TxnService) ValidateProposalResponsesArgsForCall(i int) (*pb.SignedProposal, []*pb.ProposalResponse) {
+	fake.validateProposalResponsesMutex.RLock()
+	defer fake.validateProposalResponsesMutex.RUnlock()
+	return fake.validateProposalResponsesArgsForCall[i].signedProposal, fake.validateProposalResponsesArgsForCall[i].proposalResponses
+}
+
+func (fake *TxnService) ValidateProposalResponsesReturns(result1 pb.TxValidationCode, result2 error) {
+	fake.ValidateProposalResponsesStub = nil
+	fake.validateProposalResponsesReturns = struct {
+		result1 pb.TxValidationCode
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *TxnService) ValidateProposalResponsesReturnsOnCall(i int, result1 pb.TxValidationCode, result2 error) {
+	fake.ValidateProposalResponsesStub = nil
+	if fake.validateProposalResponsesReturnsOnCall == nil {
+		fake.validateProposalResponsesReturnsOnCall = make(map[int]struct {
+			result1 pb.TxValidationCode
+			result2 error
+		})
+	}
+	fake.validateProposalResponsesReturnsOnCall[i] = struct {
+		result1 pb.TxValidationCode
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *TxnService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -347,6 +478,10 @@ func (fake *TxnService) Invocations() map[string][][]interface{} {
 	defer fake.signingIdentityMutex.RUnlock()
 	fake.getPeerMutex.RLock()
 	defer fake.getPeerMutex.RUnlock()
+	fake.verifyProposalSignatureMutex.RLock()
+	defer fake.verifyProposalSignatureMutex.RUnlock()
+	fake.validateProposalResponsesMutex.RLock()
+	defer fake.validateProposalResponsesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
