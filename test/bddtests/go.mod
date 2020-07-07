@@ -11,7 +11,7 @@ require (
 	github.com/sirupsen/logrus v1.3.0
 	github.com/spf13/viper v1.3.2
 	github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200625144512-dcb0ca18d43d
-	github.com/trustbloc/sidetree-core-go v0.1.4-0.20200624222705-2d864f12d04e
+	github.com/trustbloc/sidetree-core-go v0.1.4-0.20200702215916-b02022f5ec37
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
 )
 
