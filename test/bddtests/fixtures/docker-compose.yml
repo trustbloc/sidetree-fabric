@@ -183,4 +183,4 @@ services:
 
   # builder is only here to create a dependency on the image (not used as part of compose)
   builder:
-    image: ${TRUSTBLOCK_NS}/${FABRIC_BUILDER_FIXTURE_IMAGE}:${ARCH}-${FABRIC_BUILDER_FIXTURE_TAG}
+    image: ${FABRIC_NS}/${FABRIC_BUILDER_FIXTURE_IMAGE}:${ARCH}-${FABRIC_BUILDER_FIXTURE_TAG}

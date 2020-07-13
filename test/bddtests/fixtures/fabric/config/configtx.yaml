@@ -224,11 +224,52 @@ Orderer: &OrdererDefaults
     # network. When set to 0, this implies no maximum number of channels.
     MaxChannels: 0
 
-    Kafka:
-        # Brokers: A list of Kafka brokers to which the orderer connects
-        # NOTE: Use IP:port notation
-        Brokers:
-            - 127.0.0.1:9092
+    # EtcdRaft defines configuration which must be set when the "etcdraft"
+    # orderertype is chosen.
+    EtcdRaft:
+        # The set of Raft replicas for this network. For the etcd/raft-based
+        # implementation, we expect every replica to also be an OSN. Therefore,
+        # a subset of the host:port items enumerated in this list should be
+        # replicated under the Orderer.Addresses key above.
+        Consenters:
+            - Host: raft0.example.com
+              Port: 7050
+              ClientTLSCert: path/to/ClientTLSCert0
+              ServerTLSCert: path/to/ServerTLSCert0
+            - Host: raft1.example.com
+              Port: 7050
+              ClientTLSCert: path/to/ClientTLSCert1
+              ServerTLSCert: path/to/ServerTLSCert1
+            - Host: raft2.example.com
+              Port: 7050
+              ClientTLSCert: path/to/ClientTLSCert2
+              ServerTLSCert: path/to/ServerTLSCert2
+
+        # Options to be specified for all the etcd/raft nodes. The values here
+        # are the defaults for all new channels and can be modified on a
+        # per-channel basis via configuration updates.
+        Options:
+            # TickInterval is the time interval between two Node.Tick invocations.
+            TickInterval: 500ms
+
+            # ElectionTick is the number of Node.Tick invocations that must pass
+            # between elections. That is, if a follower does not receive any
+            # message from the leader of current term before ElectionTick has
+            # elapsed, it will become candidate and start an election.
+            # ElectionTick must be greater than HeartbeatTick.
+            ElectionTick: 10
+
+            # HeartbeatTick is the number of Node.Tick invocations that must
+            # pass between heartbeats. That is, a leader sends heartbeat
+            # messages to maintain its leadership every HeartbeatTick ticks.
+            HeartbeatTick: 1
+
+            # MaxInflightBlocks limits the max number of in-flight append messages
+            # during optimistic replication phase.
+            MaxInflightBlocks: 5
+
+            # SnapshotIntervalSize defines number of bytes per which a snapshot is taken
+            SnapshotIntervalSize: 16 MB
 
     # Organizations is the list of orgs which are defined as participants on
     # the orderer side of the network
@@ -281,6 +322,9 @@ Application: &ApplicationDefaults
 
         #---New Lifecycle System Chaincode (_lifecycle) function to policy mapping for access control--#
 
+        # ACL policy for _lifecycle's "CheckCommitReadiness" function
+        _lifecycle/CheckCommitReadiness: /Channel/Application/Writers
+
         # ACL policy for _lifecycle's "CommitChaincodeDefinition" function
         _lifecycle/CommitChaincodeDefinition: /Channel/Application/Writers
 
@@ -300,6 +344,9 @@ Application: &ApplicationDefaults
 
         #ACL policy for lscc's "getccdata" function
         lscc/GetChaincodeData: /Channel/Application/Readers
+
+        # ACL Policy for lscc's "getchaincodes" function
+        lscc/GetInstantiatedChaincodes: /Channel/Application/Readers
 
         #---Query System Chaincode (qscc) function to policy mapping for access control---#
 
@@ -327,12 +374,12 @@ Application: &ApplicationDefaults
         cscc/GetConfigTree: /Channel/Application/Readers
 
         #ACL policy for cscc's "SimulateConfigTreeUpdate" function
-        cscc/SimulateConfigTreeUpdate: /Channel/Application/Writers
+        cscc/SimulateConfigTreeUpdate: /Channel/Application/Readers
 
         #---Miscellanesous peer function to policy mapping for access control---#
 
         #ACL policy for invoking chaincodes on peer
-        peer/Proposal: /Channel/Application/Writers
+        peer/Propose: /Channel/Application/Writers
 
         #ACL policy for chaincode to chaincode invocation
         peer/ChaincodeToChaincode: /Channel/Application/Readers

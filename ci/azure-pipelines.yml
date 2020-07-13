@@ -9,13 +9,13 @@ pr:
   - master
 
 variables:
-  GO_VERSION: 1.13
+  GO_VERSION: 1.14.4
   GOPATH: $(Agent.BuildDirectory)/go
 
 jobs:
   - job: UnitTest
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-18.04
     timeoutInMinutes: 30
     steps:
     - template: azp-dependencies.yml
@@ -29,7 +29,7 @@ jobs:
 
   - job: BDDTest
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-18.04
     strategy:
       parallel: 4
     timeoutInMinutes: 30
@@ -45,7 +45,7 @@ jobs:
       - BDDTest
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-18.04
     timeoutInMinutes: 30
     steps:
       - template: azp-dependencies.yml

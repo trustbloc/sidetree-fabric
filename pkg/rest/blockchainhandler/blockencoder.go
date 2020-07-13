@@ -12,8 +12,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/hyperledger/fabric-config/protolator"
 	cb "github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric/common/tools/protolator"
 	"github.com/pkg/errors"
 )
 
