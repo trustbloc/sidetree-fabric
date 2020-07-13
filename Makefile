@@ -22,11 +22,11 @@
 # Tool commands (overridable)
 DOCKER_CMD ?= docker
 GO_CMD     ?= go
-ALPINE_VER ?= 3.10
+ALPINE_VER ?= 3.12
 DBUILD_CMD ?= docker build
 
 # defined in github.com/hyperledger/fabric/common/metadata/metadata.go
-FABRIC_METADATA_VAR = Version=2.1.1
+FABRIC_METADATA_VAR = Version=2.2.0
 
 # Build flags
 GO_TAGS    ?=
@@ -37,7 +37,7 @@ PROJECT_NAME       = sidetree-fabric
 CONTAINER_IDS      = $(shell docker ps -a -q)
 DEV_IMAGES         = $(shell docker images dev-* -q)
 ARCH               = $(shell go env GOARCH)
-GO_VER             = 1.13.4
+GO_VER             = 1.14.4
 export GO111MODULE = on
 
 # Fabric tools docker image (overridable)
@@ -95,7 +95,7 @@ populate-fixtures:
 	@scripts/populate-fixtures.sh -f
 
 
-bddtests: populate-fixtures docker-thirdparty fabric-peer-docker build-cc fabric-cli
+bddtests: clean populate-fixtures docker-thirdparty fabric-peer-docker build-cc fabric-cli
 	@scripts/integration.sh
 
 
