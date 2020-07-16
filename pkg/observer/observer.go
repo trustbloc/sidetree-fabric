@@ -289,7 +289,7 @@ func (m *Observer) processBlock(bNum uint64, changeLeaseOwner bool, metadata *Me
 
 	err = blockvisitor.New(m.channelID,
 		blockvisitor.WithWriteHandler(m.writeHandler(metadata)),
-		blockvisitor.WithErrorHandler(m.errorHandler(metadata))).Visit(block)
+		blockvisitor.WithErrorHandler(m.errorHandler(metadata))).Visit(block, nil)
 	if err != nil {
 		return err
 	}

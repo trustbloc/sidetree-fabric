@@ -118,8 +118,8 @@ fabric-peer-docker:
 	--build-arg GO_TAGS="$(GO_TAGS)" .
 
 docker-thirdparty:
-	docker pull couchdb:2.3
-	docker pull hyperledger/fabric-orderer:$(ARCH)-2.0.0
+	docker pull couchdb:3.1
+	docker pull hyperledger/fabric-orderer:$(ARCH)-2.2.0
 
 build-cc:
 	@echo "Building cc"

@@ -70,7 +70,7 @@ func (h *txnBlockScanner) scan() ([]Transaction, bool, error) {
 		blockvisitor.WithErrorHandler(h.handleError),
 	)
 
-	err := visitor.Visit(h.block)
+	err := visitor.Visit(h.block, nil)
 	if err != nil {
 		if errors.Cause(err) == errReachedMaxTxns {
 			return h.transactions, true, nil

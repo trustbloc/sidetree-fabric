@@ -672,7 +672,7 @@ ledger:
         # cache. Note that CacheSize needs to be a multiple of 32 MB. If it is not a multiple
         # of 32 MB, the peer would round the size to the next multiple of 32 MB.
         # To disable the cache, 0 MB needs to be assigned to the cacheSize.
-       cacheSize: 0
+       cacheSize: 64
 
   history:
     # enableHistoryDatabase - options are true or false

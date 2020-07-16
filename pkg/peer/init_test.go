@@ -199,7 +199,7 @@ func TestInitialize(t *testing.T) {
 		blockBuilder.Transaction(tx2, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
 			Write(peerCfgKeyBytes, peerSidetreeCfgValueBytes)
-		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build())
+		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build(), nil)
 
 		time.Sleep(200 * time.Millisecond)
 
@@ -219,7 +219,7 @@ func TestInitialize(t *testing.T) {
 			Write(peerCfgKeyBytes, peerSidetreeCfgValueBytes).
 			Write(peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
 			Write(peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes)
-		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build())
+		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build(), nil)
 
 		time.Sleep(200 * time.Millisecond)
 
@@ -237,7 +237,7 @@ func TestInitialize(t *testing.T) {
 		blockBuilder.Transaction(tx3, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
 			Write(didTrustblocCfgKeyBytes, didTrustblocCfgUpdateValueBytes)
-		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build())
+		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build(), nil)
 
 		time.Sleep(200 * time.Millisecond)
 
@@ -259,7 +259,7 @@ func TestInitialize(t *testing.T) {
 		blockBuilder.Transaction(tx4, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
 			Write(someCfgKeyBytes, someCfgValueBytes)
-		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build())
+		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build(), nil)
 
 		time.Sleep(200 * time.Millisecond)
 
@@ -277,7 +277,7 @@ func TestInitialize(t *testing.T) {
 		blockBuilder.Transaction(tx5, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
 			Write(peerCfgKeyBytes, peerTrustblocCfgValueBytes)
-		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build())
+		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build(), nil)
 
 		time.Sleep(200 * time.Millisecond)
 
@@ -296,7 +296,7 @@ func TestInitialize(t *testing.T) {
 		blockBuilder.Transaction(tx6, pb.TxValidationCode_VALID).
 			ChaincodeAction(configSCC).
 			Write(peerCfgKeyBytes, peerNoneCfgValueBytes)
-		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build())
+		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build(), nil)
 
 		time.Sleep(200 * time.Millisecond)
 

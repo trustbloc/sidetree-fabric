@@ -105,7 +105,7 @@ func (v *txnValidator) isValid() (bool, error) {
 		blockvisitor.WithErrorHandler(v.handleError),
 	)
 
-	err = visitor.Visit(block)
+	err = visitor.Visit(block, nil)
 	if err != nil {
 		if errors.Cause(err) == errFoundValid {
 			return true, nil
