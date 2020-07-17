@@ -20,7 +20,7 @@ require (
 	github.com/hyperledger/fabric-sdk-go v1.0.0-beta2
 	github.com/hyperledger/fabric/extensions v0.0.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/procfs v0.0.5 // indirect
 	github.com/rs/cors v1.7.0
 	github.com/spf13/viper v1.7.0
@@ -28,7 +28,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/syndtr/goleveldb v1.0.1-0.20190625010220-02440ea7a285
 	github.com/trustbloc/fabric-peer-ext v0.0.0
-	github.com/trustbloc/sidetree-core-go v0.1.4-0.20200702215916-b02022f5ec37
+	github.com/trustbloc/sidetree-core-go v0.1.4-0.20200716225314-628015571e41
 )
 
 replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.4-0.20200716181456-0f6536be4fe2

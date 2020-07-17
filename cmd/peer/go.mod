@@ -6,7 +6,7 @@ module github.com/trustbloc/sidetree-fabric/cmd/peer
 
 require (
 	github.com/hyperledger/fabric v2.0.0+incompatible
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper2015 v1.3.2
 	github.com/trustbloc/fabric-peer-ext v0.0.0
 	github.com/trustbloc/sidetree-fabric v0.0.0
