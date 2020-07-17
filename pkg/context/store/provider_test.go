@@ -53,7 +53,7 @@ func TestProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, ops, 1)
 
-		require.NoError(t, s.Put([]*batch.Operation{{Type: "create"}}))
+		require.NoError(t, s.Put([]*batch.AnchoredOperation{{Type: "create"}}))
 	})
 
 	t.Run("DCAS error", func(t *testing.T) {

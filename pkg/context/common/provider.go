@@ -21,8 +21,8 @@ type DCASClientProvider interface {
 
 // OperationStore interface to access operation store
 type OperationStore interface {
-	Get(suffix string) ([]*batch.Operation, error)
-	Put(ops []*batch.Operation) error
+	Get(suffix string) ([]*batch.AnchoredOperation, error)
+	Put(ops []*batch.AnchoredOperation) error
 }
 
 // OperationStoreProvider returns an operation store for the given namespace
