@@ -19,13 +19,11 @@ import (
 	commonledger "github.com/hyperledger/fabric/common/ledger"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
-
 	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 )
 
 const (
-	queryByIDTemplate = `{"selector":{"id":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["id","operationBuffer","updateRevealValue","recoveryRevealValue","operationIndex","delta","encodedDelta","signedData","suffixData","transactionNumber","transactionTime","type","uniqueSuffix"]}`
+	queryByUniqueSuffixTemplate = `{"selector":{"uniqueSuffix":"%s"},"use_index":["_design/indexIDDoc","indexID"],"fields":["uniqueSuffix","type","encodedDelta","signedData","encodedSuffixData","transactionTime","transactionNumber","operationIndex"]}`
 )
 
 var logger = flogging.MustGetLogger("sidetree_context")
@@ -52,12 +50,10 @@ func NewClient(channelID, namespace string, s store) *Client {
 }
 
 // Get retrieves all document operations for specified document ID
-func (c *Client) Get(uniqueSuffix string) ([]*batch.Operation, error) {
-	id := c.namespace + docutil.NamespaceDelimiter + uniqueSuffix
+func (c *Client) Get(uniqueSuffix string) ([]*batch.AnchoredOperation, error) {
+	logger.Debugf("[%s-%s] Querying for operations for ID [%s]", c.channelID, c.namespace, uniqueSuffix)
 
-	logger.Debugf("[%s-%s] Querying for operations for ID [%s]", c.channelID, c.namespace, id)
-
-	iter, err := c.store.Query(fmt.Sprintf(queryByIDTemplate, id))
+	iter, err := c.store.Query(fmt.Sprintf(queryByUniqueSuffixTemplate, uniqueSuffix))
 	if err != nil {
 		return nil, transienterr.New(errors.Wrap(err, "failed to query document operations"), transienterr.CodeDB)
 	}
@@ -76,17 +72,17 @@ func (c *Client) Get(uniqueSuffix string) ([]*batch.Operation, error) {
 	}
 
 	if len(ops) == 0 {
-		logger.Debugf("[%s-%s] No operations found for ID [%s]", c.channelID, c.namespace, id)
+		logger.Debugf("[%s-%s] No operations found for ID [%s]", c.channelID, c.namespace, uniqueSuffix)
 		return nil, errors.New("uniqueSuffix not found in the store")
 	}
 
-	logger.Debugf("[%s-%s] Found operations for ID [%s]: %s", c.channelID, c.namespace, id, ops)
+	logger.Debugf("[%s-%s] Found operations for ID [%s]: %s", c.channelID, c.namespace, uniqueSuffix, ops)
 
 	return getOperations(ops)
 }
 
 // Put stores an operation
-func (c *Client) Put(ops []*batch.Operation) error {
+func (c *Client) Put(ops []*batch.AnchoredOperation) error {
 	for _, op := range ops {
 		bytes, err := json.Marshal(op)
 		if err != nil {
@@ -104,10 +100,10 @@ func (c *Client) Put(ops []*batch.Operation) error {
 	return nil
 }
 
-func getOperations(ops [][]byte) ([]*batch.Operation, error) {
-	var operations []*batch.Operation
+func getOperations(ops [][]byte) ([]*batch.AnchoredOperation, error) {
+	var operations []*batch.AnchoredOperation
 	for _, opBytes := range ops {
-		var op batch.Operation
+		var op batch.AnchoredOperation
 		if err := json.Unmarshal(opBytes, &op); err != nil {
 			return nil, errors.Wrapf(err, "failed to unmarshal operation")
 		}
@@ -117,7 +113,7 @@ func getOperations(ops [][]byte) ([]*batch.Operation, error) {
 	return sortChronologically(operations), nil
 }
 
-func sortChronologically(operations []*batch.Operation) []*batch.Operation {
+func sortChronologically(operations []*batch.AnchoredOperation) []*batch.AnchoredOperation {
 	if len(operations) <= 1 {
 		return operations
 	}

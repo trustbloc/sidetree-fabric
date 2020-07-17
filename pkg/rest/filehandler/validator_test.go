@@ -99,7 +99,7 @@ func TestDocumentValidator_IsValidOriginalDocument(t *testing.T) {
 
 func TestDocumentValidator_IsValidPayload(t *testing.T) {
 	s := &mocks.OperationStore{}
-	s.GetReturns([]*batch.Operation{{}}, nil)
+	s.GetReturns([]*batch.AnchoredOperation{{}}, nil)
 
 	v := NewValidator(s)
 	require.NotNil(t, v)

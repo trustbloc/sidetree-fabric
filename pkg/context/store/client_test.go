@@ -84,7 +84,7 @@ func TestClient_Put(t *testing.T) {
 		s := &mocks.Store{}
 		c := NewClient(chID, namespace, s)
 
-		require.NoError(t, c.Put([]*batch.Operation{{}}))
+		require.NoError(t, c.Put([]*batch.AnchoredOperation{{}}))
 	})
 
 	t.Run("Store error", func(t *testing.T) {
@@ -94,7 +94,7 @@ func TestClient_Put(t *testing.T) {
 
 		c := NewClient(chID, namespace, s)
 
-		err := c.Put([]*batch.Operation{{}})
+		err := c.Put([]*batch.AnchoredOperation{{}})
 		require.EqualError(t, err, errExpected.Error())
 	})
 }
@@ -112,12 +112,12 @@ func TestClient_Get(t *testing.T) {
 }
 
 func TestSort(t *testing.T) {
-	var operations []*batch.Operation
+	var operations []*batch.AnchoredOperation
 
 	const testID = "id"
-	delete := &batch.Operation{ID: testID, Type: "delete", TransactionTime: 2, TransactionNumber: 1}
-	update := &batch.Operation{ID: testID, Type: "update", TransactionTime: 1, TransactionNumber: 7}
-	create := &batch.Operation{ID: testID, Type: "create", TransactionTime: 1, TransactionNumber: 1}
+	delete := &batch.AnchoredOperation{UniqueSuffix: testID, Type: "delete", TransactionTime: 2, TransactionNumber: 1}
+	update := &batch.AnchoredOperation{UniqueSuffix: testID, Type: "update", TransactionTime: 1, TransactionNumber: 7}
+	create := &batch.AnchoredOperation{UniqueSuffix: testID, Type: "create", TransactionTime: 1, TransactionNumber: 1}
 
 	operations = append(operations, delete)
 	operations = append(operations, update)
