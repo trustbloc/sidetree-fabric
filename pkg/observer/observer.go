@@ -28,7 +28,6 @@ import (
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/lease"
-	"github.com/trustbloc/sidetree-fabric/pkg/observer/operationfilter"
 )
 
 var logger = flogging.MustGetLogger("sidetree_observer")
@@ -112,9 +111,8 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		leaseProvider: lease.NewProvider(channelID, clientProviders.Gossip.GetGossipService()),
 		txnProcessor: observer.NewTxnProcessor(
 			&observer.Providers{
-				TxnOpsProvider:   txnhandler.NewOperationProvider(dcasReader, pcp, compressionProvider),
-				OpStoreProvider:  asObserverStoreProvider(opStoreProvider),
-				OpFilterProvider: operationfilter.NewProvider(channelID, opStoreProvider, pcp),
+				TxnOpsProvider:  txnhandler.NewOperationProvider(dcasReader, pcp, compressionProvider),
+				OpStoreProvider: asObserverStoreProvider(opStoreProvider),
 			},
 		),
 		txnChan:     txnChan,
