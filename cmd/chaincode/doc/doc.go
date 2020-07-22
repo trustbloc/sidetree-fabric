@@ -21,7 +21,7 @@ const (
 	ccVersion = "v1"
 
 	couchDB       = "couchdb"
-	docsCollIndex = `{"index": {"fields": ["id"]}, "ddoc": "indexIDDoc", "name": "indexID", "type": "json"}`
+	docsCollIndex = `{"index": {"fields": ["uniqueSuffix"]}, "ddoc": "indexUniqueSuffixDoc", "name": "indexUniqueSuffix", "type": "json"}`
 )
 
 // DocumentCC is used to setup database, collection and indexes for documents
@@ -58,7 +58,7 @@ func (cc *DocumentCC) GetDBArtifacts(collNames []string) map[string]*ccapi.DBArt
 		collIndexes[collName] = []string{docsCollIndex}
 	}
 
-	logger.Debugf("Returning DB indexes for collections %s: %s", collNames, collIndexes)
+	logger.Infof("Returning DB indexes for collections %s: %s", collNames, collIndexes)
 
 	return map[string]*ccapi.DBArtifacts{
 		couchDB: {
