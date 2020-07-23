@@ -10,12 +10,26 @@ import (
 type ProtocolClient struct {
 	CurrentStub        func() protocol.Protocol
 	currentMutex       sync.RWMutex
-	currentArgsForCall []struct{}
-	currentReturns     struct {
+	currentArgsForCall []struct {
+	}
+	currentReturns struct {
 		result1 protocol.Protocol
 	}
 	currentReturnsOnCall map[int]struct {
 		result1 protocol.Protocol
+	}
+	GetStub        func(uint64) (protocol.Protocol, error)
+	getMutex       sync.RWMutex
+	getArgsForCall []struct {
+		arg1 uint64
+	}
+	getReturns struct {
+		result1 protocol.Protocol
+		result2 error
+	}
+	getReturnsOnCall map[int]struct {
+		result1 protocol.Protocol
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -24,7 +38,8 @@ type ProtocolClient struct {
 func (fake *ProtocolClient) Current() protocol.Protocol {
 	fake.currentMutex.Lock()
 	ret, specificReturn := fake.currentReturnsOnCall[len(fake.currentArgsForCall)]
-	fake.currentArgsForCall = append(fake.currentArgsForCall, struct{}{})
+	fake.currentArgsForCall = append(fake.currentArgsForCall, struct {
+	}{})
 	fake.recordInvocation("Current", []interface{}{})
 	fake.currentMutex.Unlock()
 	if fake.CurrentStub != nil {
@@ -33,7 +48,8 @@ func (fake *ProtocolClient) Current() protocol.Protocol {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.currentReturns.result1
+	fakeReturns := fake.currentReturns
+	return fakeReturns.result1
 }
 
 func (fake *ProtocolClient) CurrentCallCount() int {
@@ -42,7 +58,15 @@ func (fake *ProtocolClient) CurrentCallCount() int {
 	return len(fake.currentArgsForCall)
 }
 
+func (fake *ProtocolClient) CurrentCalls(stub func() protocol.Protocol) {
+	fake.currentMutex.Lock()
+	defer fake.currentMutex.Unlock()
+	fake.CurrentStub = stub
+}
+
 func (fake *ProtocolClient) CurrentReturns(result1 protocol.Protocol) {
+	fake.currentMutex.Lock()
+	defer fake.currentMutex.Unlock()
 	fake.CurrentStub = nil
 	fake.currentReturns = struct {
 		result1 protocol.Protocol
@@ -50,6 +74,8 @@ func (fake *ProtocolClient) CurrentReturns(result1 protocol.Protocol) {
 }
 
 func (fake *ProtocolClient) CurrentReturnsOnCall(i int, result1 protocol.Protocol) {
+	fake.currentMutex.Lock()
+	defer fake.currentMutex.Unlock()
 	fake.CurrentStub = nil
 	if fake.currentReturnsOnCall == nil {
 		fake.currentReturnsOnCall = make(map[int]struct {
@@ -61,11 +87,76 @@ func (fake *ProtocolClient) CurrentReturnsOnCall(i int, result1 protocol.Protoco
 	}{result1}
 }
 
+func (fake *ProtocolClient) Get(arg1 uint64) (protocol.Protocol, error) {
+	fake.getMutex.Lock()
+	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
+	fake.getArgsForCall = append(fake.getArgsForCall, struct {
+		arg1 uint64
+	}{arg1})
+	fake.recordInvocation("Get", []interface{}{arg1})
+	fake.getMutex.Unlock()
+	if fake.GetStub != nil {
+		return fake.GetStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *ProtocolClient) GetCallCount() int {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	return len(fake.getArgsForCall)
+}
+
+func (fake *ProtocolClient) GetCalls(stub func(uint64) (protocol.Protocol, error)) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = stub
+}
+
+func (fake *ProtocolClient) GetArgsForCall(i int) uint64 {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	argsForCall := fake.getArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *ProtocolClient) GetReturns(result1 protocol.Protocol, result2 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = nil
+	fake.getReturns = struct {
+		result1 protocol.Protocol
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *ProtocolClient) GetReturnsOnCall(i int, result1 protocol.Protocol, result2 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = nil
+	if fake.getReturnsOnCall == nil {
+		fake.getReturnsOnCall = make(map[int]struct {
+			result1 protocol.Protocol
+			result2 error
+		})
+	}
+	fake.getReturnsOnCall[i] = struct {
+		result1 protocol.Protocol
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *ProtocolClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.currentMutex.RLock()
 	defer fake.currentMutex.RUnlock()
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

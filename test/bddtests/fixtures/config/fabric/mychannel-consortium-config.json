@@ -39,6 +39,13 @@
       "Components": [
         {
           "Name": "protocol",
+          "Version": "0.4",
+          "Config": "file://./sidetree-protocol-v0_4.json",
+          "Format": "json",
+          "Tags": ["sidetree"]
+        },
+        {
+          "Name": "protocol",
           "Version": "0.5",
           "Config": "file://./sidetree-protocol-v0_5.json",
           "Format": "json",
@@ -53,6 +60,13 @@
       "Config": "file://./file-server-config.yaml",
       "Format": "yaml",
       "Components": [
+        {
+          "Name": "protocol",
+          "Version": "0.4",
+          "Config": "file://./sidetree-protocol-v0_4.json",
+          "Format": "json",
+          "Tags": ["sidetree"]
+        },
         {
           "Name": "protocol",
           "Version": "0.5",

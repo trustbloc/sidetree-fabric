@@ -101,14 +101,14 @@ func TestNewSidetreeProvider(t *testing.T) {
 
 		protocol4, ok := protocols[v0_4]
 		require.True(t, ok)
-		require.Equal(t, uint(200000), protocol4.StartingBlockChainTime)
+		require.Equal(t, uint64(200000), protocol4.StartingBlockChainTime)
 		require.Equal(t, uint(18), protocol4.HashAlgorithmInMultiHashCode)
 		require.Equal(t, uint(2000), protocol4.MaxDeltaByteSize)
 		require.Equal(t, uint(10), protocol4.MaxOperationsPerBatch)
 
 		protocol5, ok := protocols[v0_5]
 		require.True(t, ok)
-		require.Equal(t, uint(500000), protocol5.StartingBlockChainTime)
+		require.Equal(t, uint64(500000), protocol5.StartingBlockChainTime)
 		require.Equal(t, uint(18), protocol5.HashAlgorithmInMultiHashCode)
 		require.Equal(t, uint(10000), protocol5.MaxDeltaByteSize)
 		require.Equal(t, uint(100), protocol5.MaxOperationsPerBatch)

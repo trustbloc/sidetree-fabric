@@ -7,10 +7,15 @@ SPDX-License-Identifier: Apache-2.0
 package protocol
 
 import (
+	"fmt"
 	"sort"
+
+	"github.com/hyperledger/fabric/common/flogging"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
+
+var logger = flogging.MustGetLogger("protocol_client")
 
 // Client is a struct which holds a list of protocols.
 type Client struct {
@@ -36,4 +41,17 @@ func New(protocolVersions map[string]protocol.Protocol) *Client {
 //Current returns the latest version of protocol
 func (c *Client) Current() protocol.Protocol {
 	return c.protocols[len(c.protocols)-1]
+}
+
+// Get gets protocol version based on blockchain(transaction) time
+func (c *Client) Get(transactionTime uint64) (protocol.Protocol, error) {
+	logger.Debugf("available protocols: %v", c.protocols)
+
+	for i := len(c.protocols) - 1; i >= 0; i-- {
+		if transactionTime >= c.protocols[i].StartingBlockChainTime {
+			return c.protocols[i], nil
+		}
+	}
+
+	return protocol.Protocol{}, fmt.Errorf("protocol parameters are not defined for blockchain time: %d", transactionTime)
 }
