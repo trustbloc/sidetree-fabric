@@ -91,7 +91,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	const query = "{\"selector\":{\"uniqueSuffix\":\"1234\"},\"use_index\":[\"_design/indexUniqueSuffixDoc\",\"indexUniqueSuffix\"]}"
+	const query = "{\"selector\":{\"unique_suffix\":\"1234\"},\"use_index\":[\"_design/indexUniqueSuffixDoc\",\"indexUniqueSuffix\"]}"
 
 	client := getClient()
 
@@ -182,5 +182,5 @@ func getCreateOperation() *Operation {
 // Operation defines sample operation
 type Operation struct {
 	Type         string `json:"type"`
-	UniqueSuffix string `json:"uniqueSuffix"`
+	UniqueSuffix string `json:"unique_suffix"`
 }

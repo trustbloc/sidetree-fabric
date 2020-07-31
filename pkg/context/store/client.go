@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	queryByUniqueSuffixTemplate = `{"selector":{"uniqueSuffix":"%s"},"use_index":["_design/indexUniqueSuffixDoc","indexUniqueSuffix"],"fields":["uniqueSuffix","type","encodedDelta","signedData","encodedSuffixData","transactionTime","transactionNumber","operationIndex"]}`
+	queryByUniqueSuffixTemplate = `{"selector":{"unique_suffix":"%s"},"use_index":["_design/indexUniqueSuffixDoc","indexUniqueSuffix"],"fields":["unique_suffix","type","delta","signed_data","suffix_data","transaction_time","transaction_number","operation_index"]}`
 )
 
 var logger = flogging.MustGetLogger("sidetree_context")
