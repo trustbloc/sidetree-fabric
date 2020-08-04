@@ -9,6 +9,7 @@ package peer
 import (
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
 	"github.com/trustbloc/fabric-peer-ext/pkg/chaincode/ucc"
+	extpeer "github.com/trustbloc/fabric-peer-ext/pkg/peer"
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
 
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/doc"
@@ -23,6 +24,8 @@ import (
 
 // Initialize initializes the required resources for peer startup
 func Initialize() {
+	extpeer.Initialize()
+
 	resource.Register(config.NewPeer)
 	resource.Register(config.NewSidetreeProvider)
 	resource.Register(client.NewBlockchainProvider)

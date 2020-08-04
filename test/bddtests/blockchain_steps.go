@@ -39,12 +39,7 @@ func NewBlockchainSteps(context *bddtests.BDDContext) *BlockchainSteps {
 func (d *BlockchainSteps) hashOfBase64EncodedValueEquals(base64EncodedValue, base64EncodedHash string) error {
 	var err error
 
-	base64EncodedHash, err = bddtests.ResolveVarsInExpression(base64EncodedHash)
-	if err != nil {
-		return err
-	}
-
-	base64EncodedValue, err = bddtests.ResolveVarsInExpression(base64EncodedValue)
+	err = bddtests.ResolveVarsInExpression(&base64EncodedHash, &base64EncodedValue)
 	if err != nil {
 		return err
 	}
@@ -73,12 +68,7 @@ func (d *BlockchainSteps) hashOfBase64EncodedValueEquals(base64EncodedValue, bas
 func (d *BlockchainSteps) hashOfBase64URLEncodedValueEquals(base64URLEncodedValue, base64URLEncodedHash string) error {
 	var err error
 
-	base64URLEncodedHash, err = bddtests.ResolveVarsInExpression(base64URLEncodedHash)
-	if err != nil {
-		return err
-	}
-
-	base64URLEncodedValue, err = bddtests.ResolveVarsInExpression(base64URLEncodedValue)
+	err = bddtests.ResolveVarsInExpression(&base64URLEncodedHash, &base64URLEncodedValue)
 	if err != nil {
 		return err
 	}

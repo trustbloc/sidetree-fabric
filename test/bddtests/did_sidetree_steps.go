@@ -568,8 +568,8 @@ func (d *DIDSideSteps) setResponse(statusCode int, response []byte, header http.
 	}
 }
 
-func (d *DIDSideSteps) createDIDDocuments(urlsExpr string, num int, concurrency int) error {
-	strURLs, err := bddtests.ResolveVarsInExpression(urlsExpr)
+func (d *DIDSideSteps) createDIDDocuments(strURLs string, num int, concurrency int) error {
+	err := bddtests.ResolveVarsInExpression(&strURLs)
 	if err != nil {
 		return err
 	}
@@ -611,8 +611,8 @@ func (d *DIDSideSteps) createDIDDocuments(urlsExpr string, num int, concurrency 
 	return nil
 }
 
-func (d *DIDSideSteps) verifyDIDDocuments(urlsExpr string) error {
-	strURLs, err := bddtests.ResolveVarsInExpression(urlsExpr)
+func (d *DIDSideSteps) verifyDIDDocuments(strURLs string) error {
+	err := bddtests.ResolveVarsInExpression(&strURLs)
 	if err != nil {
 		return err
 	}
