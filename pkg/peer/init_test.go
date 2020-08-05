@@ -23,15 +23,16 @@ import (
 	"github.com/hyperledger/fabric/extensions/gossip/blockpublisher"
 	viper "github.com/spf13/viper2015"
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/fabric-peer-ext/pkg/chaincode/ucc"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/compositekey"
 	extconfig "github.com/trustbloc/fabric-peer-ext/pkg/config"
 	ledgercfg "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	ledgercfgmgr "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/mgr"
 	statemocks "github.com/trustbloc/fabric-peer-ext/pkg/gossip/state/mocks"
 	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
-	extpeer "github.com/trustbloc/fabric-peer-ext/pkg/peer"
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+	txnmocks "github.com/trustbloc/fabric-peer-ext/pkg/txn/mocks"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -154,7 +155,6 @@ func TestInitialize(t *testing.T) {
 
 	req := &Require{require.New(t)}
 
-	req.NotPanics(extpeer.Initialize)
 	req.NotPanics(Initialize)
 
 	gossip := mocks.NewMockGossipAdapter()
@@ -175,10 +175,15 @@ func TestInitialize(t *testing.T) {
 			&statemocks.CCEventMgrProvider{},
 			&mockBatchWriterConfig{batchTimeout: time.Second},
 			&mockRESTServiceConfig{listenURL: "localhost:8978"},
+			&mocks.ChaincodeInfoProvider{},
+			&mocks.ChaincodeUpdateHandler{},
+			&txnmocks.LifecycleCCInfoProvider{},
 		),
 	)
 
 	defer resource.Mgr.Close()
+
+	ucc.WaitForReady()
 
 	req.NotPanics(func() { resource.Mgr.ChannelJoined(channelID) })
 

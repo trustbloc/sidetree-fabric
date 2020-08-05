@@ -12,7 +12,6 @@ import (
 	"github.com/hyperledger/fabric/peer/node"
 	"github.com/spf13/cobra"
 	viper "github.com/spf13/viper2015"
-	extpeer "github.com/trustbloc/fabric-peer-ext/pkg/peer"
 
 	sidetreepeer "github.com/trustbloc/sidetree-fabric/pkg/peer"
 )
@@ -20,7 +19,6 @@ import (
 func main() {
 	setup()
 
-	extpeer.Initialize()
 	sidetreepeer.Initialize()
 
 	if err := startPeer(); err != nil {

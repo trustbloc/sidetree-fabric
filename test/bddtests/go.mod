@@ -6,11 +6,11 @@ module github.com/trustbloc/sidetree-fabric/test/bddtests
 
 require (
 	github.com/cucumber/godog v0.8.1
-	github.com/hyperledger/fabric-protos-go v0.0.0-20200124220212-e9cfc186ba7b
+	github.com/hyperledger/fabric-protos-go v0.0.0-20200707132912-fee30f3ccd23
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.4.0
-	github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200625144512-dcb0ca18d43d
+	github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200731175120-ef25ded2adde
 	github.com/trustbloc/sidetree-core-go v0.1.4-0.20200731163924-244e4e845359
 )
 
