@@ -155,34 +155,38 @@ Organizations:
 #
 ################################################################################
 Capabilities:
-    # Global capabilities apply to both the orderers and the peers and must be
-    # supported by both.  Set the value of the capability to true to require it.
+    # Channel capabilities apply to both the orderers and the peers and must be
+    # supported by both.
+    # Set the value of the capability to true to require it.
     Channel: &ChannelCapabilities
-        # V1.1 for Global is a catchall flag for behavior which has been
-        # determined to be desired for all orderers and peers running v1.0.x,
-        # but the modification of which would cause imcompatibilities.  Users
-        # should leave this flag set to true.
-        V1_1: true
+        # V2.0 for Channel is a catchall flag for behavior which has been
+        # determined to be desired for all orderers and peers running at the v2.0.0
+        # level, but which would be incompatible with orderers and peers from
+        # prior releases.
+        # Prior to enabling V2.0 channel capabilities, ensure that all
+        # orderers and peers on a channel are at v2.0.0 or later.
+        V2_0: true
 
     # Orderer capabilities apply only to the orderers, and may be safely
-    # manipulated without concern for upgrading peers.  Set the value of the
-    # capability to true to require it.
+    # used with prior release peers.
+    # Set the value of the capability to true to require it.
     Orderer: &OrdererCapabilities
-        # V1.1 for Order is a catchall flag for behavior which has been
-        # determined to be desired for all orderers running v1.0.x, but the
-        # modification of which  would cause imcompatibilities.  Users should
-        # leave this flag set to true.
-        V1_1: true
+        # V1.1 for Orderer is a catchall flag for behavior which has been
+        # determined to be desired for all orderers running at the v1.1.x
+        # level, but which would be incompatible with orderers from prior releases.
+        # Prior to enabling V2.0 orderer capabilities, ensure that all
+        # orderers on a channel are at v2.0.0 or later.
+        V2_0: true
 
     # Application capabilities apply only to the peer network, and may be safely
-    # manipulated without concern for upgrading orderers.  Set the value of the
-    # capability to true to require it.
+    # used with prior release orderers.
+    # Set the value of the capability to true to require it.
     Application: &ApplicationCapabilities
-        # V1.1 for Application is a catchall flag for behavior which has been
-        # determined to be desired for all peers running v1.0.x, but the
-        # modification of which would cause incompatibilities.  Users should
-        # leave this flag set to true.
-        V1_2: true
+        # V2.0 for Application enables the new non-backwards compatible
+        # features and fixes of fabric v2.0.
+        # Prior to enabling V2.0 orderer capabilities, ensure that all
+        # orderers on a channel are at v2.0.0 or later.
+        V2_0: true
 
 
 ################################################################################
@@ -401,8 +405,8 @@ Application: &ApplicationDefaults
     #   /Channel/Application/<PolicyName>
     Policies:
         LifecycleEndorsement:
-            Type: ImplicitMeta
-            Rule: "MAJORITY Endorsement"
+            Type: Signature
+            Rule: "OutOf(2,'Org1MSP.member','Org2MSP.member')"
         Endorsement:
             Type: ImplicitMeta
             Rule: "MAJORITY Endorsement"

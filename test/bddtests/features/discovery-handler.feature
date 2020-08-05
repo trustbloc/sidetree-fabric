@@ -13,7 +13,7 @@ Feature:
     # Give the peers some time to gossip their new channel membership
     And we wait 20 seconds
 
-    And "system" chaincode "configscc" is instantiated from path "in-process" on the "mychannel" channel with args "" with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" with collection policy ""
+    Then chaincode "configscc", version "v1", package ID "configscc:v1", sequence 1 is approved and committed by orgs "peerorg1,peerorg2" on the "mychannel" channel with endorsement policy "AND('Org1MSP.member','Org2MSP.member')" and collection policy ""
 
     And fabric-cli network is initialized
     And fabric-cli plugin "../../.build/ledgerconfig" is installed

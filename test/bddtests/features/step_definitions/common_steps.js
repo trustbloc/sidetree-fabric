@@ -133,4 +133,39 @@ defineSupportCode(function ({And, But, Given, Then, When}) {
     And(/^the authorization bearer token for "([^"]*)" requests to path "([^"]*)" is set to "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
+
+    // Lifecycle steps
+    Given(/^chaincode "([^"]*)" is installed from path "([^"]*)" to all peers$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    When(/^chaincode "([^"]*)", version "([^"]*)", package ID "([^"]*)", sequence (\d+) is approved by orgs "([^"]*)" on the "([^"]*)" channel with endorsement policy "([^"]*)" and collection policy "([^"]*)"$/, function (arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, callback) {
+        callback.pending();
+    });
+    When(/^chaincode "([^"]*)", version "([^"]*)", package ID "([^"]*)", sequence (\d+) is approved by orgs "([^"]*)" on the "([^"]*)" channel with endorsement policy "([^"]*)" and collection policy "([^"]*)" then the error response should contain "([^"]*)"$/, function (arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, callback) {
+        callback.pending();
+    });
+    When(/^chaincode "([^"]*)", version "([^"]*)", sequence (\d+) is committed by orgs "([^"]*)" on the "([^"]*)" channel with endorsement policy "([^"]*)" and collection policy "([^"]*)"$/, function (arg1, arg2, arg3, arg4, arg5, arg6, callback) {
+        callback.pending();
+    });
+    When(/^chaincode "([^"]*)", version "([^"]*)", package ID "([^"]*)", sequence (\d+) is checked for readiness by orgs "([^"]*)" on the "([^"]*)" channel with endorsement policy "([^"]*)" and collection policy "([^"]*)"$/, function (arg1, arg2, arg3, arg4, arg5, arg6, arg7, callback) {
+        callback.pending();
+    });
+    When(/^peer "([^"]*)" is queried for installed chaincodes$/, function (arg1, callback) {
+        callback.pending();
+    });
+    When(/^committed chaincode "([^"]*)" is queried by orgs "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, arg3, callback) {
+        callback.pending();
+    });
+    When(/^all committed chaincodes are queried by orgs "([^"]*)" on the "([^"]*)" channel$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    When(/^peer "([^"]*)" is queried for approved chaincode "([^"]*)" and sequence (\d+) on the "([^"]*)" channel$/, function (arg1, arg2, arg4, arg4, callback) {
+        callback.pending();
+    });
+    When(/^peer "([^"]*)" is queried for installed chaincode package "([^"]*)"$/, function (arg1, arg2, callback) {
+        callback.pending();
+    });
+    When(/^chaincode "([^"]*)", version "([^"]*)", package ID "([^"]*)", sequence (\d+) is approved and committed by orgs "([^"]*)" on the "([^"]*)" channel with endorsement policy "([^"]*)" and collection policy "([^"]*)"$/, function (arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, callback) {
+        callback.pending();
+    });
 });
