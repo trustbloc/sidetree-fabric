@@ -313,8 +313,8 @@ github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200805155644-85f5bfcdb2f
 github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200805155644-85f5bfcdb2fd/go.mod h1:n6tREzyrig+mbobAlqSb+AXoGPm+7l7fjVHoroxmEA4=
 github.com/trustbloc/fabric-protos-go-ext v0.1.4-0.20200626180529-18936b36feca h1:XFu6UF1+2kOH+GNVwLDlqcr38HVngfz+/AE/ZaiLJPU=
 github.com/trustbloc/fabric-protos-go-ext v0.1.4-0.20200626180529-18936b36feca/go.mod h1:xVYTjK4DtZRBxZ2D9aE4y6AbLaPwue2o/criQyQbVD0=
-github.com/trustbloc/sidetree-core-go v0.1.4-0.20200731163924-244e4e845359 h1:hxyICwcOvBlgSRmpv3zykySMBrH1piHZ2udNqPZlcvg=
-github.com/trustbloc/sidetree-core-go v0.1.4-0.20200731163924-244e4e845359/go.mod h1:7iJd3MI8qlR+Fh80eGt9x5xofSGjAPN+022pUMdzhSY=
+github.com/trustbloc/sidetree-core-go v0.1.4-0.20200805170300-1bbe946486c7 h1:hG8865st7Cm8T7QXPmPMrZp7UarUrc+mlOSfgAF0ne0=
+github.com/trustbloc/sidetree-core-go v0.1.4-0.20200805170300-1bbe946486c7/go.mod h1:7iJd3MI8qlR+Fh80eGt9x5xofSGjAPN+022pUMdzhSY=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.0.1/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPUpymEIMZ47gx8=
