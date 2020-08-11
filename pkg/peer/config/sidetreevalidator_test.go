@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	protocolCfg                        = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
-	protocolInvalidAlgoCfg             = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":2777,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
-	protocolInvalidMaxOperPerBatchCfg  = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000}`
-	protocolInvalidMaxDeltaByteSizeCfg = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationsPerBatch":10}`
-	appCfg                             = `
-batchWriterTimeout: 1s
+	protocolCfg                         = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000,"maxOperationCount":10}`
+	protocolInvalidAlgoCfg              = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":2777,"maxOperationSize":2000,"maxOperationCount":10}`
+	protocolInvalidMaxOperationCountCfg = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000}`
+	protocolInvalidMaxOperationSizeCfg  = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationCount":10}`
+	appCfg                              = `
+batchWriterTimeout: 1s	
 chaincodeName: document
 collection: docs
 `
@@ -113,15 +113,15 @@ func TestSidetreeValidator_ValidateProtocol(t *testing.T) {
 		require.Contains(t, err.Error(), "algorithm not supported")
 	})
 
-	t.Run("Invalid MaxOperationsPerBatch -> error", func(t *testing.T) {
-		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxOperPerBatchCfg, config.FormatJSON, sidetreeTag)))
+	t.Run("Invalid MaxOperationCount -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxOperationCountCfg, config.FormatJSON, sidetreeTag)))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "field 'MaxOperationsPerBatch' must contain a value greater than 0")
+		require.Contains(t, err.Error(), "field 'MaxOperationCount' must contain a value greater than 0")
 	})
 
-	t.Run("Invalid MaxDeltaByteSize -> error", func(t *testing.T) {
-		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxDeltaByteSizeCfg, config.FormatJSON, sidetreeTag)))
+	t.Run("Invalid MaxOperationSize -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxOperationSizeCfg, config.FormatJSON, sidetreeTag)))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "field 'MaxDeltaByteSize' must contain a value greater than 0")
+		require.Contains(t, err.Error(), "field 'MaxOperationSize' must contain a value greater than 0")
 	})
 }

@@ -40,8 +40,8 @@ const (
 
 	didSidetreeNamespace             = "did:sidetree"
 	didSidetreeCfgJSON               = `{"batchWriterTimeout":"5s"}`
-	didSidetreeProtocol_V0_4_CfgJSON = `{"startingBlockchainTime":200000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
-	didSidetreeProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":10000,"maxOperationsPerBatch":100}`
+	didSidetreeProtocol_V0_4_CfgJSON = `{"genesisTime":200000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000,"maxOperationCount":10}`
+	didSidetreeProtocol_V0_5_CfgJSON = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":10000,"maxOperationCount":100}`
 	sidetreePeerCfgJson              = `{"Observer":{"Period":"5s"}}`
 	sidetreeHandler1CfgJson          = `{"Namespace":"did:sidetree","BasePath":"/sidetree/0.0.1"}`
 	sidetreeHandler2CfgJson          = `{"Namespace":"file:idx","BasePath":"/file"}`
@@ -101,17 +101,17 @@ func TestNewSidetreeProvider(t *testing.T) {
 
 		protocol4, ok := protocols[v0_4]
 		require.True(t, ok)
-		require.Equal(t, uint64(200000), protocol4.StartingBlockChainTime)
+		require.Equal(t, uint64(200000), protocol4.GenesisTime)
 		require.Equal(t, uint(18), protocol4.HashAlgorithmInMultiHashCode)
-		require.Equal(t, uint(2000), protocol4.MaxDeltaByteSize)
-		require.Equal(t, uint(10), protocol4.MaxOperationsPerBatch)
+		require.Equal(t, uint(2000), protocol4.MaxOperationSize)
+		require.Equal(t, uint(10), protocol4.MaxOperationCount)
 
 		protocol5, ok := protocols[v0_5]
 		require.True(t, ok)
-		require.Equal(t, uint64(500000), protocol5.StartingBlockChainTime)
+		require.Equal(t, uint64(500000), protocol5.GenesisTime)
 		require.Equal(t, uint(18), protocol5.HashAlgorithmInMultiHashCode)
-		require.Equal(t, uint(10000), protocol5.MaxDeltaByteSize)
-		require.Equal(t, uint(100), protocol5.MaxOperationsPerBatch)
+		require.Equal(t, uint(10000), protocol5.MaxOperationSize)
+		require.Equal(t, uint(100), protocol5.MaxOperationCount)
 	})
 
 	t.Run("LoadSidetree", func(t *testing.T) {

@@ -22,16 +22,16 @@ func TestNew(t *testing.T) {
 func TestClient_Current(t *testing.T) {
 	versions := map[string]protocol.Protocol{
 		"1.0": {
-			StartingBlockChainTime:       500000,
+			GenesisTime:                  500000,
 			HashAlgorithmInMultiHashCode: 18,
-			MaxDeltaByteSize:             2000,
-			MaxOperationsPerBatch:        10000,
+			MaxOperationSize:             2000,
+			MaxOperationCount:            10000,
 		},
 		"0.1": {
-			StartingBlockChainTime:       0,
+			GenesisTime:                  0,
 			HashAlgorithmInMultiHashCode: 18,
-			MaxDeltaByteSize:             500,
-			MaxOperationsPerBatch:        100,
+			MaxOperationSize:             500,
+			MaxOperationCount:            100,
 		},
 	}
 
@@ -39,22 +39,22 @@ func TestClient_Current(t *testing.T) {
 	require.NotNil(t, client)
 
 	protocol := client.Current()
-	require.Equal(t, uint(10000), protocol.MaxOperationsPerBatch)
+	require.Equal(t, uint(10000), protocol.MaxOperationCount)
 }
 
 func TestClient_Get(t *testing.T) {
 	versions := map[string]protocol.Protocol{
 		"1.0": {
-			StartingBlockChainTime:       500000,
+			GenesisTime:                  500000,
 			HashAlgorithmInMultiHashCode: 18,
-			MaxDeltaByteSize:             2000,
-			MaxOperationsPerBatch:        10000,
+			MaxOperationSize:             2000,
+			MaxOperationCount:            10000,
 		},
 		"0.1": {
-			StartingBlockChainTime:       10,
+			GenesisTime:                  10,
 			HashAlgorithmInMultiHashCode: 18,
-			MaxDeltaByteSize:             500,
-			MaxOperationsPerBatch:        100,
+			MaxOperationSize:             500,
+			MaxOperationCount:            100,
 		},
 	}
 
@@ -63,15 +63,15 @@ func TestClient_Get(t *testing.T) {
 
 	protocol, err := client.Get(100)
 	require.NoError(t, err)
-	require.Equal(t, uint(100), protocol.MaxOperationsPerBatch)
+	require.Equal(t, uint(100), protocol.MaxOperationCount)
 
 	protocol, err = client.Get(500000)
 	require.NoError(t, err)
-	require.Equal(t, uint(10000), protocol.MaxOperationsPerBatch)
+	require.Equal(t, uint(10000), protocol.MaxOperationCount)
 
 	protocol, err = client.Get(7000000)
 	require.NoError(t, err)
-	require.Equal(t, uint(10000), protocol.MaxOperationsPerBatch)
+	require.Equal(t, uint(10000), protocol.MaxOperationCount)
 
 	protocol, err = client.Get(5)
 	require.Error(t, err)

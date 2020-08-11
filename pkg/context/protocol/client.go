@@ -32,7 +32,7 @@ func New(protocolVersions map[string]protocol.Protocol) *Client {
 
 	// Sorting the protocolParameter list based on blockChain start time
 	sort.SliceStable(protocols, func(i, j int) bool {
-		return protocols[j].StartingBlockChainTime > protocols[i].StartingBlockChainTime
+		return protocols[j].GenesisTime > protocols[i].GenesisTime
 	})
 
 	return &Client{protocols: protocols}
@@ -48,7 +48,7 @@ func (c *Client) Get(transactionTime uint64) (protocol.Protocol, error) {
 	logger.Debugf("available protocols: %v", c.protocols)
 
 	for i := len(c.protocols) - 1; i >= 0; i-- {
-		if transactionTime >= c.protocols[i].StartingBlockChainTime {
+		if transactionTime >= c.protocols[i].GenesisTime {
 			return c.protocols[i], nil
 		}
 	}

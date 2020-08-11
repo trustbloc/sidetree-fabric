@@ -97,12 +97,12 @@ func (v *sidetreeValidator) validateProtocolV0(kv *config.KeyValue) error {
 		return errors.WithMessagef(err, "error in Sidetree protocol for %s", kv.Key)
 	}
 
-	if p.MaxOperationsPerBatch == 0 {
-		return errors.Errorf("field 'MaxOperationsPerBatch' must contain a value greater than 0 for %s", kv.Key)
+	if p.MaxOperationCount == 0 {
+		return errors.Errorf("field 'MaxOperationCount' must contain a value greater than 0 for %s", kv.Key)
 	}
 
-	if p.MaxDeltaByteSize == 0 {
-		return errors.Errorf("field 'MaxDeltaByteSize' must contain a value greater than 0 for %s", kv.Key)
+	if p.MaxOperationSize == 0 {
+		return errors.Errorf("field 'MaxOperationSize' must contain a value greater than 0 for %s", kv.Key)
 	}
 
 	return nil
