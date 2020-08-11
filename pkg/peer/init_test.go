@@ -76,15 +76,15 @@ const (
 
 	didTrustblocNamespace             = "did:bloc:trustbloc.dev"
 	didTrustblocBasePath              = "/trustbloc.dev/identifiers"
-	didTrustblocProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":250000,"hashAlgorithmInMultihashCode":18,"MaxDeltaByteSize":20000,"maxOperationsPerBatch":200}`
+	didTrustblocProtocol_V0_5_CfgJSON = `{"genesisTime":250000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":20000,"maxOperationCount":200}`
 	didTrustblocCfgYaml               = `batchWriterTimeout: 1s`
 	didTrustblocCfgUpdateYaml         = `batchWriterTimeout: 5s`
 
 	didSidetreeNamespace             = "did:sidetree"
 	didSidetreeBasePath              = "/document/identifiers"
 	didSidetreeCfgJSON               = `{"batchWriterTimeout":"5s"}`
-	didSidetreeProtocol_V0_4_CfgJSON = `{"startingBlockchainTime":200000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":2000,"maxOperationsPerBatch":10}`
-	didSidetreeProtocol_V0_5_CfgJSON = `{"startingBlockchainTime":500000,"hashAlgorithmInMultihashCode":18,"maxDeltaByteSize":10000,"maxOperationsPerBatch":100}`
+	didSidetreeProtocol_V0_4_CfgJSON = `{"genesisTime":200000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000,"maxOperationCount":10}`
+	didSidetreeProtocol_V0_5_CfgJSON = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":10000,"maxOperationCount":100}`
 )
 
 var (

@@ -64,10 +64,10 @@ func TestProvider(t *testing.T) {
 
 	protocolVersions := map[string]protocolApi.Protocol{
 		"0.5": {
-			StartingBlockChainTime:       100,
+			GenesisTime:                  100,
 			HashAlgorithmInMultiHashCode: 18,
-			MaxOperationsPerBatch:        100,
-			MaxDeltaByteSize:             1000,
+			MaxOperationCount:            100,
+			MaxOperationSize:             1000,
 		},
 	}
 
