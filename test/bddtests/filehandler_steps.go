@@ -11,7 +11,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -30,24 +29,15 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
 )
 
-const publicKeyTemplate = `[
-	{
-  		"id": "%s",
-  		"type": "JwsVerificationKey2020",
-		"purpose": ["ops"],
-  		"jwk": %s
-	}
-  ]`
-
 // FileHandlerSteps
 type FileHandlerSteps struct {
 	httpSteps
 
-	bddContext        *bddtests.BDDContext
-	recoveryKey   *ecdsa.PrivateKey
-	updateKey   *ecdsa.PrivateKey
-	updateKeySigner   helper.Signer
-	updatePublicKey   *jws.JWK
+	bddContext      *bddtests.BDDContext
+	recoveryKey     *ecdsa.PrivateKey
+	updateKey       *ecdsa.PrivateKey
+	updateKeySigner helper.Signer
+	updatePublicKey *jws.JWK
 }
 
 // NewFileHandlerSteps
@@ -261,24 +251,10 @@ func (d *FileHandlerSteps) getOpaqueDocument(content string) ([]byte, error) {
 		d.updateKeySigner = ecsigner.New(privateKey, "ES256", updateKeyID)
 	}
 
-	publicKeyBytes, err := json.Marshal(d.updatePublicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	publicKeysStr := fmt.Sprintf(publicKeyTemplate, updateKeyID, string(publicKeyBytes))
-
-	var publicKeys []map[string]interface{}
-	err = json.Unmarshal([]byte(publicKeysStr), &publicKeys)
-	if err != nil {
-		return nil, err
-	}
-
 	doc, err := document.FromBytes([]byte(content))
 	if err != nil {
 		return nil, err
 	}
-	doc["publicKey"] = publicKeys
 
 	return doc.Bytes()
 }
