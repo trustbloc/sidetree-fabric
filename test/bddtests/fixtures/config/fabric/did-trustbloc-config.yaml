@@ -7,3 +7,4 @@
 batchWriterTimeout: 5s
 chaincodeName: document
 collection: diddoc
+methodContext: ["https://trustbloc.github.io/context/did/trustbloc-v1.jsonld"]
