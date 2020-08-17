@@ -29,16 +29,18 @@ Feature:
 
     And fabric-cli network is initialized
     And fabric-cli plugin "../../.build/ledgerconfig" is installed
-    And fabric-cli context "mychannel" is defined on channel "mychannel" with org "peerorg1", peers "peer0.org1.example.com,peer1.org1.example.com,peer2.org1.example.com" and user "User1"
+    And fabric-cli context "org1-mychannel-context" is defined on channel "mychannel" with org "peerorg1", peers "peer0.org1.example.com,peer1.org1.example.com,peer2.org1.example.com" and user "User1"
+    And fabric-cli context "org2-mychannel-context" is defined on channel "mychannel" with org "peerorg2", peers "peer0.org2.example.com,peer1.org2.example.com,peer2.org2.example.com" and user "User1"
 
     And we wait 10 seconds
 
     # Configure the following Sidetree namespaces on channel 'mychannel'
     # - did:bloc:sidetree       - Path: /document
     # - did:bloc:trustbloc.dev  - Path: /trustbloc.dev
-    Then fabric-cli context "mychannel" is used
+    Then fabric-cli context "org1-mychannel-context" is used
     And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-consortium-config.json --noprompt"
     And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-org1-config.json --noprompt"
+    Then fabric-cli context "org2-mychannel-context" is used
     And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-org2-config.json --noprompt"
 
     # Wait for the Sidetree services to start up on mychannel
@@ -84,7 +86,7 @@ Feature:
 
   @invalid_config_update
   Scenario: Invalid configuration
-    Given fabric-cli context "mychannel" is used
+    Given fabric-cli context "org1-mychannel-context" is used
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-protocol-config.json --noprompt" then the error response should contain "algorithm not supported"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-config.json --noprompt" then the error response should contain "field 'BatchWriterTimeout' must contain a value greater than 0"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-peer-config.json --noprompt" then the error response should contain "field 'BasePath' must begin with '/'"

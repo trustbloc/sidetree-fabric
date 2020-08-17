@@ -52,7 +52,7 @@ FABRIC_PEER_EXT_IMAGE   ?= trustbloc/fabric-peer
 FABRIC_PEER_EXT_VERSION ?= 0.1.2
 FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
 
-export FABRIC_CLI_EXT_VERSION ?= 61c2cb1f92926522c280ed243e18d506be12906c
+export FABRIC_CLI_EXT_VERSION ?= 9b68954e15f297214245caf655f61e045356b6b5
 
 # Namespace for the Sidetree Fabric peer image
 DOCKER_OUTPUT_NS           ?= docker.pkg.github.com/trustbloc/sidetree-fabric

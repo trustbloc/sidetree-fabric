@@ -10,7 +10,7 @@ services:
     image: ${FABRIC_PEER_FIXTURE_IMAGE}:latest
     environment:
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - FABRIC_LOGGING_SPEC=comm.grpc.server=error:cauthdsl=warn:gossip=warn:grpc=warn:ledger=info:msp=warn:policies=warn:peer.gossip=warn:endorser=warn:sidetree_peer=info:sidetree_context=info:sidetree_observer=debug:sidetree_opqueue=debug:ext_offledger=info:ext_dispatcher=info:chaincode=info:cceventmgmt=info:ext_gossip_state=info:privacyenabledstate=info:info
+      - FABRIC_LOGGING_SPEC=comm.grpc.server=error:cauthdsl=warn:gossip=warn:grpc=warn:ledger=info:msp=warn:policies=warn:peer.gossip=warn:endorser=warn:sidetree_peer=info:sidetree_context=info:sidetree_observer=info:sidetree_opqueue=info:ext_offledger=info:ext_dispatcher=info:chaincode=info:cceventmgmt=info:ext_gossip_state=info:privacyenabledstate=info:info
       ## the following setting redirects chaincode container logs to the peer container logs
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/

@@ -30,13 +30,15 @@ Feature:
 
     And fabric-cli network is initialized
     And fabric-cli plugin "../../.build/ledgerconfig" is installed
-    And fabric-cli context "mychannel" is defined on channel "mychannel" with org "peerorg1", peers "peer0.org1.example.com,peer1.org1.example.com,peer2.org1.example.com" and user "User1"
+    And fabric-cli context "org1-mychannel-context" is defined on channel "mychannel" with org "peerorg1", peers "peer0.org1.example.com,peer1.org1.example.com,peer2.org1.example.com" and user "User1"
+    And fabric-cli context "org2-mychannel-context" is defined on channel "mychannel" with org "peerorg2", peers "peer0.org2.example.com,peer1.org2.example.com,peer2.org2.example.com" and user "User1"
 
     And we wait 10 seconds
 
-    Then fabric-cli context "mychannel" is used
+    Then fabric-cli context "org1-mychannel-context" is used
     And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-consortium-config.json --noprompt"
     And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-org1-config.json --noprompt"
+    Then fabric-cli context "org2-mychannel-context" is used
     And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-org2-config.json --noprompt"
 
     # Wait for the Sidetree services to start up on mychannel
@@ -74,7 +76,9 @@ Feature:
     And variable "wellKnownHandlerConfig" is assigned the JSON value '{"BasePath":"/.well-known/did-bloc","ChaincodeName":"file","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"${wellKnownIndexID}"}'
     And variable "org1ConfigUpdate" is assigned the JSON value '{"MspID":"Org1MSP","Peers":[{"PeerID":"peer0.org1.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]},{"PeerID":"peer1.org1.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]},{"PeerID":"peer2.org1.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]}]}'
     And variable "org2ConfigUpdate" is assigned the JSON value '{"MspID":"Org2MSP","Peers":[{"PeerID":"peer0.org2.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]},{"PeerID":"peer1.org2.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]},{"PeerID":"peer2.org2.example.com","Apps":[{"AppName":"file-handler","Version":"1","Components":[{"Name":"/schema","Version":"1","Config":"${schemaHandlerConfig}","Format":"json"},{"Name":"/.well-known/did-bloc","Version":"1","Config":"${wellKnownHandlerConfig}","Format":"json"}]}]}]}'
+    Then fabric-cli context "org1-mychannel-context" is used
     And fabric-cli is executed with args "ledgerconfig update --config ${org1ConfigUpdate} --noprompt"
+    Then fabric-cli context "org2-mychannel-context" is used
     And fabric-cli is executed with args "ledgerconfig update --config ${org2ConfigUpdate} --noprompt"
 
     # Resolve schema files
