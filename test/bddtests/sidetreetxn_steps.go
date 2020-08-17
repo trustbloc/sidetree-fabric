@@ -32,7 +32,7 @@ func (t *SidetreeTxnSteps) writeContent(content, ccID, coll, channelID string) e
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	args := []string{"writeContent", coll, content}
-	resp, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil)
+	resp, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, "", args, nil)
 	if err != nil {
 		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
 	}
@@ -48,7 +48,7 @@ func (t *SidetreeTxnSteps) readContent(ccID, coll, channelID string) error {
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	args := []string{"readContent", coll, t.address}
-	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil)
+	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, "", args, nil)
 	if err != nil {
 		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
 	}
@@ -83,7 +83,7 @@ func (t *SidetreeTxnSteps) anchorBatch(didID, ccID, coll, channelID string) erro
 
 	logger.Infof("... committing anchor address [%s] to ledger on channel [%s]", t.address, channelID)
 	args := []string{"writeAnchor", t.address}
-	_, err = commonSteps.InvokeCCWithArgs(ccID, channelID, nil, args, nil)
+	_, err = commonSteps.InvokeCCWithArgs(ccID, channelID, "", nil, args, nil)
 	if err != nil {
 		return fmt.Errorf("InvokeCCWithArgs return error: %s", err)
 	}
@@ -96,7 +96,7 @@ func (t *SidetreeTxnSteps) writeDocument(op string, ccID, channelID string) erro
 	commonSteps := bddtests.NewCommonSteps(t.BDDContext)
 
 	args := []string{"write", op}
-	_, err := commonSteps.InvokeCCWithArgs(ccID, channelID, nil, args, nil)
+	_, err := commonSteps.InvokeCCWithArgs(ccID, channelID, "", nil, args, nil)
 	if err != nil {
 		return fmt.Errorf("InvokeCCWithArgs return error: %s", err)
 	}
@@ -133,7 +133,7 @@ func (t *SidetreeTxnSteps) queryDocumentByIndexOnTargets(docID, ccID, numOfDocs,
 	}
 
 	args := []string{"queryByID", docID}
-	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, args, nil, targets...)
+	payload, err := commonSteps.QueryCCWithArgs(false, ccID, channelID, "", args, nil, targets...)
 	if err != nil {
 		return fmt.Errorf("QueryCCWithArgs return error: %s", err)
 	}

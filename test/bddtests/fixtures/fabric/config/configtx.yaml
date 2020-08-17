@@ -496,6 +496,47 @@ Profiles:
         <<: *ChannelDefaults
         Application:
             <<: *ApplicationDefaults
+            Policies:
+                LifecycleEndorsement:
+                    Type: Signature
+                    Rule: "OutOf(2,'Org1MSP.member','Org2MSP.member')"
+                Endorsement:
+                    Type: ImplicitMeta
+                    Rule: "MAJORITY Endorsement"
+                Readers:
+                    Type: ImplicitMeta
+                    Rule: "ANY Readers"
+                Writers:
+                    Type: ImplicitMeta
+                    Rule: "ANY Writers"
+                Admins:
+                    Type: ImplicitMeta
+                    Rule: "MAJORITY Admins"
+                Org1MemberPolicy:
+                    Type: Signature
+                    Rule: "OR('Org1MSP.member')"
+                Org1AdminPolicy:
+                    Type: Signature
+                    Rule: "OR('Org1MSP.admin')"
+                Org2MemberPolicy:
+                    Type: Signature
+                    Rule: "OR('Org2MSP.member')"
+                Org2AdminPolicy:
+                    Type: Signature
+                    Rule: "OR('Org2MSP.admin')"
+                Org1Org2MemberPolicy:
+                    Type: Signature
+                    Rule: "OR('Org1MSP.member','Org2MSP.member')"
+                Org1Org2AdminPolicy:
+                    Type: Signature
+                    Rule: "OR('Org1MSP.admin','Org2MSP.admin')"
+            ACLs:
+                configdata/read/Org1MSP: Readers
+                configdata/write/Org1MSP: Org1MemberPolicy
+                configdata/read/Org2MSP: Readers
+                configdata/write/Org2MSP: Org2MemberPolicy
+                configdata/read/general: Readers
+                configdata/write/general: Org1Org2MemberPolicy
             Organizations:
                 - *Org1
                 - *Org2
