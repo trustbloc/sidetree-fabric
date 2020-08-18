@@ -20,6 +20,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
@@ -92,7 +93,8 @@ func newRESTHandlers(
 	batchWriter dochandler.BatchWriter,
 	protocolProvider protocolProvider,
 	opStore processor.OperationStoreClient,
-	tokenProvider tokenProvider) (*restHandlers, error) {
+	tokenProvider tokenProvider,
+	configService config.SidetreeService) (*restHandlers, error) {
 
 	if !role.IsResolver() && !role.IsBatchWriter() {
 		return &restHandlers{
@@ -108,10 +110,15 @@ func newRESTHandlers(
 		return nil, err
 	}
 
+	sidetreeCfg, err := configService.LoadSidetree(cfg.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	docHandler := dochandler.New(
 		cfg.Namespace,
 		protocolProvider.Protocol(),
-		getValidator(opStore),
+		getValidator(sidetreeCfg, opStore),
 		batchWriter,
 		processor.New(channelID+"_"+cfg.Namespace, opStore, protocolProvider.Protocol()),
 	)
@@ -148,13 +155,13 @@ func newRESTHandlers(
 	}, nil
 }
 
-type validatorProvider func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator
+type validatorProvider func(cfg config.Sidetree, opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator
 type resolveHandlerProvider func(sidetreehandler.Config, resthandler.Resolver) common.HTTPHandler
 type updateHandlerProvider func(sidetreehandler.Config, resthandler.Processor) common.HTTPHandler
 
 var (
-	didDocValidatorProvider = func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator {
-		return didvalidator.New(opStore)
+	didDocValidatorProvider = func(cfg config.Sidetree, opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator {
+		return didvalidator.New(opStore, didvalidator.WithMethodContext(cfg.MethodContext))
 	}
 
 	didDocResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) common.HTTPHandler {
@@ -165,7 +172,7 @@ var (
 		return diddochandler.NewUpdateHandler(cfg.BasePath, processor)
 	}
 
-	fileValidatorProvider = func(opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator {
+	fileValidatorProvider = func(cfg config.Sidetree, opStore docvalidator.OperationStoreClient) dochandler.DocumentValidator {
 		return filehandler.NewValidator(opStore)
 	}
 

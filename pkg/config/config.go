@@ -46,6 +46,7 @@ type Sidetree struct {
 	ChaincodeName      string
 	Collection         string
 	BatchWriterTimeout time.Duration
+	MethodContext      []string
 }
 
 // SidetreeService is a service that loads Sidetree configuration
