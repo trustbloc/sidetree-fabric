@@ -27,8 +27,10 @@ require (
 	github.com/spf13/viper2015 v1.3.2
 	github.com/stretchr/testify v1.5.1
 	github.com/syndtr/goleveldb v1.0.1-0.20190625010220-02440ea7a285
+	github.com/trustbloc/edge-core v0.1.4-0.20200818213332-0858d9d3214c
 	github.com/trustbloc/fabric-peer-ext v0.0.0
 	github.com/trustbloc/sidetree-core-go v0.1.4-0.20200818145448-94243b40fa44
+	go.uber.org/zap v1.14.1
 )
 
 replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.4-0.20200805204753-3bee3f218aba

@@ -7,10 +7,15 @@ SPDX-License-Identifier: Apache-2.0
 package peer
 
 import (
+	"strings"
+
+	"github.com/hyperledger/fabric/common/flogging"
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
+	logger "github.com/trustbloc/edge-core/pkg/log"
 	"github.com/trustbloc/fabric-peer-ext/pkg/chaincode/ucc"
 	extpeer "github.com/trustbloc/fabric-peer-ext/pkg/peer"
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
+	"go.uber.org/zap"
 
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/doc"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/file"
@@ -24,6 +29,8 @@ import (
 
 // Initialize initializes the required resources for peer startup
 func Initialize() {
+	logger.Initialize(&loggingProvider{})
+
 	extpeer.Initialize()
 
 	resource.Register(config.NewPeer)
@@ -37,4 +44,13 @@ func Initialize() {
 	ucc.Register(func() ccapi.UserCC { return doc.New("document") })
 	ucc.Register(func() ccapi.UserCC { return txn.New("sidetreetxn") })
 	ucc.Register(func() ccapi.UserCC { return file.New("file") })
+}
+
+type loggingProvider struct {
+}
+
+func (lp *loggingProvider) GetLogger(module string) logger.Logger {
+	return &fabricLogger{
+		s: flogging.Global.ZapLogger(strings.ReplaceAll(module, "/", "_")).WithOptions(zap.AddCallerSkip(2)).Sugar(),
+	}
 }
