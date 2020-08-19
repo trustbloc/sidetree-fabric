@@ -504,10 +504,10 @@ github.com/trustbloc/edge-core v0.1.4-0.20200818213332-0858d9d3214c h1:KVT5uay+K
 github.com/trustbloc/edge-core v0.1.4-0.20200818213332-0858d9d3214c/go.mod h1:mTU1E/HcKcjmHaPCjBOvHERuryGhh5zgVkRSi4slAHg=
 github.com/trustbloc/fabric-mod v0.1.4-0.20200805204753-3bee3f218aba h1:VUmrPzO5CjVwW+Zm5k5J9sV6beuginG8wwBwnLJDlXs=
 github.com/trustbloc/fabric-mod v0.1.4-0.20200805204753-3bee3f218aba/go.mod h1:cQj569lHHCUYI44EtWmJ7Sa2Iqw/K5Hst1l9P0hsTPw=
-github.com/trustbloc/fabric-peer-ext v0.1.4-0.20200817182326-bad75e08ca04 h1:FyNJ504EFb9yXhfiBnj1PoJ5Ixizv1XWjiv9rCcKB0M=
-github.com/trustbloc/fabric-peer-ext v0.1.4-0.20200817182326-bad75e08ca04/go.mod h1:kxOqO831HjN/OvWQQa0NVb+XQK+P5tqLpoBOt2QkdwU=
-github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200817182326-bad75e08ca04 h1:Zlwmwb1Xk6/zNX5Ev8fowedHVfkP9Jp8k8vzSMBLECU=
-github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200817182326-bad75e08ca04/go.mod h1:WMExyEnhoUBVEi0vd9xT4gjc8uzuUmqSWhRMlAeV7iY=
+github.com/trustbloc/fabric-peer-ext v0.1.4-0.20200819164307-e3b0def814fa h1:S1HFLGXcdLPx5bW7YnEiVAbf5huQOwSHIX0KNOyq70A=
+github.com/trustbloc/fabric-peer-ext v0.1.4-0.20200819164307-e3b0def814fa/go.mod h1:kxOqO831HjN/OvWQQa0NVb+XQK+P5tqLpoBOt2QkdwU=
+github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200819164307-e3b0def814fa h1:DJ11tCyZ7CKjn1c7BhbIWrGkD38A1TSFzk63aWeKh+I=
+github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200819164307-e3b0def814fa/go.mod h1:WMExyEnhoUBVEi0vd9xT4gjc8uzuUmqSWhRMlAeV7iY=
 github.com/trustbloc/fabric-protos-go-ext v0.1.4-0.20200626180529-18936b36feca h1:XFu6UF1+2kOH+GNVwLDlqcr38HVngfz+/AE/ZaiLJPU=
 github.com/trustbloc/fabric-protos-go-ext v0.1.4-0.20200626180529-18936b36feca/go.mod h1:xVYTjK4DtZRBxZ2D9aE4y6AbLaPwue2o/criQyQbVD0=
 github.com/trustbloc/sidetree-core-go v0.1.4-0.20200818145448-94243b40fa44 h1:ObGsWNBftX/hryVN04jUfxe2w2YDa4hKOAuB5MBcylk=
