@@ -10,10 +10,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.4.0
-	github.com/trustbloc/fabric-peer-test-common v0.1.4-0.20200821222610-722ca33f4dd6
-	github.com/trustbloc/sidetree-core-go v0.1.4-0.20200818145448-94243b40fa44
+	github.com/trustbloc/fabric-peer-test-common v0.1.4
+	github.com/trustbloc/sidetree-core-go v0.1.4
 )
 
-replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.4-0.20200626180529-18936b36feca
+replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.4
 
 go 1.13
