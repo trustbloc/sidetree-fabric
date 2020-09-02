@@ -10,10 +10,7 @@ import (
 	"sync"
 
 	"github.com/hyperledger/fabric/common/flogging"
-	dcas "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
-	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
-	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
@@ -24,10 +21,6 @@ import (
 
 var logger = flogging.MustGetLogger("sidetree_peer")
 
-type txnServiceProvider interface {
-	ForChannel(channelID string) (txnapi.Service, error)
-}
-
 type configServiceProvider interface {
 	ForChannel(channelID string) ledgerconfig.Service
 }
@@ -36,10 +29,6 @@ type peerConfig interface {
 	PeerID() string
 	PeerAddress() string
 	MSPID() string
-}
-
-type dcasClientProvider interface {
-	ForChannel(channelID string) (dcas.DCAS, error)
 }
 
 type restConfig interface {
@@ -52,10 +41,6 @@ type restConfig interface {
 
 type sidetreeConfigProvider interface {
 	ForChannel(channelID string) config.SidetreeService
-}
-
-type operationQueueProvider interface {
-	Create(channelID string, namespace string) (cutter.OperationQueue, error)
 }
 
 type discoveryProvider interface {

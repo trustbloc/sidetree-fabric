@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/stretchr/testify/require"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	cfgservice "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
+	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	mocks2 "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
@@ -149,10 +151,21 @@ func TestChannelController_Update(t *testing.T) {
 
 	discoveryProvider := &peermocks.DiscoveryProvider{}
 
+	ledgerProvider := &extmocks.LedgerProvider{}
+	l := &extmocks.Ledger{
+		BlockchainInfo: &cb.BlockchainInfo{
+			Height: 1000,
+		},
+	}
+	ledgerProvider.GetLedgerReturns(l)
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
-			DCASProvider:           dcasProvider,
-			OperationQueueProvider: opQueueProvider,
+			Providers: &sidetreectx.Providers{
+				DCASProvider:           dcasProvider,
+				OperationQueueProvider: opQueueProvider,
+				LedgerProvider:         ledgerProvider,
+			},
 		},
 		PeerConfig:        peerConfig,
 		ConfigProvider:    configProvider,
@@ -345,10 +358,21 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 
 	discoveryProvider := &peermocks.DiscoveryProvider{}
 
+	ledgerProvider := &extmocks.LedgerProvider{}
+	l := &extmocks.Ledger{
+		BlockchainInfo: &cb.BlockchainInfo{
+			Height: 1000,
+		},
+	}
+	ledgerProvider.GetLedgerReturns(l)
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
-			DCASProvider:           dcasProvider,
-			OperationQueueProvider: opQueueProvider,
+			Providers: &sidetreectx.Providers{
+				DCASProvider:           dcasProvider,
+				OperationQueueProvider: opQueueProvider,
+				LedgerProvider:         ledgerProvider,
+			},
 		},
 		PeerConfig:        peerConfig,
 		ConfigProvider:    configProvider,
@@ -404,10 +428,21 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 
 	discoveryProvider := &peermocks.DiscoveryProvider{}
 
+	ledgerProvider := &extmocks.LedgerProvider{}
+	l := &extmocks.Ledger{
+		BlockchainInfo: &cb.BlockchainInfo{
+			Height: 1000,
+		},
+	}
+	ledgerProvider.GetLedgerReturns(l)
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
-			OperationQueueProvider: opQueueProvider,
-			BlockchainProvider:     blockchainProvider,
+			Providers: &sidetreectx.Providers{
+				OperationQueueProvider: opQueueProvider,
+				LedgerProvider:         ledgerProvider,
+			},
+			BlockchainProvider: blockchainProvider,
 		},
 		PeerConfig:        peerConfig,
 		ConfigProvider:    configProvider,
@@ -470,11 +505,22 @@ func TestChannelController_LoadDiscoveryHandlers(t *testing.T) {
 	blockchainProvider := &mocks2.BlockchainClientProvider{}
 
 	discoveryProvider := &peermocks.DiscoveryProvider{}
+	ledgerProvider := &extmocks.LedgerProvider{}
+
+	l := &extmocks.Ledger{
+		BlockchainInfo: &cb.BlockchainInfo{
+			Height: 1000,
+		},
+	}
+	ledgerProvider.GetLedgerReturns(l)
 
 	providers := &providers{
 		ContextProviders: &ContextProviders{
-			OperationQueueProvider: opQueueProvider,
-			BlockchainProvider:     blockchainProvider,
+			Providers: &sidetreectx.Providers{
+				OperationQueueProvider: opQueueProvider,
+				LedgerProvider:         ledgerProvider,
+			},
+			BlockchainProvider: blockchainProvider,
 		},
 		PeerConfig:        peerConfig,
 		ConfigProvider:    configProvider,

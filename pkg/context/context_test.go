@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
+	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
@@ -34,6 +34,7 @@ func TestNew(t *testing.T) {
 	txnProvider := &mocks.TxnServiceProvider{}
 	dcasProvider := &mocks.DCASClientProvider{}
 	opQueueProvider := &mocks.OperationQueueProvider{}
+	ledgerProvider := &extmocks.LedgerProvider{}
 	protocolVersions := map[string]protocolApi.Protocol{}
 
 	errExpected := errors.New("injected op queue error")
@@ -44,13 +45,20 @@ func TestNew(t *testing.T) {
 		Collection:    coll,
 	}
 
-	sctx, err := New(channelID, namespace, dcasCfg, protocolVersions, txnProvider, dcasProvider, opQueueProvider)
+	p := &Providers{
+		TxnProvider:            txnProvider,
+		DCASProvider:           dcasProvider,
+		OperationQueueProvider: opQueueProvider,
+		LedgerProvider:         ledgerProvider,
+	}
+
+	sctx, err := New(channelID, namespace, dcasCfg, protocolVersions, p)
 	require.EqualError(t, err, errExpected.Error())
 	require.Nil(t, sctx)
 
 	opQueueProvider.CreateReturns(&opqueue.MemQueue{}, nil)
 
-	sctx, err = New(channelID, namespace, dcasCfg, protocolVersions, txnProvider, dcasProvider, opQueueProvider)
+	sctx, err = New(channelID, namespace, dcasCfg, protocolVersions, p)
 	require.NoError(t, err)
 	require.NotNil(t, sctx)
 

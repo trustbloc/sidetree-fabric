@@ -58,16 +58,14 @@ type blockchainClientProvider interface {
 
 // ContextProviders defines the providers required by the context
 type ContextProviders struct {
-	TxnProvider            txnServiceProvider
-	DCASProvider           dcasClientProvider
-	OperationQueueProvider operationQueueProvider
-	BlockchainProvider     blockchainClientProvider
+	*sidetreectx.Providers
+	BlockchainProvider blockchainClientProvider
 }
 
 func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider common.OperationStoreProvider, tokenProvider tokenProvider) (*context, error) {
 	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, handlerCfg.Namespace)
 
-	ctx, err := newSidetreeContext(channelID, handlerCfg.Namespace, cfg, dcasCfg, providers.TxnProvider, providers.DCASProvider, providers.OperationQueueProvider)
+	ctx, err := newSidetreeContext(channelID, handlerCfg.Namespace, cfg, dcasCfg, providers.Providers)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +97,7 @@ func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg con
 	}, nil
 }
 
-func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService, dcasCfg config.DCAS, txnProvider txnServiceProvider, dcasProvider dcasClientProvider, opQueueProvider operationQueueProvider) (*sidetreectx.SidetreeContext, error) {
+func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService, dcasCfg config.DCAS, providers *sidetreectx.Providers) (*sidetreectx.SidetreeContext, error) {
 	protocolVersions, err := cfg.LoadProtocols(namespace)
 	if err != nil {
 		return nil, err
@@ -109,5 +107,5 @@ func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService,
 		return nil, errors.Errorf("no protocols defined for [%s]", namespace)
 	}
 
-	return sidetreectx.New(channelID, namespace, dcasCfg, protocolVersions, txnProvider, dcasProvider, opQueueProvider)
+	return sidetreectx.New(channelID, namespace, dcasCfg, protocolVersions, providers)
 }
