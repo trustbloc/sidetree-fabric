@@ -13,9 +13,9 @@ require (
 
 replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.4
 
-replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200827153016-67510e986ed9
+replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20200902124622-3c735642587f
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.4
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.5-0.20200902124622-3c735642587f
 
 replace github.com/trustbloc/sidetree-fabric => ../..
 
