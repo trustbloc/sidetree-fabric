@@ -32,9 +32,11 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+	"github.com/trustbloc/fabric-peer-ext/pkg/statedb"
 	txnmocks "github.com/trustbloc/fabric-peer-ext/pkg/txn/mocks"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -138,7 +140,7 @@ func TestInitialize(t *testing.T) {
 	restore := setRoles(role.Observer, role.BatchWriter, role.Resolver)
 	defer restore()
 
-	qe := mocks.NewQueryExecutor().
+	db := peermocks.NewStateDB().
 		WithState(configSCC, dcasCfgKeyBytes, dcasCfgValueBytes).
 		WithState(configSCC, didTrustblocCfgKeyBytes, didTrustblocCfgValueBytes).
 		WithState(configSCC, getIndexKey(didTrustblocCfgKeyBytes, []string{config.GlobalMSPID}), []byte("{}")).
@@ -155,6 +157,8 @@ func TestInitialize(t *testing.T) {
 
 	req := &Require{require.New(t)}
 
+	statedb.GetProvider().Register(channelID, db)
+
 	req.NotPanics(Initialize)
 
 	gossip := mocks.NewMockGossipAdapter()
@@ -166,7 +170,7 @@ func TestInitialize(t *testing.T) {
 	req.NoError(
 		resource.Mgr.Initialize(
 			blockpublisher.ProviderInstance,
-			newMockLedgerProvider(qe),
+			newMockLedgerProvider(mocks.NewQueryExecutor()),
 			newMockPeerConfigPrivider(),
 			gossipProvider,
 			&mocks.IdentityDeserializerProvider{},
@@ -195,7 +199,7 @@ func TestInitialize(t *testing.T) {
 	req.ConnectionRefused()
 
 	t.Run("Update peer config with only did:sidetree namespace", func(t *testing.T) {
-		qe.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+		db.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
 			WithState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID}), []byte("{}")).
 			WithDeletedState(configSCC, peerTrustblocHandlerCfgKeyBytes).
 			WithDeletedState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}))
@@ -214,7 +218,7 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update peer config with did:sidetree and did:bloc:trustbloc.dev namespaces", func(t *testing.T) {
-		qe.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+		db.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
 			WithState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID}), []byte("{}")).
 			WithState(configSCC, peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes).
 			WithState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}), []byte("{}"))
@@ -234,7 +238,7 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update consortium config", func(t *testing.T) {
-		qe.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+		db.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
 			WithState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID}), []byte("{}")).
 			WithState(configSCC, peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes).
 			WithState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}), []byte("{}"))
@@ -252,7 +256,7 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update irrelevant config", func(t *testing.T) {
-		qe.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
+		db.WithState(configSCC, peerDocumentHandlerCfgKeyBytes, peerDocumentHandlerCfgValueBytes).
 			WithState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID}), []byte("{}")).
 			WithState(configSCC, peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes).
 			WithState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}), []byte("{}"))
@@ -274,7 +278,7 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update peer config with only did:bloc:trustbloc.dev namespace", func(t *testing.T) {
-		qe.WithDeletedState(configSCC, peerDocumentHandlerCfgKeyBytes).
+		db.WithDeletedState(configSCC, peerDocumentHandlerCfgKeyBytes).
 			WithDeletedState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID})).
 			WithState(configSCC, peerTrustblocHandlerCfgKeyBytes, peerTrustblocHandlerCfgValueBytes).
 			WithState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}), []byte("{}"))
@@ -292,7 +296,7 @@ func TestInitialize(t *testing.T) {
 	})
 
 	t.Run("Update peer config with no namespaces", func(t *testing.T) {
-		qe.WithDeletedState(configSCC, peerDocumentHandlerCfgKeyBytes).
+		db.WithDeletedState(configSCC, peerDocumentHandlerCfgKeyBytes).
 			WithDeletedState(configSCC, getIndexKey(peerDocumentHandlerCfgKeyBytes, []string{mspID})).
 			WithDeletedState(configSCC, peerTrustblocHandlerCfgKeyBytes).
 			WithDeletedState(configSCC, getIndexKey(peerTrustblocHandlerCfgKeyBytes, []string{mspID}))
