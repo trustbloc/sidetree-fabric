@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/fabric-peer-ext/pkg/gossip/blockpublisher"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
+	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
@@ -96,10 +98,21 @@ func TestProvider(t *testing.T) {
 
 	discoveryProvider := &peermocks.DiscoveryProvider{}
 
+	ledgerProvider := &extmocks.LedgerProvider{}
+	l := &extmocks.Ledger{
+		BlockchainInfo: &cb.BlockchainInfo{
+			Height: 1000,
+		},
+	}
+	ledgerProvider.GetLedgerReturns(l)
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
-			OperationQueueProvider: opQueueProvider,
-			DCASProvider:           dcasProvider,
+			Providers: &sidetreectx.Providers{
+				OperationQueueProvider: opQueueProvider,
+				DCASProvider:           dcasProvider,
+				LedgerProvider:         ledgerProvider,
+			},
 		},
 		PeerConfig:        peerConfig,
 		RESTConfig:        restConfig,

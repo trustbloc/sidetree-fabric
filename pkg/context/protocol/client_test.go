@@ -7,15 +7,18 @@ SPDX-License-Identifier: Apache-2.0
 package protocol
 
 import (
+	"fmt"
 	"testing"
 
+	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
 
 func TestNew(t *testing.T) {
 	versions := map[string]protocol.Protocol{}
-	client := New(versions)
+	client := New(versions, &mocks.Ledger{})
 	require.NotNil(t, client)
 }
 
@@ -35,11 +38,26 @@ func TestClient_Current(t *testing.T) {
 		},
 	}
 
-	client := New(versions)
+	l := &mocks.Ledger{
+		BlockchainInfo: &cb.BlockchainInfo{Height: 10001},
+	}
+
+	client := New(versions, l)
 	require.NotNil(t, client)
 
-	protocol := client.Current()
-	require.Equal(t, uint(10000), protocol.MaxOperationCount)
+	p, err := client.Current()
+	require.NoError(t, err)
+	require.Equal(t, uint(100), p.MaxOperationCount)
+
+	l.BlockchainInfo = &cb.BlockchainInfo{Height: 500001}
+
+	p, err = client.Current()
+	require.NoError(t, err)
+	require.Equal(t, uint(10000), p.MaxOperationCount)
+
+	l.BcInfoError = fmt.Errorf("injected protocol error")
+	p, err = client.Current()
+	require.EqualError(t, err, l.BcInfoError.Error())
 }
 
 func TestClient_Get(t *testing.T) {
@@ -58,7 +76,13 @@ func TestClient_Get(t *testing.T) {
 		},
 	}
 
-	client := New(versions)
+	l := &mocks.Ledger{
+		BlockchainInfo: &cb.BlockchainInfo{
+			Height: 10001,
+		},
+	}
+
+	client := New(versions, l)
 	require.NotNil(t, client)
 
 	protocol, err := client.Get(100)

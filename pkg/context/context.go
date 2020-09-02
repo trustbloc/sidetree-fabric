@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package context
 
 import (
+	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
 
@@ -43,15 +44,25 @@ type operationQueueProvider interface {
 	Create(channelID string, namespace string) (cutter.OperationQueue, error)
 }
 
+type ledgerProvider interface {
+	GetLedger(cid string) ledger.PeerLedger
+}
+
+// Providers contains the providers required by the SidetreeContext
+type Providers struct {
+	TxnProvider            txnServiceProvider
+	DCASProvider           dcasClientProvider
+	OperationQueueProvider operationQueueProvider
+	LedgerProvider         ledgerProvider
+}
+
 // New creates new Sidetree context
 func New(
 	channelID, namespace string,
 	dcasCfg config.DCAS,
 	protocolVersions map[string]protocolApi.Protocol,
-	txnProvider txnServiceProvider,
-	dcasProvider dcasClientProvider,
-	opQueueProvider operationQueueProvider) (*SidetreeContext, error) {
-	opQueue, err := opQueueProvider.Create(channelID, namespace)
+	providers *Providers) (*SidetreeContext, error) {
+	opQueue, err := providers.OperationQueueProvider.Create(channelID, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -59,9 +70,9 @@ func New(
 	return &SidetreeContext{
 		channelID:        channelID,
 		namespace:        namespace,
-		protocolClient:   protocol.New(protocolVersions),
-		casClient:        cas.New(channelID, dcasCfg, dcasProvider),
-		blockchainClient: blockchain.New(channelID, dcasCfg.ChaincodeName, namespace, txnProvider),
+		protocolClient:   protocol.New(protocolVersions, providers.LedgerProvider.GetLedger(channelID)),
+		casClient:        cas.New(channelID, dcasCfg, providers.DCASProvider),
+		blockchainClient: blockchain.New(channelID, dcasCfg.ChaincodeName, namespace, providers.TxnProvider),
 		opQueue:          opQueue,
 	}, nil
 }

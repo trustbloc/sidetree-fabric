@@ -12,11 +12,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
+	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
+	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
@@ -39,9 +40,12 @@ func TestContext(t *testing.T) {
 	restCfg := &peermocks.RestConfig{}
 
 	ctxProviders := &ContextProviders{
-		TxnProvider:            &peermocks.TxnServiceProvider{},
-		DCASProvider:           &peermocks.DCASClientProvider{},
-		OperationQueueProvider: &mocks.OperationQueueProvider{},
+		Providers: &sidetreectx.Providers{
+			TxnProvider:            &peermocks.TxnServiceProvider{},
+			DCASProvider:           &peermocks.DCASClientProvider{},
+			OperationQueueProvider: &mocks.OperationQueueProvider{},
+			LedgerProvider:         &extmocks.LedgerProvider{},
+		},
 	}
 
 	t.Run("Success", func(t *testing.T) {
