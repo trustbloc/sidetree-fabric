@@ -7,9 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
+	"crypto"
 	"encoding/json"
 	"fmt"
-	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"testing"
 	"time"
 
@@ -24,6 +24,7 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"github.com/trustbloc/sidetree-core-go/pkg/compression"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
@@ -609,7 +610,7 @@ func generateCreateOperations(num int) (*batch.Operation, error) {
 		X:   "x",
 	}
 
-	c, err := commitment.Calculate(testKey, sha2_256)
+	c, err := commitment.Calculate(testKey, sha2_256, crypto.SHA256)
 	if err != nil {
 		return nil, err
 	}

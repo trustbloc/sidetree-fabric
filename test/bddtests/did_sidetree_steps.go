@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package bddtests
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/elliptic"
@@ -415,7 +416,7 @@ func getCommitment(key *ecdsa.PublicKey) (string, error) {
 		return "", err
 	}
 
-	return commitment.Calculate(pubKey, sha2_256)
+	return commitment.Calculate(pubKey, sha2_256, crypto.SHA256)
 }
 
 func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byte, error) {
