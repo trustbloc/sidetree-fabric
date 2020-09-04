@@ -9,6 +9,7 @@ package httpserver
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -294,7 +295,7 @@ func getCreateRequest() ([]byte, error) {
 		X:   "x",
 	}
 
-	c, err := commitment.Calculate(testKey, sha2_256)
+	c, err := commitment.Calculate(testKey, sha2_256, crypto.SHA256)
 	if err != nil {
 		return nil, err
 	}

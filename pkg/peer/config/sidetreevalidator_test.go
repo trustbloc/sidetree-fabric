@@ -14,11 +14,152 @@ import (
 )
 
 const (
-	protocolCfg                         = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000,"maxOperationCount":10}`
-	protocolInvalidAlgoCfg              = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":2777,"maxOperationSize":2000,"maxOperationCount":10}`
-	protocolInvalidMaxOperationCountCfg = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000}`
-	protocolInvalidMaxOperationSizeCfg  = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationCount":10}`
-	appCfg                              = `
+	protocolCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidMulithashAlgoCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":2777,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidHashAlgoCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidMaxOperationCountCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidMaxOperationSizeCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidMaxAnchorSizeCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidMaxMapSizeCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidMaxChunkSizeCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidCompressionAlgoCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidSignatureAlgorithmsCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+	}`
+
+	protocolInvalidKeyAlgorithmsCfg = `{
+		"genesisTime":500000,
+		"hashAlgorithmInMultihashCode":18,
+		"hashAlgorithm":5,
+		"maxOperationSize":2000,
+		"maxOperationCount":10,
+		"compressionAlgorithm": "GZIP",
+		"maxAnchorFileSize": 1000000,
+		"maxMapFileSize": 1000000,
+		"maxChunkFileSize": 10000000,
+		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"]
+	}`
+
+	appCfg = `
 batchWriterTimeout: 1s	
 chaincodeName: document
 collection: docs
@@ -107,10 +248,16 @@ func TestSidetreeValidator_ValidateProtocol(t *testing.T) {
 		require.Contains(t, err.Error(), "invalid protocol config")
 	})
 
-	t.Run("Invalid algorithm -> error", func(t *testing.T) {
-		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidAlgoCfg, config.FormatJSON, sidetreeTag)))
+	t.Run("Invalid multihash algorithm -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMulithashAlgoCfg, config.FormatJSON, sidetreeTag)))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "algorithm not supported")
+	})
+
+	t.Run("Invalid hash algorithm -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidHashAlgoCfg, config.FormatJSON, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "hash function not available for: 0")
 	})
 
 	t.Run("Invalid MaxOperationCount -> error", func(t *testing.T) {
@@ -123,5 +270,41 @@ func TestSidetreeValidator_ValidateProtocol(t *testing.T) {
 		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxOperationSizeCfg, config.FormatJSON, sidetreeTag)))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "field 'MaxOperationSize' must contain a value greater than 0")
+	})
+
+	t.Run("Invalid MaxAnchorFileSize -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxAnchorSizeCfg, config.FormatJSON, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'MaxAnchorFileSize' must contain a value greater than 0")
+	})
+
+	t.Run("Invalid MaxMapFileSize -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxMapSizeCfg, config.FormatJSON, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'MaxMapFileSize' must contain a value greater than 0")
+	})
+
+	t.Run("Invalid MaxChunkFileSize -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidMaxChunkSizeCfg, config.FormatJSON, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'MaxChunkFileSize' must contain a value greater than 0")
+	})
+
+	t.Run("Invalid SignatureAlgorithms -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidSignatureAlgorithmsCfg, config.FormatJSON, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'SignatureAlgorithms' cannot be empty")
+	})
+
+	t.Run("Invalid KeyAlgorithms -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidKeyAlgorithmsCfg, config.FormatJSON, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'KeyAlgorithms' cannot be empty")
+	})
+
+	t.Run("Invalid CompressionAlgorithm -> error", func(t *testing.T) {
+		err := v.Validate(config.NewKeyValue(protocolKey, config.NewValue(txID, protocolInvalidCompressionAlgoCfg, config.FormatJSON, sidetreeTag)))
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'CompressionAlgorithm' cannot be empty")
 	})
 }
