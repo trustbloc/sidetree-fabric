@@ -39,6 +39,7 @@ const (
 	sha2_256 = 18
 
 	initialStateParamTemplate = "?-%s-initial-state="
+	initialStateSeparator     = ":"
 )
 
 const addPublicKeysTemplate = `[{
@@ -135,7 +136,7 @@ func (d *DIDSideSteps) sendDIDDocument(url, namespace string) error {
 	return d.httpPost(url, req, contentTypeJSON)
 }
 
-func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
+func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url, mode string) error {
 	did, err := d.getDID()
 	if err != nil {
 		return err
@@ -143,14 +144,24 @@ func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
 
 	initialState := d.createRequest.SuffixData + "." + d.createRequest.Delta
 
-	method, err := getMethod(d.reqNamespace)
-	if err != nil {
-		return err
+	var req string
+	switch mode {
+	case "parameter":
+		method, err := getMethod(d.reqNamespace)
+		if err != nil {
+			return err
+		}
+
+		initialStateParam := fmt.Sprintf(initialStateParamTemplate, method)
+
+		req = url + "/" + did + initialStateParam + initialState
+
+	case "value":
+		req = url + "/" + did + initialStateSeparator + initialState
+
+	default:
+		return fmt.Errorf("mode '%s' not supported", mode)
 	}
-
-	initialStateParam := fmt.Sprintf(initialStateParamTemplate, method)
-
-	req := url + "/" + did + initialStateParam + initialState
 
 	return d.httpGet(req)
 }
@@ -738,7 +749,7 @@ func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^client sends request to "([^"]*)" to remove service endpoint with ID "([^"]*)" from DID document$`, d.removeServiceEndpointsFromDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to recover DID document$`, d.recoverDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to deactivate DID document$`, d.deactivateDIDDocument)
-	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial value$`, d.resolveDIDDocumentWithInitialValue)
+	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial state "([^"]*)"$`, d.resolveDIDDocumentWithInitialValue)
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessRespContains)
 	s.Step(`^check success response does NOT contain "([^"]*)"$`, d.checkSuccessRespDoesNotContain)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document$`, d.resolveDIDDocument)
