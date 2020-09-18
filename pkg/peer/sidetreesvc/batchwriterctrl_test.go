@@ -12,9 +12,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
+	"github.com/trustbloc/sidetree-core-go/pkg/mocks"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
@@ -44,7 +45,12 @@ func TestBatchWriter(t *testing.T) {
 	ctx := &peermocks.BatchContext{}
 	ctx.OperationQueueReturns(&opqueue.MemQueue{})
 
+	v := &mocks.ProtocolVersion{}
+	v.ProtocolReturns(protocol.Protocol{})
+
 	pc := &peermocks.ProtocolClient{}
+	pc.CurrentReturns(v, nil)
+
 	ctx.ProtocolReturns(pc)
 
 	t.Run("Success", func(t *testing.T) {

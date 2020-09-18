@@ -1,5 +1,5 @@
 {
-  "genesisTime": 100,
+  "genesisTime": 20,
   "hashAlgorithmInMultihashCode": 18,
   "hashAlgorithm": 5,
   "maxOperationSize": 200000,

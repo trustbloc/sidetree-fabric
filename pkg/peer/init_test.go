@@ -37,6 +37,8 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/factoryregistry"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/version"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -54,8 +56,8 @@ const (
 	pageNotFound = "404 page not found"
 
 	v1     = "1"
-	v0_4   = "0.4"
-	v0_5   = "0.5"
+	v0_1_1 = "0.1.1"
+	v0_2_0 = "0.2"
 	v0_1_3 = "0.1.3"
 
 	tx1 = "tx1"
@@ -102,16 +104,16 @@ var (
 	didTrustblocCfgValueBytes       = marshalConfigValue(tx1, didTrustblocCfgYaml, "yaml")
 	didTrustblocCfgUpdateValueBytes = marshalConfigValue(tx3, didTrustblocCfgUpdateYaml, "yaml")
 
-	didTrustblocProtocol_v0_5_CfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewComponentKey(config.GlobalMSPID, didTrustblocNamespace, v1, config.ProtocolComponentName, v0_5))
+	didTrustblocProtocol_v0_5_CfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewComponentKey(config.GlobalMSPID, didTrustblocNamespace, v1, config.ProtocolComponentName, v0_2_0))
 	didTrustblocProtocol_v0_5_CfgValueBytes = marshalConfigValue(tx1, didTrustblocProtocol_V0_5_CfgJSON, "json")
 
 	didSidetreeCfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewAppKey(config.GlobalMSPID, didSidetreeNamespace, v1))
 	didSidetreeCfgValueBytes = marshalConfigValue(tx1, didSidetreeCfgJSON, "json")
 
-	didSidetreeProtocol_v0_4_CfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewComponentKey(config.GlobalMSPID, didSidetreeNamespace, v1, config.ProtocolComponentName, v0_4))
+	didSidetreeProtocol_v0_4_CfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewComponentKey(config.GlobalMSPID, didSidetreeNamespace, v1, config.ProtocolComponentName, v0_1_1))
 	didSidetreeProtocol_v0_4_CfgValueBytes = marshalConfigValue(tx1, didSidetreeProtocol_V0_4_CfgJSON, "json")
 
-	didSidetreeProtocol_v0_5_CfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewComponentKey(config.GlobalMSPID, didSidetreeNamespace, v1, config.ProtocolComponentName, v0_5))
+	didSidetreeProtocol_v0_5_CfgKeyBytes   = ledgercfgmgr.MarshalKey(ledgercfg.NewComponentKey(config.GlobalMSPID, didSidetreeNamespace, v1, config.ProtocolComponentName, v0_2_0))
 	didSidetreeProtocol_v0_5_CfgValueBytes = marshalConfigValue(tx1, didSidetreeProtocol_V0_5_CfgJSON, "json")
 
 	peerCfgKeyBytes                   = ledgercfgmgr.MarshalKey(ledgercfg.NewPeerKey(mspID, peerID, config.SidetreePeerAppName, config.SidetreePeerAppVersion))
@@ -166,6 +168,9 @@ func TestInitialize(t *testing.T) {
 
 	gossipProvider := &mocks.GossipProvider{}
 	gossipProvider.GetGossipServiceReturns(gossip)
+
+	// Register a new protocol version under 0.2.0 using the 0.1.0 implementation (just for testing purpose)
+	require.NoError(t, factoryregistry.Register(v0_2_0, version.New()))
 
 	req.NoError(
 		resource.Mgr.Initialize(

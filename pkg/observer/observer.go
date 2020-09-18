@@ -18,9 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/txn"
-	"github.com/trustbloc/sidetree-core-go/pkg/compression"
-	"github.com/trustbloc/sidetree-core-go/pkg/observer"
-	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
@@ -74,12 +71,12 @@ type Observer struct {
 	period         time.Duration
 	maxAttempts    int
 	done           chan struct{}
-	txnProcessor   *observer.TxnProcessor
 	blockchain     common.BlockchainClientProvider
 	metadataStore  metadataStore
 	processStarted uint32
 	txnChan        <-chan gossipapi.TxMetadata
 	processChan    chan struct{}
+	pcp            ctxcommon.ProtocolClientProvider
 }
 
 type peerConfig interface {
@@ -88,7 +85,7 @@ type peerConfig interface {
 }
 
 // New returns a new Observer
-func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcasCfg config.DCAS, clientProviders *ClientProviders, opStoreProvider ctxcommon.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata, pcp ctxcommon.ProtocolClientProvider) *Observer {
+func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, clientProviders *ClientProviders, txnChan <-chan gossipapi.TxMetadata, pcp ctxcommon.ProtocolClientProvider) *Observer {
 	period := observerCfg.Period
 	if period == 0 {
 		period = defaultMonitorPeriod
@@ -99,9 +96,6 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		maxAttempts = defaultMaxAttempts
 	}
 
-	dcasReader := NewSidetreeDCASReader(channelID, dcasCfg, clientProviders.DCAS)
-	compressionProvider := compression.New(compression.WithDefaultAlgorithms())
-
 	m := &Observer{
 		channelID:     channelID,
 		period:        period,
@@ -109,15 +103,10 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, dcas
 		blockchain:    clientProviders.Blockchain,
 		metadataStore: NewMetaDataStore(channelID, peerCfg, observerCfg.MetaDataChaincodeName, clientProviders.OffLedger),
 		leaseProvider: lease.NewProvider(channelID, clientProviders.Gossip.GetGossipService()),
-		txnProcessor: observer.NewTxnProcessor(
-			&observer.Providers{
-				TxnOpsProvider:  txnhandler.NewOperationProvider(dcasReader, pcp, compressionProvider),
-				OpStoreProvider: asObserverStoreProvider(opStoreProvider),
-			},
-		),
-		txnChan:     txnChan,
-		done:        make(chan struct{}, 1),
-		processChan: make(chan struct{}),
+		txnChan:       txnChan,
+		done:          make(chan struct{}, 1),
+		processChan:   make(chan struct{}),
+		pcp:           pcp,
 	}
 
 	return m
@@ -336,7 +325,17 @@ func (m *Observer) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
 			Namespace:         txnInfo.Namespace,
 		}
 
-		if err := m.txnProcessor.Process(sidetreeTxn); err != nil {
+		pv, err := m.pcp.ForNamespace(txnInfo.Namespace)
+		if err != nil {
+			return err
+		}
+
+		pc, err := pv.Get(w.BlockNum)
+		if err != nil {
+			return err
+		}
+
+		if err := pc.TransactionProcessor().Process(sidetreeTxn); err != nil {
 			return errors.WithMessagef(err, "error processing Txn for anchor [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
 		}
 
@@ -453,21 +452,4 @@ func (m *Observer) processorStarting() bool {
 
 func (m *Observer) processorStopped() {
 	atomic.CompareAndSwapUint32(&m.processStarted, 1, 0)
-}
-
-type observerStorePovider struct {
-	opStoreProvider ctxcommon.OperationStoreProvider
-}
-
-func asObserverStoreProvider(p ctxcommon.OperationStoreProvider) *observerStorePovider {
-	return &observerStorePovider{opStoreProvider: p}
-}
-
-func (p *observerStorePovider) ForNamespace(namespace string) (observer.OperationStore, error) {
-	s, err := p.opStoreProvider.ForNamespace(namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	return s, nil
 }

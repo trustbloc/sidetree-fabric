@@ -90,6 +90,7 @@ Feature:
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-protocol-config.json --noprompt" then the error response should contain "algorithm not supported"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-config.json --noprompt" then the error response should contain "field 'BatchWriterTimeout' must contain a value greater than 0"
     When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-sidetree-peer-config.json --noprompt" then the error response should contain "field 'BasePath' must begin with '/'"
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/unsupported-version-config.json --noprompt" then the error response should contain "protocol version [5.1] not supported"
 
   @observer_failover
   Scenario: Active observer fails over to standby

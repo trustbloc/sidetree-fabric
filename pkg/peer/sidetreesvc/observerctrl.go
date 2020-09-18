@@ -11,7 +11,6 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
@@ -21,10 +20,10 @@ type observerController struct {
 	observer  *observer.Observer
 }
 
-func newObserverController(channelID string, peerConfig peerConfig, observerCfg config.Observer, dcasCfg config.DCAS, providers *observer.ClientProviders, opStoreProvider common.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata, pcp protocol.ClientProvider) *observerController {
+func newObserverController(channelID string, peerConfig peerConfig, observerCfg config.Observer, providers *observer.ClientProviders, txnChan <-chan gossipapi.TxMetadata, pcp protocol.ClientProvider) *observerController {
 	var o *observer.Observer
 	if role.IsObserver() {
-		o = observer.New(channelID, peerConfig, observerCfg, dcasCfg, providers, opStoreProvider, txnChan, pcp)
+		o = observer.New(channelID, peerConfig, observerCfg, providers, txnChan, pcp)
 	}
 
 	return &observerController{

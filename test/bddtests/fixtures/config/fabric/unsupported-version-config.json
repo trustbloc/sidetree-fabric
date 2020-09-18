@@ -7,8 +7,8 @@
       "Components": [
         {
           "Name": "protocol",
-          "Version": "0.1",
-          "Config": "file://./invalid-hash-algorithm.json",
+          "Version": "5.1",
+          "Config": "file://./sidetree-protocol-v0_1.json",
           "Format": "json",
           "Tags": ["sidetree"]
         }

@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
 	"github.com/trustbloc/sidetree-core-go/pkg/compression"
-	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
 )
 
 // BlockchainSteps
@@ -105,7 +105,7 @@ func (d *BlockchainSteps) getAnchorAddressFromTxnInfo(txInfoVar, anchorAddressVa
 		return err
 	}
 
-	ad, err := txnhandler.ParseAnchorData(txnInfo.AnchorString)
+	ad, err := txnprovider.ParseAnchorData(txnInfo.AnchorString)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (d *BlockchainSteps) getAnchorAddress(anchorStringVar, anchorAddressVar str
 		return fmt.Errorf("var[%s] not set", anchorStringVar)
 	}
 
-	ad, err := txnhandler.ParseAnchorData(anchorString)
+	ad, err := txnprovider.ParseAnchorData(anchorString)
 	if err != nil {
 		return err
 	}

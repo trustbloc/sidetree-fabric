@@ -23,8 +23,8 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
-//go:generate counterfeiter -o ../mocks/txnserviceprovider.gen.go --fake-name TxnServiceProvider . txnServiceProvider
-//go:generate counterfeiter -o ../mocks/dcasprovider.gen.go --fake-name DCASClientProvider . dcasClientProvider
+//go:generate counterfeiter -o ../mocks/protocolversionfactory.gen.go --fake-name ProtocolVersionFactory . protocolVersionFactory
+//go:generate counterfeiter -o ../../mocks/protocolversion.gen.go --fake-name ProtocolVersion github.com/trustbloc/sidetree-core-go/pkg/api/protocol.Version
 
 func TestContext(t *testing.T) {
 	nsCfg := sidetreehandler.Config{
@@ -46,6 +46,7 @@ func TestContext(t *testing.T) {
 			OperationQueueProvider: &mocks.OperationQueueProvider{},
 			LedgerProvider:         &extmocks.LedgerProvider{},
 		},
+		VersionFactory: &peermocks.ProtocolVersionFactory{},
 	}
 
 	t.Run("Success", func(t *testing.T) {

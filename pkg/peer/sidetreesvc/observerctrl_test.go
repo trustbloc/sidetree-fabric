@@ -17,7 +17,6 @@ import (
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
@@ -38,8 +37,7 @@ func TestObserverController(t *testing.T) {
 	peerCfg.PeerIDReturns(peer1)
 	peerCfg.MSPIDReturns(msp1)
 
-	monitorCfg := config.Observer{Period: time.Second}
-	dcasCfg := config.DCAS{}
+	observerCfg := config.Observer{Period: time.Second}
 	providers := &observer.ClientProviders{}
 	gossip := extmocks.NewMockGossipAdapter()
 	gossip.Self(msp1, extmocks.NewMember(peer1, []byte("pkiid")))
@@ -59,7 +57,7 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		m := newObserverController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{}, txnChan, coremocks.NewMockProtocolClientProvider())
+		m := newObserverController(channel1, peerCfg, observerCfg, providers, txnChan, coremocks.NewMockProtocolClientProvider())
 		require.NotNil(t, m)
 
 		require.NoError(t, m.Start())
@@ -76,7 +74,7 @@ func TestObserverController(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		m := newObserverController(channel1, peerCfg, monitorCfg, dcasCfg, providers, &mocks.OperationStoreProvider{}, txnChan, coremocks.NewMockProtocolClientProvider())
+		m := newObserverController(channel1, peerCfg, observerCfg, providers, txnChan, coremocks.NewMockProtocolClientProvider())
 		require.NotNil(t, m)
 
 		require.NoError(t, m.Start())
