@@ -158,7 +158,7 @@ func (c *channelController) load() error {
 		return err
 	}
 
-	if err := c.restartObserver(cfg.Observer, dcasCfg, storeProvider); err != nil {
+	if err := c.restartObserver(cfg.Observer); err != nil {
 		return err
 	}
 
@@ -356,12 +356,12 @@ func (c *channelController) ForNamespace(ns string) (protocol.Client, error) {
 	return ctx.Protocol(), nil
 }
 
-func (c *channelController) restartObserver(observerCfg config.Observer, dcasCfg config.DCAS, storeProvider ctxcommon.OperationStoreProvider) error {
+func (c *channelController) restartObserver(observerCfg config.Observer) error {
 	if c.observer != nil {
 		c.observer.Stop()
 	}
 
-	c.observer = newObserverController(c.channelID, c.PeerConfig, observerCfg, dcasCfg, c.ObserverProviders, storeProvider, c.txnChan, c)
+	c.observer = newObserverController(c.channelID, c.PeerConfig, observerCfg, c.ObserverProviders, c.txnChan, c)
 
 	return c.observer.Start()
 }

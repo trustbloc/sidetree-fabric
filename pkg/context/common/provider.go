@@ -14,6 +14,10 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
 
+//go:generate counterfeiter -o ../../mocks/protocolclient.gen.go --fake-name ProtocolClient github.com/trustbloc/sidetree-core-go/pkg/api/protocol.Client
+//go:generate counterfeiter -o ../../mocks/protocolclientprovider.gen.go --fake-name ProtocolClientProvider github.com/trustbloc/sidetree-core-go/pkg/api/protocol.ClientProvider
+//go:generate counterfeiter -o ../../mocks/operationprovider.gen.go --fake-name OperationProvider github.com/trustbloc/sidetree-core-go/pkg/api/protocol.OperationProvider
+
 // DCASClientProvider is a DCAS client provider
 type DCASClientProvider interface {
 	ForChannel(channelID string) (dcasclient.DCAS, error)

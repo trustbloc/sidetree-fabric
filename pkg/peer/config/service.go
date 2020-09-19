@@ -12,7 +12,6 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
@@ -67,7 +66,9 @@ func NewSidetreeProvider(configProvider configServiceProvider, registry validato
 
 // ForChannel returns the service for the given channel
 func (p *SidetreeProvider) ForChannel(channelID string) config.SidetreeService {
-	return &sidetreeService{service: p.configProvider.ForChannel(channelID)}
+	return &sidetreeService{
+		service: p.configProvider.ForChannel(channelID),
+	}
 }
 
 type sidetreeService struct {

@@ -64,14 +64,20 @@ func TestProvider(t *testing.T) {
 		BasePath:  didTrustblocBasePath,
 	}
 
-	protocolVersions := map[string]protocolApi.Protocol{
-		"0.5": {
-			GenesisTime:                  100,
-			HashAlgorithmInMultiHashCode: 18,
-			MaxOperationCount:            100,
-			MaxOperationSize:             1000,
-		},
+	pr := protocolApi.Protocol{
+		GenesisTime:                  100,
+		HashAlgorithmInMultiHashCode: 18,
+		MaxOperationCount:            100,
+		MaxOperationSize:             1000,
 	}
+
+	protocolVersions := map[string]protocolApi.Protocol{"0.5": pr}
+
+	pv := &mocks.ProtocolVersion{}
+	pv.ProtocolReturns(pr)
+
+	vf := &peermocks.ProtocolVersionFactory{}
+	vf.CreateProtocolVersionReturns(pv, nil)
 
 	configSvc := &peermocks.ConfigService{}
 	configProvider := &peermocks.ConfigServiceProvider{}
@@ -113,6 +119,7 @@ func TestProvider(t *testing.T) {
 				DCASProvider:           dcasProvider,
 				LedgerProvider:         ledgerProvider,
 			},
+			VersionFactory: vf,
 		},
 		PeerConfig:        peerConfig,
 		RESTConfig:        restConfig,

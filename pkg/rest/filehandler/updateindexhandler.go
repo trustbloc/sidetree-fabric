@@ -9,6 +9,7 @@ package filehandler
 import (
 	"net/http"
 
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 )
@@ -20,10 +21,10 @@ type UpdateIndex struct {
 }
 
 // NewUpdateIndexHandler returns a new update index handler
-func NewUpdateIndexHandler(path string, processor resthandler.Processor) *UpdateIndex {
+func NewUpdateIndexHandler(path string, processor resthandler.Processor, pc protocol.Client) *UpdateIndex {
 	return &UpdateIndex{
 		path:          path,
-		UpdateHandler: resthandler.NewUpdateHandler(processor),
+		UpdateHandler: resthandler.NewUpdateHandler(processor, pc),
 	}
 }
 

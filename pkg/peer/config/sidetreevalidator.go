@@ -7,17 +7,14 @@ SPDX-License-Identifier: Apache-2.0
 package config
 
 import (
-	"crypto"
-
 	"github.com/pkg/errors"
-
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
-	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
-	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
-	"github.com/trustbloc/sidetree-core-go/pkg/hashing"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/validator"
 
 	sidetreecfg "github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/common"
 )
 
 const (
@@ -83,72 +80,22 @@ func (v *sidetreeValidator) validateConfig(kv *config.KeyValue) error {
 func (v *sidetreeValidator) validateProtocol(kv *config.KeyValue) error {
 	logger.Debugf("Validating Sidetree Protocol config %s", kv)
 
-	// Validation of protocol depends on the version.
-	switch kv.ComponentVersion {
-	default:
-		// For now, only one protocol version exists
-		return v.validateProtocolV0(kv)
-	}
-}
-
-func (v *sidetreeValidator) validateProtocolV0(kv *config.KeyValue) error {
 	p, err := unmarshalProtocol(kv.Value)
 	if err != nil {
 		return errors.WithMessagef(err, "invalid protocol config for %s", kv.Key)
 	}
 
-	if _, err := docutil.GetHash(p.HashAlgorithmInMultiHashCode); err != nil {
-		return errors.WithMessagef(err, "error in Sidetree protocol for %s", kv.Key)
+	// Validation of protocol depends on the version.
+	if common.Version(kv.ComponentVersion).Matches(protocolversion.V0_1) {
+		err = validator.Validate(p)
+		if err != nil {
+			return errors.WithMessagef(err, "invalid protocol config for %s", kv.Key)
+		}
+
+		return nil
 	}
 
-	if _, err := hashing.GetHash(crypto.Hash(p.HashAlgorithm), []byte("")); err != nil {
-		return errors.WithMessagef(err, "error in Sidetree protocol for %s", kv.Key)
-	}
-
-	if p.MaxOperationCount == 0 {
-		return errors.Errorf("field 'MaxOperationCount' must contain a value greater than 0 for %s", kv.Key)
-	}
-
-	if p.MaxOperationSize == 0 {
-		return errors.Errorf("field 'MaxOperationSize' must contain a value greater than 0 for %s", kv.Key)
-	}
-
-	if p.CompressionAlgorithm == "" {
-		return errors.Errorf("field 'CompressionAlgorithm' cannot be empty for for %s", kv.Key)
-	}
-
-	if len(p.SignatureAlgorithms) == 0 {
-		return errors.Errorf("field 'SignatureAlgorithms' cannot be empty for %s", kv.Key)
-	}
-
-	if len(p.KeyAlgorithms) == 0 {
-		return errors.Errorf("field 'KeyAlgorithms' cannot be empty for %s", kv.Key)
-	}
-
-	e := verifyBatchSizesV0(p)
-	if e != nil {
-		return errors.Errorf("%s for %s", e.Error(), kv.Key)
-	}
-
-	return nil
-}
-
-func verifyBatchSizesV0(p *protocol.Protocol) error {
-	const errMsg = "field '%s' must contain a value greater than 0"
-
-	if p.MaxAnchorFileSize == 0 {
-		return errors.Errorf(errMsg, "MaxAnchorFileSize")
-	}
-
-	if p.MaxMapFileSize == 0 {
-		return errors.Errorf(errMsg, "MaxMapFileSize")
-	}
-
-	if p.MaxChunkFileSize == 0 {
-		return errors.Errorf(errMsg, "MaxChunkFileSize")
-	}
-
-	return nil
+	return errors.Errorf("protocol version [%s] not supported for %s", kv.ComponentVersion, kv.Key)
 }
 
 func canValidate(kv *config.KeyValue) bool {

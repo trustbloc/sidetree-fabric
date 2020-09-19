@@ -18,7 +18,6 @@ import (
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/blockchain"
-	"github.com/trustbloc/sidetree-fabric/pkg/context/cas"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/protocol"
 )
 
@@ -60,7 +59,8 @@ type Providers struct {
 func New(
 	channelID, namespace string,
 	dcasCfg config.DCAS,
-	protocolVersions map[string]protocolApi.Protocol,
+	casClient casApi.Client,
+	protocolVersions []protocolApi.Version,
 	providers *Providers) (*SidetreeContext, error) {
 	opQueue, err := providers.OperationQueueProvider.Create(channelID, namespace)
 	if err != nil {
@@ -71,7 +71,7 @@ func New(
 		channelID:        channelID,
 		namespace:        namespace,
 		protocolClient:   protocol.New(protocolVersions, providers.LedgerProvider.GetLedger(channelID)),
-		casClient:        cas.New(channelID, dcasCfg, providers.DCASProvider),
+		casClient:        casClient,
 		blockchainClient: blockchain.New(channelID, dcasCfg.ChaincodeName, namespace, providers.TxnProvider),
 		opQueue:          opQueue,
 	}, nil

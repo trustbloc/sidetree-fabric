@@ -16,7 +16,7 @@ import (
 func TestUpdateIndex(t *testing.T) {
 	path := "/file"
 
-	h := NewUpdateIndexHandler(path, nil)
+	h := NewUpdateIndexHandler(path, nil, nil)
 	require.NotNil(t, h)
 	require.Equal(t, "/file", h.Path())
 	require.NotNil(t, h.Handler())

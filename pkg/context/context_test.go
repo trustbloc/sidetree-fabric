@@ -12,7 +12,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
-	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
@@ -22,6 +21,7 @@ import (
 //go:generate counterfeiter -o ./../mocks/txnserviceprovider.gen.go --fake-name TxnServiceProvider . txnServiceProvider
 //go:generate counterfeiter -o ./../mocks/txnservice.gen.go --fake-name TxnService github.com/trustbloc/fabric-peer-ext/pkg/txn/api.Service
 //go:generate counterfeiter -o ./../mocks/opqueueprovider.gen.go --fake-name OperationQueueProvider . operationQueueProvider
+//go:generate counterfeiter -o ./../mocks/casclient.gen.go --fake-name CasClient github.com/trustbloc/sidetree-core-go/pkg/api/cas.Client
 
 const (
 	channelID = "channel1"
@@ -35,7 +35,6 @@ func TestNew(t *testing.T) {
 	dcasProvider := &mocks.DCASClientProvider{}
 	opQueueProvider := &mocks.OperationQueueProvider{}
 	ledgerProvider := &extmocks.LedgerProvider{}
-	protocolVersions := map[string]protocolApi.Protocol{}
 
 	errExpected := errors.New("injected op queue error")
 	opQueueProvider.CreateReturns(nil, errExpected)
@@ -52,13 +51,15 @@ func TestNew(t *testing.T) {
 		LedgerProvider:         ledgerProvider,
 	}
 
-	sctx, err := New(channelID, namespace, dcasCfg, protocolVersions, p)
+	casClient := &mocks.CasClient{}
+
+	sctx, err := New(channelID, namespace, dcasCfg, casClient, nil, p)
 	require.EqualError(t, err, errExpected.Error())
 	require.Nil(t, sctx)
 
 	opQueueProvider.CreateReturns(&opqueue.MemQueue{}, nil)
 
-	sctx, err = New(channelID, namespace, dcasCfg, protocolVersions, p)
+	sctx, err = New(channelID, namespace, dcasCfg, casClient, nil, p)
 	require.NoError(t, err)
 	require.NotNil(t, sctx)
 

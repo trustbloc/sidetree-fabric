@@ -85,14 +85,14 @@ func TestChannelController_Update(t *testing.T) {
 		},
 	}
 
-	protocolVersions := map[string]protocolApi.Protocol{
-		"0.5": {
-			GenesisTime:                  100,
-			HashAlgorithmInMultiHashCode: 18,
-			MaxOperationCount:            100,
-			MaxOperationSize:             1000,
-		},
+	p := protocolApi.Protocol{
+		GenesisTime:                  100,
+		HashAlgorithmInMultiHashCode: 18,
+		MaxOperationCount:            100,
+		MaxOperationSize:             1000,
 	}
+
+	protocolVersions := map[string]protocolApi.Protocol{"0.5": p}
 
 	fileHandlers := []filehandler.Config{
 		{
@@ -159,6 +159,12 @@ func TestChannelController_Update(t *testing.T) {
 	}
 	ledgerProvider.GetLedgerReturns(l)
 
+	v := &mocks.ProtocolVersion{}
+	v.ProtocolReturns(p)
+
+	vf := &peermocks.ProtocolVersionFactory{}
+	vf.CreateProtocolVersionReturns(v, nil)
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			Providers: &sidetreectx.Providers{
@@ -166,6 +172,7 @@ func TestChannelController_Update(t *testing.T) {
 				OperationQueueProvider: opQueueProvider,
 				LedgerProvider:         ledgerProvider,
 			},
+			VersionFactory: vf,
 		},
 		PeerConfig:        peerConfig,
 		ConfigProvider:    configProvider,

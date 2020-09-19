@@ -4,47 +4,50 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package filehandler
+package validator
 
 import (
 	"encoding/json"
 	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
-
-	"github.com/trustbloc/sidetree-core-go/pkg/dochandler/docvalidator"
-	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/docvalidator/docvalidator"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 )
+
+var logger = flogging.MustGetLogger("sidetree_peer")
 
 const (
 	jsonPatchBasePath = "/fileIndex/mappings/"
 )
 
-// Validator validates the file index Sidetree document
-type Validator struct {
+// FileIdxValidator validates the file index Sidetree document
+type FileIdxValidator struct {
 	*docvalidator.Validator
 }
 
-// NewValidator returns a new file index document validator
-func NewValidator(store docvalidator.OperationStoreClient) *Validator {
-	return &Validator{
+// NewFileIdxValidator returns a new file index document validator
+func NewFileIdxValidator(store docvalidator.OperationStoreClient) *FileIdxValidator {
+	return &FileIdxValidator{
 		Validator: docvalidator.New(store),
 	}
 }
 
 // IsValidOriginalDocument verifies that the given payload is a valid Sidetree specific document that can be accepted by the Sidetree create operation.
-func (v *Validator) IsValidOriginalDocument(payload []byte) error {
+func (v *FileIdxValidator) IsValidOriginalDocument(payload []byte) error {
 	logger.Debugf("Validating file handler original document %s", payload)
 
 	if err := v.Validator.IsValidOriginalDocument(payload); err != nil {
 		return err
 	}
 
-	fileIndexDoc := &FileIndexDoc{}
+	fileIndexDoc := &filehandler.FileIndexDoc{}
 	err := jsonUnmarshal(payload, fileIndexDoc)
 	if err != nil {
 		return err
@@ -68,7 +71,7 @@ func (v *Validator) IsValidOriginalDocument(payload []byte) error {
 
 // IsValidPayload verifies that the given payload is a valid Sidetree specific payload
 // that can be accepted by the Sidetree update operations
-func (v *Validator) IsValidPayload(payload []byte) error {
+func (v *FileIdxValidator) IsValidPayload(payload []byte) error {
 	logger.Debugf("Validating file handler payload %s", payload)
 
 	if err := v.Validator.IsValidPayload(payload); err != nil {
@@ -88,42 +91,6 @@ func (v *Validator) IsValidPayload(payload []byte) error {
 	}
 
 	return nil
-}
-
-// TransformDocument takes internal representation of document and transforms it to required representation
-func (v *Validator) TransformDocument(doc document.Document) (*document.ResolutionResult, error) {
-	resolutionResult := &document.ResolutionResult{
-		Document:       doc,
-		MethodMetadata: document.MethodMetadata{},
-	}
-
-	processKeys(doc)
-
-	return resolutionResult, nil
-}
-
-// generic documents will most likely only contain operation keys
-// operation keys are not part of external document but resolution result
-func processKeys(internal document.Document) {
-	var pubKeys []document.PublicKey
-
-	for _, pk := range internal.PublicKeys() {
-		externalPK := make(document.PublicKey)
-		externalPK[document.IDProperty] = internal.ID() + "#" + pk.ID()
-		externalPK[document.TypeProperty] = pk.Type()
-		externalPK[document.ControllerProperty] = internal[document.IDProperty]
-		externalPK[document.PublicKeyJwkProperty] = pk.JWK()
-
-		delete(pk, document.PurposeProperty)
-
-		pubKeys = append(pubKeys, externalPK)
-	}
-
-	if len(pubKeys) > 0 {
-		internal[document.PublicKeyProperty] = pubKeys
-	} else {
-		delete(internal, document.PublicKeyProperty)
-	}
 }
 
 func validatePatch(p patch.Patch) error {

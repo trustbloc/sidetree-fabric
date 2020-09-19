@@ -25,6 +25,8 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/discovery"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/sidetreesvc"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/factoryregistry"
 )
 
 // Initialize initializes the required resources for peer startup
@@ -39,11 +41,16 @@ func Initialize() {
 	resource.Register(sidetreesvc.NewProvider)
 	resource.Register(operationqueue.NewProvider)
 	resource.Register(discovery.New)
+	resource.Register(factoryregistry.New)
 
 	// Register chaincode
 	ucc.Register(func() ccapi.UserCC { return doc.New("document") })
 	ucc.Register(func() ccapi.UserCC { return txn.New("sidetreetxn") })
 	ucc.Register(func() ccapi.UserCC { return file.New("file") })
+
+	if err := protocolversion.RegisterFactories(); err != nil {
+		panic(err)
+	}
 }
 
 type loggingProvider struct {

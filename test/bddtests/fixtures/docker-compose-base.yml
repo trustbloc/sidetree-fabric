@@ -40,7 +40,6 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=MSP
-      - CORE_COLL_OFFLEDGER_CACHE_ENABLE=false
       - CORE_SIDETREE_PORT=48326
       - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key

@@ -18,17 +18,20 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
-	"github.com/trustbloc/sidetree-core-go/pkg/mocks"
+	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
 const (
@@ -43,14 +46,37 @@ const (
 	sha2_256        = 18
 )
 
+var p = protocol.Protocol{
+	GenesisTime:                  0,
+	HashAlgorithmInMultiHashCode: sha2_256,
+	HashAlgorithm:                5,
+	MaxOperationCount:            2,
+	MaxOperationSize:             1024,
+	CompressionAlgorithm:         "GZIP",
+	MaxChunkFileSize:             1024,
+	MaxMapFileSize:               1024,
+	MaxAnchorFileSize:            1024,
+	SignatureAlgorithms:          []string{"EdDSA", "ES256"},
+	KeyAlgorithms:                []string{"Ed25519", "P-256"},
+}
+
 func TestServer_Start(t *testing.T) {
-	didDocHandler := mocks.NewMockDocumentHandler().WithNamespace(didDocNamespace)
-	sampleDocHandler := mocks.NewMockDocumentHandler().WithNamespace(sampleNamespace)
+	pc := &mocks.ProtocolClient{}
+	opp := operationparser.New(p)
+
+	pv := &mocks.ProtocolVersion{}
+	pv.OperationParserReturns(opp)
+
+	pc.CurrentReturns(pv, nil)
+	pc.GetReturns(pv, nil)
+
+	didDocHandler := coremocks.NewMockDocumentHandler().WithNamespace(didDocNamespace).WithProtocolClient(pc)
+	sampleDocHandler := coremocks.NewMockDocumentHandler().WithNamespace(sampleNamespace).WithProtocolClient(pc)
 
 	s := New(url,
 		"",
 		"",
-		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
+		diddochandler.NewUpdateHandler(didDocPath, didDocHandler, pc),
 		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
@@ -115,13 +141,22 @@ func TestServer_Start(t *testing.T) {
 }
 
 func TestServer_RetryOnStartup(t *testing.T) {
-	didDocHandler := mocks.NewMockDocumentHandler().WithNamespace(didDocNamespace)
-	sampleDocHandler := mocks.NewMockDocumentHandler().WithNamespace(sampleNamespace)
+	pc := &mocks.ProtocolClient{}
+	opp := operationparser.New(p)
+
+	pv := &mocks.ProtocolVersion{}
+	pv.OperationParserReturns(opp)
+
+	pc.CurrentReturns(pv, nil)
+	pc.GetReturns(pv, nil)
+
+	didDocHandler := coremocks.NewMockDocumentHandler().WithNamespace(didDocNamespace)
+	sampleDocHandler := coremocks.NewMockDocumentHandler().WithNamespace(sampleNamespace)
 
 	s1 := New(url,
 		"",
 		"",
-		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
+		diddochandler.NewUpdateHandler(didDocPath, didDocHandler, pc),
 		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
@@ -130,7 +165,7 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	s2 := New(url,
 		"",
 		"",
-		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
+		diddochandler.NewUpdateHandler(didDocPath, didDocHandler, pc),
 		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
@@ -139,7 +174,7 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	s3 := New(url,
 		"",
 		"",
-		diddochandler.NewUpdateHandler(didDocPath, didDocHandler),
+		diddochandler.NewUpdateHandler(didDocPath, didDocHandler, pc),
 		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
@@ -224,8 +259,17 @@ type sampleUpdateHandler struct {
 }
 
 func newSampleUpdateHandler(processor dochandler.Processor) *sampleUpdateHandler {
+	pc := &mocks.ProtocolClient{}
+	opp := operationparser.New(p)
+
+	pv := &mocks.ProtocolVersion{}
+	pv.OperationParserReturns(opp)
+
+	pc.CurrentReturns(pv, nil)
+	pc.GetReturns(pv, nil)
+
 	return &sampleUpdateHandler{
-		UpdateHandler: dochandler.NewUpdateHandler(processor),
+		UpdateHandler: dochandler.NewUpdateHandler(processor, pc),
 	}
 }
 

@@ -13,13 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
-
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	gcommon "github.com/hyperledger/fabric/gossip/common"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
@@ -29,17 +28,17 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
-	"github.com/trustbloc/sidetree-core-go/pkg/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
-	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler"
-	"github.com/trustbloc/sidetree-core-go/pkg/txnhandler/models"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider/models"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
+	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -59,6 +58,8 @@ const (
 	metaDataCCName = "document"
 
 	sha2_256 = 18
+
+	sideTreeTxnCCName = "sidetreetxn_cc"
 )
 
 var (
@@ -215,7 +216,7 @@ func TestObserver_Error(t *testing.T) {
 		MetaDataChaincodeName: metaDataCCName,
 	}
 
-	ad := txnhandler.AnchorData{
+	ad := txnprovider.AnchorData{
 		AnchorAddress:      anchor1,
 		NumberOfOperations: 1,
 	}
@@ -498,7 +499,7 @@ func newMockClients(t *testing.T) *mockClients {
 	}
 
 	const numOfOps = 2
-	ad := &txnhandler.AnchorData{
+	ad := &txnprovider.AnchorData{
 		AnchorAddress:      anchor1,
 		NumberOfOperations: numOfOps,
 	}
@@ -559,14 +560,9 @@ func compress(model interface{}) ([]byte, error) {
 }
 
 func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, clients *mockClients, opStoreProvider ctxcommon.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata) *Observer {
-	peerCfg := &mocks.PeerConfig{}
+	peerCfg := &peermocks.PeerConfig{}
 	peerCfg.MSPIDReturns(org1)
 	peerCfg.PeerIDReturns(peer1)
-
-	dcasCfg := config.DCAS{
-		ChaincodeName: sideTreeTxnCCName,
-		Collection:    dcasColl,
-	}
 
 	gossip := peerextmocks.NewMockGossipAdapter()
 	gossip.Self(org1, p1Org1).Member(org1, p2Org1)
@@ -574,19 +570,58 @@ func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, c
 	gossipProvider := &peerextmocks.GossipProvider{}
 	gossipProvider.GetGossipServiceReturns(gossip)
 
+	pv := newMockProtocolVersion()
+
+	pc := &stmocks.ProtocolClient{}
+	pc.CurrentReturns(pv, nil)
+	pc.GetReturns(pv, nil)
+
+	pcp := &stmocks.ProtocolClientProvider{}
+	pcp.ForNamespaceReturns(pc, nil)
+
 	m := New(
-		channelID, peerCfg, cfg, dcasCfg,
+		channelID, peerCfg, cfg,
 		&ClientProviders{
 			OffLedger:  clients.offLedgerProvider,
 			DCAS:       clients.dcasProvider,
 			Blockchain: clients.blockchainProvider,
 			Gossip:     gossipProvider,
 		},
-		opStoreProvider, txnChan, coremocks.NewMockProtocolClientProvider(),
+		txnChan, pcp,
 	)
 	require.NotNil(t, m)
 
 	return m
+}
+
+func newMockProtocolVersion() protocol.Version {
+	const maxBatchFileSize = 20000
+	const maxOperationByteSize = 2000
+
+	p := protocol.Protocol{
+		GenesisTime:                  0,
+		HashAlgorithmInMultiHashCode: sha2_256,
+		HashAlgorithm:                5, // crypto code for sha256 hash function
+		MaxOperationCount:            2,
+		MaxOperationSize:             maxOperationByteSize,
+		CompressionAlgorithm:         "GZIP",
+		MaxChunkFileSize:             maxBatchFileSize,
+		MaxMapFileSize:               maxBatchFileSize,
+		MaxAnchorFileSize:            maxBatchFileSize,
+		SignatureAlgorithms:          []string{"EdDSA", "ES256"},
+		KeyAlgorithms:                []string{"Ed25519", "P-256"},
+	}
+
+	tp := &coremocks.TxnProcessor{}
+	pv := &coremocks.ProtocolVersion{}
+	pv.TransactionProcessorReturns(tp)
+
+	pv.ProtocolReturns(p)
+
+	opp := &stmocks.OperationProvider{}
+	pv.OperationProviderReturns(opp)
+
+	return pv
 }
 
 func getTestOperations(createOpsNum int) ([]*batch.Operation, error) {
@@ -626,7 +661,8 @@ func generateCreateOperations(num int) (*batch.Operation, error) {
 		return nil, err
 	}
 
-	return operation.ParseOperation(namespace, request, protocol.Protocol{
+	parser := operationparser.New(protocol.Protocol{
 		HashAlgorithmInMultiHashCode: sha2_256,
 	})
+	return parser.Parse(namespace, request)
 }
