@@ -52,19 +52,17 @@ func (m *Registry) CreateProtocolVersion(version string, p protocol.Protocol, ca
 }
 
 // Register registers a protocol factory for a given version
-func Register(version string, factory factory) error {
+func Register(version string, factory factory) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	if _, ok := factories[version]; ok {
-		return fmt.Errorf("protocol version factory [%s] already registered", version)
+		panic(fmt.Errorf("protocol version factory [%s] already registered", version))
 	}
 
 	logger.Infof("Registering protocol version factory [%s]", version)
 
 	factories[version] = factory
-
-	return nil
 }
 
 func (m *Registry) resolveFactory(version string) (factory, error) {

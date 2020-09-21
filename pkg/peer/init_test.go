@@ -38,7 +38,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/factoryregistry"
-	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/version"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/factory"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
@@ -170,7 +170,7 @@ func TestInitialize(t *testing.T) {
 	gossipProvider.GetGossipServiceReturns(gossip)
 
 	// Register a new protocol version under 0.2.0 using the 0.1.0 implementation (just for testing purpose)
-	require.NoError(t, factoryregistry.Register(v0_2_0, version.New()))
+	require.NotPanics(t, func() { factoryregistry.Register(v0_2_0, factory.New()) })
 
 	req.NoError(
 		resource.Mgr.Initialize(
