@@ -8,7 +8,7 @@ package protocolversion
 
 import (
 	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/factoryregistry"
-	v0_1 "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/version"
+	v0_1 "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/factory"
 )
 
 const (
@@ -17,10 +17,6 @@ const (
 )
 
 // RegisterFactories registers all protocol version factories
-func RegisterFactories() error {
-	if err := factoryregistry.Register(V0_1, v0_1.New()); err != nil {
-		return err
-	}
-
-	return nil
+func RegisterFactories() {
+	factoryregistry.Register(V0_1, v0_1.New())
 }

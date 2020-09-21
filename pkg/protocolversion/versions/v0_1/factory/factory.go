@@ -4,7 +4,7 @@ Copyright SecureKey Technologies Inc. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package version
+package factory
 
 import (
 	"fmt"
@@ -25,17 +25,17 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
-// Version implements version 0.1 of the Sidetree protocol
-type Version struct {
+// Factory implements version 0.1 of the Sidetree protocol
+type Factory struct {
 }
 
 // New returns a version 0.1 implementation of the Sidetree protocol
-func New() *Version {
-	return &Version{}
+func New() *Factory {
+	return &Factory{}
 }
 
 // Create creates a new protocol version
-func (v *Version) Create(p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType sidetreehandler.DocumentType) (protocol.Version, error) {
+func (v *Factory) Create(p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType sidetreehandler.DocumentType) (protocol.Version, error) {
 	parser := operationparser.New(p)
 	cp := compression.New(compression.WithDefaultAlgorithms())
 	opp := txnprovider.NewOperationProvider(p, parser, casClient, cp)

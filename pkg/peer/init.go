@@ -48,9 +48,7 @@ func Initialize() {
 	ucc.Register(func() ccapi.UserCC { return txn.New("sidetreetxn") })
 	ucc.Register(func() ccapi.UserCC { return file.New("file") })
 
-	if err := protocolversion.RegisterFactories(); err != nil {
-		panic(err)
-	}
+	protocolversion.RegisterFactories()
 }
 
 type loggingProvider struct {
