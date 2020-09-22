@@ -44,15 +44,16 @@ func New(channelID, chaincodeName, namespace string, txnProvider txnServiceProvi
 }
 
 // WriteAnchor writes anchor string to blockchain
-func (c *Client) WriteAnchor(anchor string) error {
+func (c *Client) WriteAnchor(anchor string, protocolGenesisTime uint64) error {
 	txnService, err := c.txnProvider.ForChannel(c.channelID)
 	if err != nil {
 		return err
 	}
 
 	txnInfo := common.TxnInfo{
-		AnchorString: anchor,
-		Namespace:    c.namespace,
+		AnchorString:        anchor,
+		Namespace:           c.namespace,
+		ProtocolGenesisTime: protocolGenesisTime,
 	}
 
 	txnInfoBytes, err := json.Marshal(txnInfo)

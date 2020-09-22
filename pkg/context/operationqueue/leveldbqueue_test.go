@@ -44,23 +44,25 @@ func TestLevelDBQueue(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, ops)
 
-	n, err := q.Add(op1)
+	n, err := q.Add(op1, 100)
 	require.NoError(t, err)
 	require.Equal(t, uint(1), n)
 
-	n, err = q.Add(op2)
+	n, err = q.Add(op2, 101)
 	require.NoError(t, err)
 	require.Equal(t, uint(2), n)
 
-	n, err = q.Add(op3)
+	n, err = q.Add(op3, 101)
 	require.NoError(t, err)
 	require.Equal(t, uint(3), n)
 
 	ops, err = q.Peek(2)
 	require.NoError(t, err)
 	require.Len(t, ops, 2)
-	require.Equal(t, op1, ops[0])
-	require.Equal(t, op2, ops[1])
+	require.Equal(t, *op1, ops[0].OperationInfo)
+	require.Equal(t, uint64(100), ops[0].ProtocolGenesisTime)
+	require.Equal(t, *op2, ops[1].OperationInfo)
+	require.Equal(t, uint64(101), ops[1].ProtocolGenesisTime)
 
 	removed, n, err := q.Remove(2)
 	require.NoError(t, err)
@@ -81,19 +83,19 @@ func TestLevelDBQueue_Reload(t *testing.T) {
 	defer cleanup()
 	require.Zero(t, q.Len())
 
-	n, err := q.Add(op1)
+	n, err := q.Add(op1, 100)
 	require.NoError(t, err)
 	require.Equal(t, uint(1), n)
 
-	n, err = q.Add(op2)
+	n, err = q.Add(op2, 100)
 	require.NoError(t, err)
 	require.Equal(t, uint(2), n)
 
-	n, err = q.Add(op3)
+	n, err = q.Add(op3, 101)
 	require.NoError(t, err)
 	require.Equal(t, uint(3), n)
 
-	n, err = q.Add(op4)
+	n, err = q.Add(op4, 101)
 	require.NoError(t, err)
 	require.Equal(t, uint(4), n)
 	require.Equal(t, uint(4), q.Len())
@@ -146,7 +148,7 @@ func TestLevelDBQueue_Close(t *testing.T) {
 	q.Close()
 	require.NotPanicsf(t, func() { q.Close() }, "calling close twice should not panic")
 
-	_, err = q.Add(&batch.OperationInfo{})
+	_, err = q.Add(&batch.OperationInfo{}, 100)
 	require.EqualError(t, err, errClosed.Error())
 
 	_, err = q.Peek(1)
@@ -186,7 +188,7 @@ func TestLevelDBQueue_Error(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, q)
 
-		_, err = q.Add(&batch.OperationInfo{})
+		_, err = q.Add(&batch.OperationInfo{}, 100)
 		require.Error(t, err, errExpected.Error())
 	})
 
@@ -198,7 +200,7 @@ func TestLevelDBQueue_Error(t *testing.T) {
 			it.NextReturnsOnCall(0, true)
 			it.KeyReturns(toBytes(1000))
 
-			v, err := marshal(&batch.OperationInfo{})
+			v, err := marshal(&batch.OperationInfoAtTime{})
 			require.NoError(t, err)
 			it.ValueReturns(v)
 
@@ -213,7 +215,7 @@ func TestLevelDBQueue_Error(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, q)
 
-		_, err = q.Add(&batch.OperationInfo{})
+		_, err = q.Add(&batch.OperationInfo{}, 100)
 		require.NoError(t, err)
 
 		_, _, err = q.Remove(1)

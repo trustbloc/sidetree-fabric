@@ -15,4 +15,6 @@ const (
 type TxnInfo struct {
 	AnchorString string `json:"anchor_string"`
 	Namespace    string `json:"namespace"`
+	// ProtocolGenesisTime is the genesis time of the protocol that was used to create the anchor
+	ProtocolGenesisTime uint64 `json:"protocol_genesis_time"`
 }

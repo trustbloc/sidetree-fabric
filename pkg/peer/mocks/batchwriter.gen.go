@@ -8,10 +8,11 @@ import (
 )
 
 type BatchWriter struct {
-	AddStub        func(operation *batch.OperationInfo) error
+	AddStub        func(operation *batch.OperationInfo, protocolGenesisTime uint64) error
 	addMutex       sync.RWMutex
 	addArgsForCall []struct {
-		operation *batch.OperationInfo
+		operation           *batch.OperationInfo
+		protocolGenesisTime uint64
 	}
 	addReturns struct {
 		result1 error
@@ -35,16 +36,17 @@ type BatchWriter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *BatchWriter) Add(operation *batch.OperationInfo) error {
+func (fake *BatchWriter) Add(operation *batch.OperationInfo, protocolGenesisTime uint64) error {
 	fake.addMutex.Lock()
 	ret, specificReturn := fake.addReturnsOnCall[len(fake.addArgsForCall)]
 	fake.addArgsForCall = append(fake.addArgsForCall, struct {
-		operation *batch.OperationInfo
-	}{operation})
-	fake.recordInvocation("Add", []interface{}{operation})
+		operation           *batch.OperationInfo
+		protocolGenesisTime uint64
+	}{operation, protocolGenesisTime})
+	fake.recordInvocation("Add", []interface{}{operation, protocolGenesisTime})
 	fake.addMutex.Unlock()
 	if fake.AddStub != nil {
-		return fake.AddStub(operation)
+		return fake.AddStub(operation, protocolGenesisTime)
 	}
 	if specificReturn {
 		return ret.result1
@@ -58,10 +60,10 @@ func (fake *BatchWriter) AddCallCount() int {
 	return len(fake.addArgsForCall)
 }
 
-func (fake *BatchWriter) AddArgsForCall(i int) *batch.OperationInfo {
+func (fake *BatchWriter) AddArgsForCall(i int) (*batch.OperationInfo, uint64) {
 	fake.addMutex.RLock()
 	defer fake.addMutex.RUnlock()
-	return fake.addArgsForCall[i].operation
+	return fake.addArgsForCall[i].operation, fake.addArgsForCall[i].protocolGenesisTime
 }
 
 func (fake *BatchWriter) AddReturns(result1 error) {

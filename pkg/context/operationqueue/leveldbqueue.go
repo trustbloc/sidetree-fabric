@@ -116,7 +116,7 @@ func (q *LevelDBQueue) Drop() error {
 }
 
 // Add adds the given operation to the tail of the queue
-func (q *LevelDBQueue) Add(op *batch.OperationInfo) (uint, error) {
+func (q *LevelDBQueue) Add(op *batch.OperationInfo, protocolGenesisTime uint64) (uint, error) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -124,7 +124,12 @@ func (q *LevelDBQueue) Add(op *batch.OperationInfo) (uint, error) {
 		return 0, errClosed
 	}
 
-	b, err := marshal(op)
+	b, err := marshal(
+		&batch.OperationInfoAtTime{
+			OperationInfo:       *op,
+			ProtocolGenesisTime: protocolGenesisTime,
+		},
+	)
 	if err != nil {
 		return uint(q.tail - q.head), err
 	}
@@ -187,7 +192,7 @@ func (q *LevelDBQueue) Remove(num uint) (uint, uint, error) {
 }
 
 // Peek returns the given number of operation at the head of the queue without removing them.
-func (q *LevelDBQueue) Peek(num uint) ([]*batch.OperationInfo, error) {
+func (q *LevelDBQueue) Peek(num uint) ([]*batch.OperationInfoAtTime, error) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -212,9 +217,9 @@ func (q *LevelDBQueue) Peek(num uint) ([]*batch.OperationInfo, error) {
 		}, nil)
 	defer it.Release()
 
-	var ops []*batch.OperationInfo
+	var ops []*batch.OperationInfoAtTime
 	for it.Next() {
-		op := &batch.OperationInfo{}
+		op := &batch.OperationInfoAtTime{}
 		if err := unmarshal(it.Value(), op); err != nil {
 			return nil, err
 		}
@@ -257,7 +262,7 @@ func min(i, j uint64) uint64 {
 	return j
 }
 
-func marshal(op *batch.OperationInfo) ([]byte, error) {
+func marshal(op *batch.OperationInfoAtTime) ([]byte, error) {
 	var buffer bytes.Buffer
 	if err := gob.NewEncoder(&buffer).Encode(op); err != nil {
 		return nil, err
@@ -266,7 +271,7 @@ func marshal(op *batch.OperationInfo) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func unmarshal(b []byte, op *batch.OperationInfo) error {
+func unmarshal(b []byte, op *batch.OperationInfoAtTime) error {
 	return gob.NewDecoder(bytes.NewBuffer(b)).Decode(op)
 }
 
