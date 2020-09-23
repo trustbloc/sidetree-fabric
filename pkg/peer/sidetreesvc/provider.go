@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package sidetreesvc
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/hyperledger/fabric/common/flogging"
@@ -100,6 +101,19 @@ func (p *Provider) ChannelJoined(channelID string) {
 	defer p.mutex.Unlock()
 
 	p.chanControllers[channelID] = ctrl
+}
+
+// ProtocolClientProviderForChannel returns the protocol client provider for the given channel
+func (p *Provider) ProtocolClientProviderForChannel(channelID string) (ctxcommon.ProtocolClientProvider, error) {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	ctrl, ok := p.chanControllers[channelID]
+	if !ok {
+		return nil, fmt.Errorf("protocol client provider not found for channel [%s]", channelID)
+	}
+
+	return ctrl, nil
 }
 
 // Close closes all Sidetree resources
