@@ -319,10 +319,11 @@ func (m *Observer) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
 		logger.Debugf("[%s] Handling write to anchor [%s] in block [%d] and TxNum [%d] on attempt #%d", m.channelID, w.Write.Value, w.BlockNum, w.TxNum, metadata.FailedAttempts+1)
 
 		sidetreeTxn := txn.SidetreeTxn{
-			TransactionTime:   w.BlockNum,
-			TransactionNumber: w.TxNum,
-			AnchorString:      txnInfo.AnchorString,
-			Namespace:         txnInfo.Namespace,
+			TransactionTime:     w.BlockNum,
+			TransactionNumber:   w.TxNum,
+			AnchorString:        txnInfo.AnchorString,
+			Namespace:           txnInfo.Namespace,
+			ProtocolGenesisTime: txnInfo.ProtocolGenesisTime,
 		}
 
 		pv, err := m.pcp.ForNamespace(txnInfo.Namespace)
