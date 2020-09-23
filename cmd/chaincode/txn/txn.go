@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package txn
 
 import (
+	"encoding/json"
 	"fmt"
 	"runtime/debug"
 
@@ -16,6 +17,7 @@ import (
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
 
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
+	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
@@ -34,17 +36,24 @@ const (
 // funcMap is a map of functions by function name
 type funcMap map[string]func(shim.ChaincodeStubInterface, [][]byte) pb.Response
 
+// ProtocolClientChannelProvider returns the protocol client provider for a given channel
+type ProtocolClientChannelProvider interface {
+	ProtocolClientProviderForChannel(channelID string) (ctxcommon.ProtocolClientProvider, error)
+}
+
 // SidetreeTxnCC ...
 type SidetreeTxnCC struct {
 	name      string
 	functions funcMap
+	ProtocolClientChannelProvider
 }
 
 // New returns chaincode
-func New(name string) *SidetreeTxnCC {
+func New(name string, pccp ProtocolClientChannelProvider) *SidetreeTxnCC {
 	cc := &SidetreeTxnCC{
-		name:      name,
-		functions: make(funcMap),
+		name:                          name,
+		functions:                     make(funcMap),
+		ProtocolClientChannelProvider: pccp,
 	}
 
 	cc.functions[writeContent] = cc.write
@@ -162,10 +171,23 @@ func (cc *SidetreeTxnCC) writeAnchor(stub shim.ChaincodeStubInterface, args [][]
 	}
 
 	anchorString := string(args[0])
-	txnInfo := args[1]
+	txnInfoBytes := args[1]
+
+	txnInfo := &common.TxnInfo{}
+	err := json.Unmarshal(txnInfoBytes, txnInfo)
+	if err != nil {
+		errMsg := "invalid transaction info payload"
+		logger.Debugf("[txID %s] %s: %s", txID, errMsg, err.Error())
+		return shim.Error(errMsg)
+	}
+
+	err = cc.validateProtocolVersion(stub.GetChannelID(), txnInfo)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 
 	// record anchor string on the ledger plus Sidetree transaction info (anchor string, namespace)
-	err := stub.PutState(common.AnchorPrefix+anchorString, txnInfo)
+	err = stub.PutState(common.AnchorPrefix+anchorString, txnInfoBytes)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to write anchor string: %s", err.Error())
 		logger.Errorf("[txID %s] %s", txID, errMsg)
@@ -173,6 +195,31 @@ func (cc *SidetreeTxnCC) writeAnchor(stub shim.ChaincodeStubInterface, args [][]
 	}
 
 	return shim.Success(nil)
+}
+
+func (cc *SidetreeTxnCC) validateProtocolVersion(channelID string, txnInfo *common.TxnInfo) error {
+	pcp, err := cc.ProtocolClientProviderForChannel(channelID)
+	if err != nil {
+		return err
+	}
+
+	pc, err := pcp.ForNamespace(txnInfo.Namespace)
+	if err != nil {
+		return err
+	}
+
+	pv, err := pc.Get(txnInfo.ProtocolGenesisTime)
+	if err != nil {
+		return err
+	}
+
+	if txnInfo.ProtocolGenesisTime != pv.Protocol().GenesisTime {
+		logger.Debugf("[%s] Request protocol genesis time [%d] ", channelID)
+
+		return fmt.Errorf("invalid protocol genesis time in request: %d", txnInfo.ProtocolGenesisTime)
+	}
+
+	return nil
 }
 
 func (m funcMap) String() string {

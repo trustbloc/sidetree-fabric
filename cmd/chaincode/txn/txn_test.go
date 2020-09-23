@@ -9,15 +9,20 @@ package txn
 import (
 	"crypto"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
-	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/mocks"
+	cmdmocks "github.com/trustbloc/sidetree-fabric/cmd/chaincode/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
+
+//go:generate counterfeiter -o ../mocks/protocolclientchannelprovider.gen.go --fake-name ProtocolClientChannelProvider . protocolClientChannelProvider
 
 const (
 	ccName = "sidetreetxncc"
@@ -27,7 +32,9 @@ const (
 func TestNew(t *testing.T) {
 	req := require.New(t)
 
-	cc := New(ccName)
+	pccp := &cmdmocks.ProtocolClientChannelProvider{}
+
+	cc := New(ccName, pccp)
 	req.NotNil(cc)
 
 	req.Empty(cc.GetDBArtifacts([]string{coll1}))
@@ -125,18 +132,106 @@ func TestRead_MissingAddress(t *testing.T) {
 }
 
 func TestWriteAnchor(t *testing.T) {
+	stub := prepareStubWithProtocol(protocol.Protocol{GenesisTime: 100})
 
-	stub := prepareStub()
+	t.Run("Success", func(t *testing.T) {
+		anchor := []byte("anchor1")
+		txnInfoBytes := getTxnInfoBytes(t, 100)
 
-	anchor := []byte("anchor")
-	txnInfo := []byte("txn")
-	payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), anchor, txnInfo})
-	require.Nil(t, err)
-	require.Nil(t, payload)
+		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), anchor, txnInfoBytes})
+		require.NoError(t, err)
+		require.Nil(t, payload)
 
-	result, err := stub.GetState(common.AnchorPrefix + string(anchor))
-	require.Nil(t, err)
-	require.Equal(t, txnInfo, result)
+		result, err := stub.GetState(common.AnchorPrefix + string(anchor))
+		require.NoError(t, err)
+		require.Equal(t, txnInfoBytes, result)
+	})
+
+	t.Run("Invalid txn info bytes", func(t *testing.T) {
+		anchor := []byte("anchor2")
+
+		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), anchor, []byte("invalid TxnInfo")})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid transaction info payload")
+		require.Nil(t, payload)
+	})
+
+	t.Run("Invalid protocol genesis time", func(t *testing.T) {
+		anchor := []byte("anchor2")
+
+		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), anchor, getTxnInfoBytes(t, 99)})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid protocol genesis time in request")
+		require.Nil(t, payload)
+
+		result, err := stub.GetState(common.AnchorPrefix + string(anchor))
+		require.NoError(t, err)
+		require.Empty(t, result)
+	})
+
+	t.Run("Protocol client channel provider error", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected protocol client channel provider error")
+
+		pccp := &cmdmocks.ProtocolClientChannelProvider{}
+		pccp.ProtocolClientProviderForChannelReturns(nil, errExpected)
+
+		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp))
+
+		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), []byte("anchor"), getTxnInfoBytes(t, 101)})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+		require.Nil(t, payload)
+	})
+
+	t.Run("Protocol client provider error", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected protocol client provider error")
+
+		pcp := &mocks.ProtocolClientProvider{}
+		pcp.ForNamespaceReturns(nil, errExpected)
+
+		pccp := &cmdmocks.ProtocolClientChannelProvider{}
+		pccp.ProtocolClientProviderForChannelReturns(pcp, nil)
+
+		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp))
+
+		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), []byte("anchor"), getTxnInfoBytes(t, 100)})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+		require.Nil(t, payload)
+	})
+
+	t.Run("Protocol client error", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected protocol client error")
+
+		pc := &mocks.ProtocolClient{}
+		pc.GetReturns(nil, errExpected)
+
+		pcp := &mocks.ProtocolClientProvider{}
+		pcp.ForNamespaceReturns(pc, nil)
+
+		pccp := &cmdmocks.ProtocolClientChannelProvider{}
+		pccp.ProtocolClientProviderForChannelReturns(pcp, nil)
+
+		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp))
+
+		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), []byte("anchor"), getTxnInfoBytes(t, 100)})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+		require.Nil(t, payload)
+	})
+}
+
+func getTxnInfoBytes(t *testing.T, protocolGenesisTime uint64) []byte {
+	txnInfo := &common.TxnInfo{
+		AnchorString:        "anchor",
+		Namespace:           "ns",
+		ProtocolGenesisTime: protocolGenesisTime,
+	}
+
+	txnInfoBytes, err := json.Marshal(txnInfo)
+	require.NoError(t, err)
+
+	return txnInfoBytes
 }
 
 func TestWriteAnchor_CheckRequiredArguments(t *testing.T) {
@@ -197,7 +292,7 @@ func encodedSHA256Hash(bytes []byte) string {
 	return base64.URLEncoding.EncodeToString(h.Sum(nil))
 }
 
-func testInvalidFunctionName(t *testing.T, stub *mocks.MockStub) {
+func testInvalidFunctionName(t *testing.T, stub *cmdmocks.MockStub) {
 
 	// Test function name not provided
 	_, err := invoke(stub, [][]byte{})
@@ -209,11 +304,27 @@ func testInvalidFunctionName(t *testing.T, stub *mocks.MockStub) {
 
 }
 
-func prepareStub() *mocks.MockStub {
-	return mocks.NewMockStub(ccName, New(ccName))
+func prepareStub() *cmdmocks.MockStub {
+	return prepareStubWithProtocol(protocol.Protocol{GenesisTime: 100})
 }
 
-func checkInit(t *testing.T, stub *mocks.MockStub, args [][]byte) {
+func prepareStubWithProtocol(p protocol.Protocol) *cmdmocks.MockStub {
+	pv := &mocks.ProtocolVersion{}
+	pv.ProtocolReturns(p)
+
+	pc := &mocks.ProtocolClient{}
+	pc.GetReturns(pv, nil)
+
+	pcp := &mocks.ProtocolClientProvider{}
+	pcp.ForNamespaceReturns(pc, nil)
+
+	pccp := &cmdmocks.ProtocolClientChannelProvider{}
+	pccp.ProtocolClientProviderForChannelReturns(pcp, nil)
+
+	return cmdmocks.NewMockStub(ccName, New(ccName, pccp))
+}
+
+func checkInit(t *testing.T, stub *cmdmocks.MockStub, args [][]byte) {
 	txID := stub.GetTxID()
 	if txID == "" {
 		txID = "1"
@@ -224,7 +335,7 @@ func checkInit(t *testing.T, stub *mocks.MockStub, args [][]byte) {
 	}
 }
 
-func invoke(stub *mocks.MockStub, args [][]byte) ([]byte, error) {
+func invoke(stub *cmdmocks.MockStub, args [][]byte) ([]byte, error) {
 	txID := stub.GetTxID()
 	if txID == "" {
 		txID = "1"

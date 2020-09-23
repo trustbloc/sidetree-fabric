@@ -160,6 +160,14 @@ func TestProvider(t *testing.T) {
 	p.ChannelJoined(channel2)
 	time.Sleep(20 * time.Millisecond)
 
+	pcp, err := p.ProtocolClientProviderForChannel(channel1)
+	require.NoError(t, err)
+	require.NotNil(t, pcp)
+
+	pcp, err = p.ProtocolClientProviderForChannel("invalid")
+	require.EqualError(t, err, "protocol client provider not found for channel [invalid]")
+	require.Nil(t, pcp)
+
 	p.RestartRESTService()
 	time.Sleep(20 * time.Millisecond)
 
