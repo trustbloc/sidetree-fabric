@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 func TestFactory_Create(t *testing.T) {
@@ -26,19 +26,19 @@ func TestFactory_Create(t *testing.T) {
 	opStore := &mocks.OperationStore{}
 
 	t.Run("DID doc type", func(t *testing.T) {
-		pv, err := f.Create(p, casClient, opStore, sidetreehandler.DIDDocType)
+		pv, err := f.Create("", p, casClient, opStore, common.DIDDocType)
 		require.NoError(t, err)
 		require.NotNil(t, pv)
 	})
 
 	t.Run("FileIndex doc type", func(t *testing.T) {
-		pv, err := f.Create(p, casClient, opStore, sidetreehandler.FileIndexType)
+		pv, err := f.Create("", p, casClient, opStore, common.FileIndexType)
 		require.NoError(t, err)
 		require.NotNil(t, pv)
 	})
 
 	t.Run("Invalid doc type", func(t *testing.T) {
-		pv, err := f.Create(p, casClient, opStore, "invalid")
+		pv, err := f.Create("", p, casClient, opStore, "invalid")
 		require.EqualError(t, err, "unsupported document type: [invalid]")
 		require.Nil(t, pv)
 	})

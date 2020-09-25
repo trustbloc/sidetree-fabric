@@ -6,18 +6,19 @@ import (
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/cas"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	common2 "github.com/trustbloc/sidetree-fabric/pkg/common"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
-	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 type ProtocolFactory struct {
-	CreateStub        func(p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType sidetreehandler.DocumentType) (protocol.Version, error)
+	CreateStub        func(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common2.DocumentType) (protocol.Version, error)
 	createMutex       sync.RWMutex
 	createArgsForCall []struct {
+		version   string
 		p         protocol.Protocol
 		casClient cas.Client
 		opStore   ctxcommon.OperationStore
-		docType   sidetreehandler.DocumentType
+		docType   common2.DocumentType
 	}
 	createReturns struct {
 		result1 protocol.Version
@@ -31,19 +32,20 @@ type ProtocolFactory struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *ProtocolFactory) Create(p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType sidetreehandler.DocumentType) (protocol.Version, error) {
+func (fake *ProtocolFactory) Create(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common2.DocumentType) (protocol.Version, error) {
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
 	fake.createArgsForCall = append(fake.createArgsForCall, struct {
+		version   string
 		p         protocol.Protocol
 		casClient cas.Client
 		opStore   ctxcommon.OperationStore
-		docType   sidetreehandler.DocumentType
-	}{p, casClient, opStore, docType})
-	fake.recordInvocation("Create", []interface{}{p, casClient, opStore, docType})
+		docType   common2.DocumentType
+	}{version, p, casClient, opStore, docType})
+	fake.recordInvocation("Create", []interface{}{version, p, casClient, opStore, docType})
 	fake.createMutex.Unlock()
 	if fake.CreateStub != nil {
-		return fake.CreateStub(p, casClient, opStore, docType)
+		return fake.CreateStub(version, p, casClient, opStore, docType)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -57,10 +59,10 @@ func (fake *ProtocolFactory) CreateCallCount() int {
 	return len(fake.createArgsForCall)
 }
 
-func (fake *ProtocolFactory) CreateArgsForCall(i int) (protocol.Protocol, cas.Client, ctxcommon.OperationStore, sidetreehandler.DocumentType) {
+func (fake *ProtocolFactory) CreateArgsForCall(i int) (string, protocol.Protocol, cas.Client, ctxcommon.OperationStore, common2.DocumentType) {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
-	return fake.createArgsForCall[i].p, fake.createArgsForCall[i].casClient, fake.createArgsForCall[i].opStore, fake.createArgsForCall[i].docType
+	return fake.createArgsForCall[i].version, fake.createArgsForCall[i].p, fake.createArgsForCall[i].casClient, fake.createArgsForCall[i].opStore, fake.createArgsForCall[i].docType
 }
 
 func (fake *ProtocolFactory) CreateReturns(result1 protocol.Version, result2 error) {

@@ -6,19 +6,19 @@ import (
 
 	casApi "github.com/trustbloc/sidetree-core-go/pkg/api/cas"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	common2 "github.com/trustbloc/sidetree-fabric/pkg/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
-	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 type ProtocolVersionFactory struct {
-	CreateProtocolVersionStub        func(version string, p protocolApi.Protocol, casClient casApi.Client, opStore common.OperationStore, docType sidetreehandler.DocumentType) (protocolApi.Version, error)
+	CreateProtocolVersionStub        func(version string, p protocolApi.Protocol, casClient casApi.Client, opStore common.OperationStore, docType common2.DocumentType) (protocolApi.Version, error)
 	createProtocolVersionMutex       sync.RWMutex
 	createProtocolVersionArgsForCall []struct {
 		version   string
 		p         protocolApi.Protocol
 		casClient casApi.Client
 		opStore   common.OperationStore
-		docType   sidetreehandler.DocumentType
+		docType   common2.DocumentType
 	}
 	createProtocolVersionReturns struct {
 		result1 protocolApi.Version
@@ -32,7 +32,7 @@ type ProtocolVersionFactory struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *ProtocolVersionFactory) CreateProtocolVersion(version string, p protocolApi.Protocol, casClient casApi.Client, opStore common.OperationStore, docType sidetreehandler.DocumentType) (protocolApi.Version, error) {
+func (fake *ProtocolVersionFactory) CreateProtocolVersion(version string, p protocolApi.Protocol, casClient casApi.Client, opStore common.OperationStore, docType common2.DocumentType) (protocolApi.Version, error) {
 	fake.createProtocolVersionMutex.Lock()
 	ret, specificReturn := fake.createProtocolVersionReturnsOnCall[len(fake.createProtocolVersionArgsForCall)]
 	fake.createProtocolVersionArgsForCall = append(fake.createProtocolVersionArgsForCall, struct {
@@ -40,7 +40,7 @@ func (fake *ProtocolVersionFactory) CreateProtocolVersion(version string, p prot
 		p         protocolApi.Protocol
 		casClient casApi.Client
 		opStore   common.OperationStore
-		docType   sidetreehandler.DocumentType
+		docType   common2.DocumentType
 	}{version, p, casClient, opStore, docType})
 	fake.recordInvocation("CreateProtocolVersion", []interface{}{version, p, casClient, opStore, docType})
 	fake.createProtocolVersionMutex.Unlock()
@@ -59,7 +59,7 @@ func (fake *ProtocolVersionFactory) CreateProtocolVersionCallCount() int {
 	return len(fake.createProtocolVersionArgsForCall)
 }
 
-func (fake *ProtocolVersionFactory) CreateProtocolVersionArgsForCall(i int) (string, protocolApi.Protocol, casApi.Client, common.OperationStore, sidetreehandler.DocumentType) {
+func (fake *ProtocolVersionFactory) CreateProtocolVersionArgsForCall(i int) (string, protocolApi.Protocol, casApi.Client, common.OperationStore, common2.DocumentType) {
 	fake.createProtocolVersionMutex.RLock()
 	defer fake.createProtocolVersionMutex.RUnlock()
 	return fake.createProtocolVersionArgsForCall[i].version, fake.createProtocolVersionArgsForCall[i].p, fake.createProtocolVersionArgsForCall[i].casClient, fake.createProtocolVersionArgsForCall[i].opStore, fake.createProtocolVersionArgsForCall[i].docType

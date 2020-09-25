@@ -65,6 +65,7 @@ func TestClient_Current(t *testing.T) {
 
 func TestClient_Get(t *testing.T) {
 	v1_0 := &coremocks.ProtocolVersion{}
+	v1_0.VersionReturns("1.0")
 	v1_0.ProtocolReturns(protocol.Protocol{
 		GenesisTime:                  500000,
 		HashAlgorithmInMultiHashCode: 18,
@@ -73,6 +74,7 @@ func TestClient_Get(t *testing.T) {
 	})
 
 	v0_1 := &coremocks.ProtocolVersion{}
+	v0_1.VersionReturns("0.1")
 	v0_1.ProtocolReturns(protocol.Protocol{
 		GenesisTime:                  10,
 		HashAlgorithmInMultiHashCode: 18,
@@ -94,10 +96,12 @@ func TestClient_Get(t *testing.T) {
 	protocol, err := client.Get(100)
 	require.NoError(t, err)
 	require.Equal(t, uint(100), protocol.Protocol().MaxOperationCount)
+	require.Equal(t, "0.1", protocol.Version())
 
 	protocol, err = client.Get(500000)
 	require.NoError(t, err)
 	require.Equal(t, uint(10000), protocol.Protocol().MaxOperationCount)
+	require.Equal(t, "1.0", protocol.Version())
 
 	protocol, err = client.Get(7000000)
 	require.NoError(t, err)

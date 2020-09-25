@@ -67,10 +67,6 @@ Feature:
     Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
     And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version"
-    Then the JSON path "name" of the response equals "Sidetree"
-    And the JSON path "version" of the response equals "0.1.3"
-
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
@@ -201,3 +197,48 @@ Feature:
     And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
     When an HTTP POST is sent to "https://localhost:48327/sidetree/0.0.1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 400
     When an HTTP GET is sent to "https://localhost:48327/sidetree/0.0.1/identifiers/did:sidetree:1234" and the returned status code is 404
+
+  @version_and_protocol_params
+  Scenario: Version and protocol parameters
+    # Protocol at time (block number) 50
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version?time=50"
+    And the JSON path "version" of the response equals "0.1.1"
+    And the JSON path "genesis_time" of the numeric response equals "20"
+    And the JSON path "hash_algorithm" of the numeric response equals "5"
+    And the JSON path "multi_hash_algorithm" of the numeric response equals "18"
+    And the JSON path "max_operation_count" of the numeric response equals "30"
+    And the JSON path "max_operation_size" of the numeric response equals "200000"
+    And the JSON path "max_anchor_file_size" of the numeric response equals "1000000"
+    And the JSON path "max_map_file_size" of the numeric response equals "1000000"
+    And the JSON path "max_chunk_file_size" of the numeric response equals "10000000"
+    And the JSON path "compression_algorithm" of the response equals "GZIP"
+    And the JSON path "enable_replace_patch" of the boolean response equals "false"
+    And the JSON path "signature_algorithms" of the array response is not empty
+    And the JSON path "key_algorithms" of the array response is not empty
+
+    # Protocol at time (block number) 2000
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version?time=2000"
+    And the JSON path "version" of the response equals "0.1.2"
+    And the JSON path "genesis_time" of the numeric response equals "1000"
+    And the JSON path "hash_algorithm" of the numeric response equals "5"
+    And the JSON path "multi_hash_algorithm" of the numeric response equals "18"
+    And the JSON path "max_operation_count" of the numeric response equals "50"
+    And the JSON path "max_operation_size" of the numeric response equals "300000"
+    And the JSON path "max_anchor_file_size" of the numeric response equals "2000000"
+    And the JSON path "max_map_file_size" of the numeric response equals "2000000"
+    And the JSON path "max_chunk_file_size" of the numeric response equals "20000000"
+    And the JSON path "compression_algorithm" of the response equals "GZIP"
+    And the JSON path "enable_replace_patch" of the boolean response equals "true"
+    And the JSON path "signature_algorithms" of the array response is not empty
+    And the JSON path "key_algorithms" of the array response is not empty
+
+    # Current protocol
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version"
+    # We can't check for actual version because we don't know how many blocks have been created
+    # by the tests so far so we don't know which protocol is current
+    And the JSON path "version" of the response is not empty
+    And the JSON path "hash_algorithm" of the numeric response equals "5"
+    And the JSON path "multi_hash_algorithm" of the numeric response equals "18"
+    And the JSON path "compression_algorithm" of the response equals "GZIP"
+    And the JSON path "signature_algorithms" of the array response is not empty
+    And the JSON path "key_algorithms" of the array response is not empty

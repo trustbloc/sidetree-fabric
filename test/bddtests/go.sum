@@ -311,12 +311,12 @@ github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhV
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/trustbloc/edge-core v0.1.4-0.20200709143857-e104bb29f6c6 h1:GlzMPygeehW/W8tq2vBiN6DLsTFY5xtvQysu1aqqGoQ=
 github.com/trustbloc/edge-core v0.1.4-0.20200709143857-e104bb29f6c6/go.mod h1:SZg7nAIc9FONS+G7MwEyGkCWCJR3R02bePwTpWxqH5w=
-github.com/trustbloc/fabric-peer-test-common v0.1.4 h1:oD0MvoN2EQgGcWKKE7qdIgfRSkxFGJnyg+O0ABtk1+g=
-github.com/trustbloc/fabric-peer-test-common v0.1.4/go.mod h1:7Cfp0qdzZYjLGoge4HNEO5yuosz0XaT/4F/2688x8Ug=
+github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20200924170026-94a1825995eb h1:+mjJgsfz4LH3vbIF5/tWwsWCk5caIfJqF4tf3O62irI=
+github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20200924170026-94a1825995eb/go.mod h1:7Cfp0qdzZYjLGoge4HNEO5yuosz0XaT/4F/2688x8Ug=
 github.com/trustbloc/fabric-protos-go-ext v0.1.4 h1:XaeZ4bPfGRsiJE2HbU9hEKzAtyYfbOFjVdKIVIKdmyw=
 github.com/trustbloc/fabric-protos-go-ext v0.1.4/go.mod h1:xVYTjK4DtZRBxZ2D9aE4y6AbLaPwue2o/criQyQbVD0=
-github.com/trustbloc/sidetree-core-go v0.1.5-0.20200922205534-e629dd46dd6d h1:QxyZzB6D4eKjiWLJRlV4R2eewMxmcWM6IU3XbJX93v4=
-github.com/trustbloc/sidetree-core-go v0.1.5-0.20200922205534-e629dd46dd6d/go.mod h1:prRWqxBavkSxgKtPmUriSxCemrvl47yStMbW4jMFuRs=
+github.com/trustbloc/sidetree-core-go v0.1.5-0.20200925165431-903c3c478e5e h1:idqE31Ljaa8lI/02d963T/0grPstz0LsB1unCzP0Qko=
+github.com/trustbloc/sidetree-core-go v0.1.5-0.20200925165431-903c3c478e5e/go.mod h1:prRWqxBavkSxgKtPmUriSxCemrvl47yStMbW4jMFuRs=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.0.1/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPUpymEIMZ47gx8=

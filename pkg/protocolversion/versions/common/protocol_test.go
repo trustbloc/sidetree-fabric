@@ -20,6 +20,7 @@ import (
 
 func TestProtocolVersion(t *testing.T) {
 	p := &ProtocolVersion{
+		VersionStr: "1.1",
 		P: protocol.Protocol{
 			GenesisTime: 1000,
 		},
@@ -32,6 +33,7 @@ func TestProtocolVersion(t *testing.T) {
 		DocValidator: &coremocks.MockDocumentValidator{},
 	}
 
+	require.Equal(t, p.VersionStr, p.Version())
 	require.Equal(t, p.P, p.Protocol())
 	require.Equal(t, p.TxnProcessor, p.TransactionProcessor())
 	require.Equal(t, p.OpParser, p.OperationParser())

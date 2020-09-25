@@ -11,10 +11,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
+
+	"github.com/trustbloc/sidetree-fabric/pkg/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	frmocks "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/factoryregistry/mocks"
-
-	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 //go:generate counterfeiter -o ./mocks/protocolfactory.gen.go --fake-name ProtocolFactory . factory
@@ -25,7 +26,7 @@ func TestRegistry(t *testing.T) {
 	p := protocol.Protocol{}
 
 	f := &frmocks.ProtocolFactory{}
-	f.CreateReturns(&mocks.ProtocolVersion{}, nil)
+	f.CreateReturns(&coremocks.ProtocolVersion{}, nil)
 
 	require.NotPanics(t, func() { Register(version, f) })
 	require.PanicsWithError(t, "protocol version factory [0.1] already registered", func() { Register(version, f) })
@@ -34,7 +35,7 @@ func TestRegistry(t *testing.T) {
 
 	casClient := &mocks.CasClient{}
 	opStore := &mocks.OperationStore{}
-	docType := sidetreehandler.DIDDocType
+	docType := common.DIDDocType
 
 	pv, err := r.CreateProtocolVersion(version, p, casClient, opStore, docType)
 	require.NoError(t, err)

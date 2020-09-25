@@ -70,7 +70,7 @@ func TestRESTService(t *testing.T) {
 func TestRESTHandlers(t *testing.T) {
 	nsCfg := sidetreehandler.Config{}
 	bw := &peermocks.BatchWriter{}
-	pp := &peermocks.ProtocolProvider{}
+	pc := &mocks.ProtocolClient{}
 	os := &mocks.OperationStore{}
 	restCfg := &peermocks.RestConfig{}
 	sidetreeCfg := &configmocks.SidetreeConfigService{}
@@ -84,7 +84,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os, restCfg, sidetreeCfg)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pc, os, restCfg, sidetreeCfg)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.NotNil(t, rh.service)
@@ -99,7 +99,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os, restCfg, sidetreeCfg)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pc, os, restCfg, sidetreeCfg)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Nil(t, rh.service)
@@ -118,7 +118,7 @@ func TestRESTHandlers(t *testing.T) {
 		cfgService := &configmocks.SidetreeConfigService{}
 		cfgService.LoadSidetreeReturns(config.Sidetree{}, errExpected)
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pp, os, restCfg, cfgService)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pc, os, restCfg, cfgService)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), errExpected.Error())
 		require.Nil(t, rh)

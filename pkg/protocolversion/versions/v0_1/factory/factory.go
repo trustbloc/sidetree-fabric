@@ -19,10 +19,10 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprocessor"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
-	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/common"
+	vcommon "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/validator"
-	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 // Factory implements version 0.1 of the Sidetree protocol
@@ -35,7 +35,7 @@ func New() *Factory {
 }
 
 // Create creates a new protocol version
-func (v *Factory) Create(p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType sidetreehandler.DocumentType) (protocol.Version, error) {
+func (v *Factory) Create(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType) (protocol.Version, error) {
 	parser := operationparser.New(p)
 	cp := compression.New(compression.WithDefaultAlgorithms())
 	opp := txnprovider.NewOperationProvider(p, parser, casClient, cp)
@@ -55,7 +55,8 @@ func (v *Factory) Create(p protocol.Protocol, casClient cas.Client, opStore ctxc
 		return nil, err
 	}
 
-	return &common.ProtocolVersion{
+	return &vcommon.ProtocolVersion{
+		VersionStr:   version,
 		P:            p,
 		TxnProcessor: txnProcessor,
 		OpParser:     parser,
@@ -67,11 +68,11 @@ func (v *Factory) Create(p protocol.Protocol, casClient cas.Client, opStore ctxc
 	}, nil
 }
 
-func createDocumentValidator(docType sidetreehandler.DocumentType, opStore ctxcommon.OperationStore) (protocol.DocumentValidator, error) {
+func createDocumentValidator(docType common.DocumentType, opStore ctxcommon.OperationStore) (protocol.DocumentValidator, error) {
 	switch docType {
-	case sidetreehandler.FileIndexType:
+	case common.FileIndexType:
 		return validator.NewFileIdxValidator(opStore), nil
-	case sidetreehandler.DIDDocType:
+	case common.DIDDocType:
 		return didvalidator.New(opStore), nil
 	default:
 		return nil, fmt.Errorf("unsupported document type: [%s]", docType)

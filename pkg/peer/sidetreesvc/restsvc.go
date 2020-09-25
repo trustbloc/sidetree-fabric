@@ -14,10 +14,11 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler/transformer/didtransformer"
 	"github.com/trustbloc/sidetree-core-go/pkg/processor"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
+	restcommon "github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	resthandler "github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
@@ -31,7 +32,7 @@ type restService struct {
 	httpServer *httpserver.Server
 }
 
-func newRESTService(cfg restConfig, handlers ...common.HTTPHandler) (*restService, error) {
+func newRESTService(cfg restConfig, handlers ...restcommon.HTTPHandler) (*restService, error) {
 	listenURL, err := cfg.SidetreeListenURL()
 	if err != nil {
 		return nil, err
@@ -77,10 +78,6 @@ type restHandlers struct {
 	docHandler *dochandler.DocumentHandler
 }
 
-type protocolProvider interface {
-	Protocol() protocol.Client
-}
-
 type tokenProvider interface {
 	SidetreeAPIToken(name string) string
 }
@@ -89,7 +86,7 @@ func newRESTHandlers(
 	channelID string,
 	cfg sidetreehandler.Config,
 	batchWriter dochandler.BatchWriter,
-	protocolProvider protocolProvider,
+	pc protocol.Client,
 	opStore processor.OperationStoreClient,
 	tokenProvider tokenProvider,
 	configService config.SidetreeService) (*restHandlers, error) {
@@ -112,8 +109,6 @@ func newRESTHandlers(
 	if err != nil {
 		return nil, err
 	}
-
-	pc := protocolProvider.Protocol()
 
 	docHandler := dochandler.New(
 		cfg.Namespace,
@@ -144,7 +139,7 @@ func newRESTHandlers(
 	}
 
 	service.endpoints = append(service.endpoints,
-		newEndpoint("/version", sidetreehandler.NewVersionHandler(channelID, cfg)),
+		newEndpoint("/version", sidetreehandler.NewVersionHandler(channelID, cfg, pc)),
 	)
 
 	return &restHandlers{
@@ -156,19 +151,19 @@ func newRESTHandlers(
 }
 
 type validatorProvider func(cfg config.Sidetree) dochandler.DocumentTransformer
-type resolveHandlerProvider func(sidetreehandler.Config, resthandler.Resolver) common.HTTPHandler
-type updateHandlerProvider func(sidetreehandler.Config, resthandler.Processor, protocol.Client) common.HTTPHandler
+type resolveHandlerProvider func(sidetreehandler.Config, resthandler.Resolver) restcommon.HTTPHandler
+type updateHandlerProvider func(sidetreehandler.Config, resthandler.Processor, protocol.Client) restcommon.HTTPHandler
 
 var (
 	didDocTransformerProvider = func(cfg config.Sidetree) dochandler.DocumentTransformer {
 		return didtransformer.New(didtransformer.WithMethodContext(cfg.MethodContext))
 	}
 
-	didDocResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) common.HTTPHandler {
+	didDocResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) restcommon.HTTPHandler {
 		return diddochandler.NewResolveHandler(cfg.BasePath, resolver)
 	}
 
-	didDocUpdateProvider = func(cfg sidetreehandler.Config, processor resthandler.Processor, pc protocol.Client) common.HTTPHandler {
+	didDocUpdateProvider = func(cfg sidetreehandler.Config, processor resthandler.Processor, pc protocol.Client) restcommon.HTTPHandler {
 		return diddochandler.NewUpdateHandler(cfg.BasePath, processor, pc)
 	}
 
@@ -176,20 +171,20 @@ var (
 		return filehandler.NewTransformer()
 	}
 
-	fileResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) common.HTTPHandler {
+	fileResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) restcommon.HTTPHandler {
 		return filehandler.NewResolveIndexHandler(cfg.BasePath, resolver)
 	}
 
-	fileUpdateProvider = func(cfg sidetreehandler.Config, processor resthandler.Processor, pc protocol.Client) common.HTTPHandler {
+	fileUpdateProvider = func(cfg sidetreehandler.Config, processor resthandler.Processor, pc protocol.Client) restcommon.HTTPHandler {
 		return filehandler.NewUpdateIndexHandler(cfg.BasePath, processor, pc)
 	}
 )
 
-func newProviders(docType sidetreehandler.DocumentType) (validatorProvider, resolveHandlerProvider, updateHandlerProvider, error) {
+func newProviders(docType common.DocumentType) (validatorProvider, resolveHandlerProvider, updateHandlerProvider, error) {
 	switch docType {
-	case sidetreehandler.FileIndexType:
+	case common.FileIndexType:
 		return fileTransformerProvider, fileResolveProvider, fileUpdateProvider, nil
-	case sidetreehandler.DIDDocType:
+	case common.DIDDocType:
 		return didDocTransformerProvider, didDocResolveProvider, didDocUpdateProvider, nil
 	default:
 		return nil, nil, nil, errors.Errorf("unsupported document type [%s]", docType)

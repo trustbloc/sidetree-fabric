@@ -17,6 +17,7 @@ import (
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
+	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
@@ -73,7 +74,7 @@ func TestProvider(t *testing.T) {
 
 	protocolVersions := map[string]protocolApi.Protocol{"0.5": pr}
 
-	pv := &mocks.ProtocolVersion{}
+	pv := &coremocks.ProtocolVersion{}
 	pv.ProtocolReturns(pr)
 
 	vf := &peermocks.ProtocolVersionFactory{}

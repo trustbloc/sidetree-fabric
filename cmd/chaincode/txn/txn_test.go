@@ -16,13 +16,14 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 
 	cmdmocks "github.com/trustbloc/sidetree-fabric/cmd/chaincode/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 )
 
-//go:generate counterfeiter -o ../mocks/protocolclientchannelprovider.gen.go --fake-name ProtocolClientChannelProvider . protocolClientChannelProvider
+//go:generate counterfeiter -o ../mocks/protocolclientchannelprovider.gen.go --fake-name ProtocolClientChannelProvider . ProtocolClientChannelProvider
 
 const (
 	ccName = "sidetreetxncc"
@@ -309,7 +310,7 @@ func prepareStub() *cmdmocks.MockStub {
 }
 
 func prepareStubWithProtocol(p protocol.Protocol) *cmdmocks.MockStub {
-	pv := &mocks.ProtocolVersion{}
+	pv := &coremocks.ProtocolVersion{}
 	pv.ProtocolReturns(p)
 
 	pc := &mocks.ProtocolClient{}

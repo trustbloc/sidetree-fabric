@@ -13,10 +13,11 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 
 	bcclient "github.com/trustbloc/sidetree-fabric/pkg/client"
+	"github.com/trustbloc/sidetree-fabric/pkg/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/cas"
-	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
+	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
@@ -59,7 +60,7 @@ type blockchainClientProvider interface {
 }
 
 type protocolVersionFactory interface {
-	CreateProtocolVersion(version string, p protocolApi.Protocol, casClient casApi.Client, opStore common.OperationStore, docType sidetreehandler.DocumentType) (protocolApi.Version, error)
+	CreateProtocolVersion(version string, p protocolApi.Protocol, casClient casApi.Client, opStore ctxcommon.OperationStore, docType common.DocumentType) (protocolApi.Version, error)
 }
 
 // ContextProviders defines the providers required by the context
@@ -69,7 +70,7 @@ type ContextProviders struct {
 	VersionFactory     protocolVersionFactory
 }
 
-func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider common.OperationStoreProvider, tokenProvider tokenProvider) (*context, error) {
+func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider ctxcommon.OperationStoreProvider, tokenProvider tokenProvider) (*context, error) {
 	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, handlerCfg.Namespace)
 
 	dcasClient, err := providers.DCASProvider.ForChannel(channelID)
@@ -96,7 +97,7 @@ func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg con
 		return nil, err
 	}
 
-	restHandlers, err := newRESTHandlers(channelID, handlerCfg, bw, ctx, store, tokenProvider, cfg)
+	restHandlers, err := newRESTHandlers(channelID, handlerCfg, bw, ctx.Protocol(), store, tokenProvider, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +110,7 @@ func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg con
 	}, nil
 }
 
-func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService, docType sidetreehandler.DocumentType, dcasCfg config.DCAS, opStoreProvider common.OperationStoreProvider, casClient casApi.Client, providers *ContextProviders) (*sidetreectx.SidetreeContext, error) {
+func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService, docType common.DocumentType, dcasCfg config.DCAS, opStoreProvider ctxcommon.OperationStoreProvider, casClient casApi.Client, providers *ContextProviders) (*sidetreectx.SidetreeContext, error) {
 	protocols, err := cfg.LoadProtocols(namespace)
 	if err != nil {
 		return nil, err

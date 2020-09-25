@@ -19,7 +19,9 @@ import (
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
+	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
@@ -77,7 +79,7 @@ func TestChannelController_Update(t *testing.T) {
 		{
 			Namespace: fileIndexNamespace,
 			BasePath:  fileIndexBasePath,
-			DocType:   sidetreehandler.FileIndexType,
+			DocType:   common.FileIndexType,
 			Authorization: authhandler.Config{
 				ReadTokens:  []string{"content_r"},
 				WriteTokens: []string{"content_r", "content_w"},
@@ -159,7 +161,7 @@ func TestChannelController_Update(t *testing.T) {
 	}
 	ledgerProvider.GetLedgerReturns(l)
 
-	v := &mocks.ProtocolVersion{}
+	v := &coremocks.ProtocolVersion{}
 	v.ProtocolReturns(p)
 
 	vf := &peermocks.ProtocolVersionFactory{}
