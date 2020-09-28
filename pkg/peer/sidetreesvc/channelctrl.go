@@ -492,7 +492,7 @@ func (c *channelController) loadFileService(cfg filehandler.Config) (*service, e
 		logger.Debugf("[%s] Authorization tokens for file read handler: %s", c.channelID, cfg.Authorization.ReadTokens)
 
 		s.endpoints = append(s.endpoints,
-			newEndpoint("", c.authHandler(cfg.Authorization.ReadTokens, filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DCASProvider))),
+			newEndpoint("/identifiers", c.authHandler(cfg.Authorization.ReadTokens, filehandler.NewRetrieveHandler(c.channelID, cfg, docHandler, c.DCASProvider))),
 		)
 	}
 
@@ -501,7 +501,7 @@ func (c *channelController) loadFileService(cfg filehandler.Config) (*service, e
 		logger.Debugf("[%s] Authorization tokens for file upload handler: %s", c.channelID, cfg.Authorization.WriteTokens)
 
 		s.endpoints = append(s.endpoints,
-			newEndpoint("", c.authHandler(cfg.Authorization.WriteTokens, filehandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider))),
+			newEndpoint("/operations", c.authHandler(cfg.Authorization.WriteTokens, filehandler.NewUploadHandler(c.channelID, cfg, c.DCASProvider))),
 		)
 	}
 
