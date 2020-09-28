@@ -18,7 +18,7 @@ func TestUpdateIndex(t *testing.T) {
 
 	h := NewUpdateIndexHandler(path, nil, nil)
 	require.NotNil(t, h)
-	require.Equal(t, "/file", h.Path())
+	require.Equal(t, "/file/operations", h.Path())
 	require.NotNil(t, h.Handler())
 	require.Equal(t, http.MethodPost, h.Method())
 }

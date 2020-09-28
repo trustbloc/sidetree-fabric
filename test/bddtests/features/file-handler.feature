@@ -56,7 +56,7 @@ Feature:
     Then the ID of the file is saved to variable "arraysSchemaID"
     # Create the schema file index Sidetree document
     Given variable "schemaIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":"/schema","mappings":{"arrays.schema.json":"${arraysSchemaID}"}}}'
-    When client sends request to "https://localhost:48426/file" to create document with content "${schemaIndexFile}" in namespace "file:idx"
+    When client sends request to "https://localhost:48426/file/operations" to create document with content "${schemaIndexFile}" in namespace "file:idx"
     Then the ID of the returned document is saved to variable "schemaIndexID"
 
     # Upload .well-known files
@@ -68,7 +68,7 @@ Feature:
     Then the ID of the file is saved to variable "wellKnownOrg2ID"
     # Create the .well-known file index Sidetree document
     Given variable "wellKnownIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":"/.well-known/did-bloc","mappings":{"trustbloc.dev.json":"${wellKnownTrustblocID}","org1.dev.json":"${wellKnownOrg1ID}","org2.dev.json":"${wellKnownOrg2ID}"}}}'
-    When client sends request to "https://localhost:48426/file" to create document with content "${wellKnownIndexFile}" in namespace "file:idx"
+    When client sends request to "https://localhost:48426/file/operations" to create document with content "${wellKnownIndexFile}" in namespace "file:idx"
     Then the ID of the returned document is saved to variable "wellKnownIndexID"
 
     # Update the ledger config to point to the index file documents
@@ -101,7 +101,7 @@ Feature:
     Then the ID of the file is saved to variable "locationsSchemaID"
     # Update the schema file index Sidetree document
     Given variable "schemaPatch" is assigned the JSON patch '[{"op": "add", "path": "/fileIndex/mappings/geographical-location.schema.json", "value": "${locationsSchemaID}"}]'
-    When client sends request to "https://localhost:48326/file" to update document "${schemaIndexID}" with patch "${schemaPatch}"
+    When client sends request to "https://localhost:48326/file/operations" to update document "${schemaIndexID}" with patch "${schemaPatch}"
     Then the response has status code 200 and error message ""
 
     And client sends request to "https://localhost:48326/schema/geographical-location.schema.json" to retrieve file
@@ -109,7 +109,7 @@ Feature:
 
     # Test invalid file index document (with missing basePath)
     Given variable "invalidIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":""}}'
-    When client sends request to "https://localhost:48426/file" to create document with content "${invalidIndexFile}" in namespace "file:idx"
+    When client sends request to "https://localhost:48426/file/operations" to create document with content "${invalidIndexFile}" in namespace "file:idx"
     Then the response has status code 500 and error message "missing base path"
 
   @duplicate_create_operation
@@ -119,19 +119,19 @@ Feature:
 
     # Create the /content file index Sidetree document
     Given variable "contentIndexFile" is assigned the JSON value '{"fileIndex":{"basePath":"/content"}}'
-    When client sends request to "https://localhost:48426/file" to create document with content "${contentIndexFile}" in namespace "file:idx"
+    When client sends request to "https://localhost:48426/file/operations" to create document with content "${contentIndexFile}" in namespace "file:idx"
     Then the ID of the returned document is saved to variable "contentIdxID"
     Then we wait 10 seconds
 
-    When an HTTP GET is sent to "https://localhost:48326/file/${contentIdxID}"
+    When an HTTP GET is sent to "https://localhost:48326/file/identifiers/${contentIdxID}"
     Then the JSON path "didDocument.id" of the response equals "${contentIdxID}"
 
     # Attempt to create the /content file index Sidetree document again
-    When client sends request to "https://localhost:48426/file" to create document with content "${contentIndexFile}" in namespace "file:idx"
+    When client sends request to "https://localhost:48426/file/operations" to create document with content "${contentIndexFile}" in namespace "file:idx"
     Then we wait 10 seconds
 
     # The Observer should have rejected the second create and the document resolver will not error out because of an invalid operation in the store
-    When an HTTP GET is sent to "https://localhost:48326/file/${contentIdxID}"
+    When an HTTP GET is sent to "https://localhost:48326/file/identifiers/${contentIdxID}"
     Then the JSON path "didDocument.id" of the response equals "${contentIdxID}"
 
   @filehandler_unauthorized
@@ -146,8 +146,26 @@ Feature:
     When an HTTP POST is sent to "https://localhost:48428/internal" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 400
 
     # Don't provide a token for POST requests to /file - should get 401
-    When an HTTP GET is sent to "https://localhost:48428/file/file:idx:1234" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/file/identifiers/file:idx:1234" and the returned status code is 401
 
     # Now provide a valid tokens for /file
     Given the authorization bearer token for "GET" requests to path "/file" is set to "${content_r}"
-    When an HTTP GET is sent to "https://localhost:48428/file/file:idx:1234" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48428/file/identifiers/file:idx:1234" and the returned status code is 404
+
+  @filehandler_version
+  Scenario: Version and protocol parameters
+    # Protocol at time (block number) 50
+    When an HTTP GET is sent to "https://localhost:48326/file/version?time=50"
+    And the JSON path "version" of the response equals "0.1.1"
+    And the JSON path "genesis_time" of the numeric response equals "20"
+    And the JSON path "hash_algorithm" of the numeric response equals "5"
+    And the JSON path "multi_hash_algorithm" of the numeric response equals "18"
+    And the JSON path "max_operation_count" of the numeric response equals "30"
+    And the JSON path "max_operation_size" of the numeric response equals "200000"
+    And the JSON path "max_anchor_file_size" of the numeric response equals "1000000"
+    And the JSON path "max_map_file_size" of the numeric response equals "1000000"
+    And the JSON path "max_chunk_file_size" of the numeric response equals "10000000"
+    And the JSON path "compression_algorithm" of the response equals "GZIP"
+    And the JSON path "enable_replace_patch" of the boolean response equals "false"
+    And the JSON path "signature_algorithms" of the array response is not empty
+    And the JSON path "key_algorithms" of the array response is not empty

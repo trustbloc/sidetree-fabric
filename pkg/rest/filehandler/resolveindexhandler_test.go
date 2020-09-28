@@ -18,7 +18,7 @@ func TestResolveIndex(t *testing.T) {
 
 	h := NewResolveIndexHandler(path, nil)
 	require.NotNil(t, h)
-	require.Equal(t, "/file/{id}", h.Path())
+	require.Equal(t, "/file/identifiers/{id}", h.Path())
 	require.NotNil(t, h.Handler())
 	require.Equal(t, http.MethodGet, h.Method())
 }

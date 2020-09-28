@@ -29,7 +29,7 @@ func NewResolveIndexHandler(path string, resolver dochandler.Resolver) *ResolveI
 
 // Path returns the context path
 func (h *ResolveIndex) Path() string {
-	return h.path + "/{id}"
+	return h.path + "/identifiers/{id}"
 }
 
 // Method returns the HTTP method
