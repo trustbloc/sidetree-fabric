@@ -27,6 +27,13 @@
           "Config": "file://./sidetree-protocol-v0_1_1.json",
           "Format": "json",
           "Tags": ["sidetree"]
+        },
+        {
+          "Name": "protocol",
+          "Version": "0.1.2",
+          "Config": "file://./sidetree-protocol-v0_1_2.json",
+          "Format": "json",
+          "Tags": ["sidetree"]
         }
       ]
     },

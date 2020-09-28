@@ -64,7 +64,7 @@ func TestServer_Start(t *testing.T) {
 	pc := &mocks.ProtocolClient{}
 	opp := operationparser.New(p)
 
-	pv := &mocks.ProtocolVersion{}
+	pv := &coremocks.ProtocolVersion{}
 	pv.OperationParserReturns(opp)
 
 	pc.CurrentReturns(pv, nil)
@@ -144,7 +144,7 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	pc := &mocks.ProtocolClient{}
 	opp := operationparser.New(p)
 
-	pv := &mocks.ProtocolVersion{}
+	pv := &coremocks.ProtocolVersion{}
 	pv.OperationParserReturns(opp)
 
 	pc.CurrentReturns(pv, nil)
@@ -262,7 +262,7 @@ func newSampleUpdateHandler(processor dochandler.Processor) *sampleUpdateHandler
 	pc := &mocks.ProtocolClient{}
 	opp := operationparser.New(p)
 
-	pv := &mocks.ProtocolVersion{}
+	pv := &coremocks.ProtocolVersion{}
 	pv.OperationParserReturns(opp)
 
 	pc.CurrentReturns(pv, nil)

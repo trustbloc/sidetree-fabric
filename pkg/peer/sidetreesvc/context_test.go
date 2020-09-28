@@ -24,7 +24,6 @@ import (
 )
 
 //go:generate counterfeiter -o ../mocks/protocolversionfactory.gen.go --fake-name ProtocolVersionFactory . protocolVersionFactory
-//go:generate counterfeiter -o ../../mocks/protocolversion.gen.go --fake-name ProtocolVersion github.com/trustbloc/sidetree-core-go/pkg/api/protocol.Version
 
 func TestContext(t *testing.T) {
 	nsCfg := sidetreehandler.Config{

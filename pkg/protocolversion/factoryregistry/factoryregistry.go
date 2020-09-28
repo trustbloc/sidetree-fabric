@@ -13,16 +13,16 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/cas"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
-	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
-	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/common"
+	versioncommon "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/common"
 )
 
 var logger = flogging.MustGetLogger("sidetree_peer")
 
 type factory interface {
-	Create(p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType sidetreehandler.DocumentType) (protocol.Version, error)
+	Create(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType) (protocol.Version, error)
 }
 
 var mutex sync.RWMutex
@@ -40,7 +40,7 @@ func New() *Registry {
 }
 
 // CreateProtocolVersion creates a new protocol version using the given version, protocol and providers
-func (m *Registry) CreateProtocolVersion(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType sidetreehandler.DocumentType) (protocol.Version, error) {
+func (m *Registry) CreateProtocolVersion(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType) (protocol.Version, error) {
 	v, err := m.resolveFactory(version)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (m *Registry) CreateProtocolVersion(version string, p protocol.Protocol, ca
 
 	logger.Infof("Creating protocol version [%s]", version)
 
-	return v.Create(p, casClient, opStore, docType)
+	return v.Create(version, p, casClient, opStore, docType)
 }
 
 // Register registers a protocol factory for a given version
@@ -70,7 +70,7 @@ func (m *Registry) resolveFactory(version string) (factory, error) {
 	defer mutex.RUnlock()
 
 	for v, f := range factories {
-		if common.Version(v).Matches(version) {
+		if versioncommon.Version(v).Matches(version) {
 			return f, nil
 		}
 	}

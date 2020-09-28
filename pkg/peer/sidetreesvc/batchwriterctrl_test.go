@@ -15,16 +15,16 @@ import (
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
-	"github.com/trustbloc/sidetree-core-go/pkg/mocks"
+	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
 //go:generate counterfeiter -o ../mocks/batchcontext.gen.go --fake-name BatchContext github.com/trustbloc/sidetree-core-go/pkg/batch.Context
-//go:generate counterfeiter -o ../mocks/protocolclient.gen.go --fake-name ProtocolClient github.com/trustbloc/sidetree-core-go/pkg/api/protocol.Client
 //go:generate counterfeiter -o ../../config/mocks/sidetreeconfigservice.gen.go --fake-name SidetreeConfigService ../../config SidetreeService
 
 const (
@@ -45,10 +45,10 @@ func TestBatchWriter(t *testing.T) {
 	ctx := &peermocks.BatchContext{}
 	ctx.OperationQueueReturns(&opqueue.MemQueue{})
 
-	v := &mocks.ProtocolVersion{}
+	v := &coremocks.ProtocolVersion{}
 	v.ProtocolReturns(protocol.Protocol{})
 
-	pc := &peermocks.ProtocolClient{}
+	pc := &mocks.ProtocolClient{}
 	pc.CurrentReturns(v, nil)
 
 	ctx.ProtocolReturns(pc)

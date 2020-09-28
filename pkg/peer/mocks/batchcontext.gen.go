@@ -4,7 +4,6 @@ package mocks
 import (
 	"sync"
 
-	"github.com/trustbloc/sidetree-core-go/pkg/api/cas"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
@@ -19,15 +18,6 @@ type BatchContext struct {
 	}
 	protocolReturnsOnCall map[int]struct {
 		result1 protocol.Client
-	}
-	CASStub        func() cas.Client
-	cASMutex       sync.RWMutex
-	cASArgsForCall []struct{}
-	cASReturns     struct {
-		result1 cas.Client
-	}
-	cASReturnsOnCall map[int]struct {
-		result1 cas.Client
 	}
 	BlockchainStub        func() batch.BlockchainClient
 	blockchainMutex       sync.RWMutex
@@ -88,46 +78,6 @@ func (fake *BatchContext) ProtocolReturnsOnCall(i int, result1 protocol.Client) 
 	}
 	fake.protocolReturnsOnCall[i] = struct {
 		result1 protocol.Client
-	}{result1}
-}
-
-func (fake *BatchContext) CAS() cas.Client {
-	fake.cASMutex.Lock()
-	ret, specificReturn := fake.cASReturnsOnCall[len(fake.cASArgsForCall)]
-	fake.cASArgsForCall = append(fake.cASArgsForCall, struct{}{})
-	fake.recordInvocation("CAS", []interface{}{})
-	fake.cASMutex.Unlock()
-	if fake.CASStub != nil {
-		return fake.CASStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.cASReturns.result1
-}
-
-func (fake *BatchContext) CASCallCount() int {
-	fake.cASMutex.RLock()
-	defer fake.cASMutex.RUnlock()
-	return len(fake.cASArgsForCall)
-}
-
-func (fake *BatchContext) CASReturns(result1 cas.Client) {
-	fake.CASStub = nil
-	fake.cASReturns = struct {
-		result1 cas.Client
-	}{result1}
-}
-
-func (fake *BatchContext) CASReturnsOnCall(i int, result1 cas.Client) {
-	fake.CASStub = nil
-	if fake.cASReturnsOnCall == nil {
-		fake.cASReturnsOnCall = make(map[int]struct {
-			result1 cas.Client
-		})
-	}
-	fake.cASReturnsOnCall[i] = struct {
-		result1 cas.Client
 	}{result1}
 }
 
@@ -216,8 +166,6 @@ func (fake *BatchContext) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.protocolMutex.RLock()
 	defer fake.protocolMutex.RUnlock()
-	fake.cASMutex.RLock()
-	defer fake.cASMutex.RUnlock()
 	fake.blockchainMutex.RLock()
 	defer fake.blockchainMutex.RUnlock()
 	fake.operationQueueMutex.RLock()

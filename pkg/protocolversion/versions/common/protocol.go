@@ -12,6 +12,7 @@ import (
 
 // ProtocolVersion implements the protocol.Version interface
 type ProtocolVersion struct {
+	VersionStr   string
 	P            protocol.Protocol
 	TxnProcessor protocol.TxnProcessor
 	OpParser     protocol.OperationParser
@@ -20,6 +21,11 @@ type ProtocolVersion struct {
 	OpHandler    protocol.OperationHandler
 	OpProvider   protocol.OperationProvider
 	DocValidator protocol.DocumentValidator
+}
+
+// Version returns the protocol parameters
+func (h *ProtocolVersion) Version() string {
+	return h.VersionStr
 }
 
 // Protocol returns the protocol parameters

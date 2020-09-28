@@ -12,7 +12,6 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
-
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
 
