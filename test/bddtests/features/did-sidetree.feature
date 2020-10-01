@@ -70,7 +70,7 @@ Feature:
     When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48327/sidetree/0.0.1/identifiers" to resolve DID document with initial state "value"
+    When client sends request to "https://localhost:48327/sidetree/0.0.1/identifiers" to resolve DID document with initial state
     Then check success response contains "#didDocumentHash"
 
     And we wait 10 seconds
@@ -81,7 +81,7 @@ Feature:
     When client sends request to "https://localhost:48426/trustbloc.dev/operations" to create DID document in namespace "did:bloc:trustbloc.dev"
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48327/trustbloc.dev/identifiers" to resolve DID document with initial state "parameter"
+    When client sends request to "https://localhost:48327/trustbloc.dev/identifiers" to resolve DID document with initial state
     Then check success response contains "#didDocumentHash"
 
     And we wait 10 seconds
@@ -92,7 +92,7 @@ Feature:
     When client sends request to "https://localhost:48426/yourdomain.com/operations" to create DID document in namespace "did:bloc:yourdomain.com"
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48327/yourdomain.com/identifiers" to resolve DID document with initial state "value"
+    When client sends request to "https://localhost:48327/yourdomain.com/identifiers" to resolve DID document with initial state
     Then check success response contains "#didDocumentHash"
 
     And we wait 10 seconds

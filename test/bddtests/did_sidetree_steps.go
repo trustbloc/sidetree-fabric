@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
+	"github.com/trustbloc/sidetree-core-go/pkg/canonicalizer"
 	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
@@ -38,8 +39,7 @@ var logger = logrus.New()
 const (
 	sha2_256 = 18
 
-	initialStateParamTemplate = "?-%s-initial-state="
-	initialStateSeparator     = ":"
+	initialStateSeparator = ":"
 )
 
 const addPublicKeysTemplate = `[{
@@ -136,34 +136,56 @@ func (d *DIDSideSteps) sendDIDDocument(url, namespace string) error {
 	return d.httpPost(url, req, contentTypeJSON)
 }
 
-func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url, mode string) error {
+func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
 	did, err := d.getDID()
 	if err != nil {
 		return err
 	}
 
-	initialState := d.createRequest.SuffixData + "." + d.createRequest.Delta
-
-	var req string
-	switch mode {
-	case "parameter":
-		method, err := getMethod(d.reqNamespace)
-		if err != nil {
-			return err
-		}
-
-		initialStateParam := fmt.Sprintf(initialStateParamTemplate, method)
-
-		req = url + "/" + did + initialStateParam + initialState
-
-	case "value":
-		req = url + "/" + did + initialStateSeparator + initialState
-
-	default:
-		return fmt.Errorf("mode '%s' not supported", mode)
+	initialState, err := d.getInitialState()
+	if err != nil {
+		return err
 	}
 
+	req := url + "/" + did + initialStateSeparator + initialState
+
 	return d.httpGet(req)
+}
+
+func (d *DIDSideSteps) getInitialState() (string, error) {
+	suffixDataBytes, err := docutil.DecodeString(d.createRequest.SuffixData)
+	if err != nil {
+		return "", err
+	}
+
+	var suffixData model.SuffixDataModel
+	err = json.Unmarshal(suffixDataBytes, &suffixData)
+	if err != nil {
+		return "", err
+	}
+
+	deltaBytes, err := docutil.DecodeString(d.createRequest.Delta)
+	if err != nil {
+		return "", err
+	}
+
+	var delta model.DeltaModel
+	err = json.Unmarshal(deltaBytes, &delta)
+	if err != nil {
+		return "", err
+	}
+
+	createReq := model.CreateRequestJCS{
+		Delta:      &delta,
+		SuffixData: &suffixData,
+	}
+
+	bytes, err := canonicalizer.MarshalCanonical(createReq)
+	if err != nil {
+		return "", err
+	}
+
+	return docutil.EncodeToString(bytes), nil
 }
 
 func (d *DIDSideSteps) checkSuccessRespContains(msg string) error {
@@ -749,7 +771,7 @@ func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^client sends request to "([^"]*)" to remove service endpoint with ID "([^"]*)" from DID document$`, d.removeServiceEndpointsFromDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to recover DID document$`, d.recoverDIDDocument)
 	s.Step(`^client sends request to "([^"]*)" to deactivate DID document$`, d.deactivateDIDDocument)
-	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial state "([^"]*)"$`, d.resolveDIDDocumentWithInitialValue)
+	s.Step(`^client sends request to "([^"]*)" to resolve DID document with initial state$`, d.resolveDIDDocumentWithInitialValue)
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessRespContains)
 	s.Step(`^check success response does NOT contain "([^"]*)"$`, d.checkSuccessRespDoesNotContain)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document$`, d.resolveDIDDocument)
