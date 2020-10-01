@@ -9,7 +9,7 @@ var myStepDefinitionsWrapper = function () {
     this.When(/^client sends request to "([^"]*)" to create DID document in namespace "([^"]*)"$/, function (arg1, arg2, callback) {
         callback.pending();
     });
-    this.When(/^client sends request to "([^"]*)" to resolve DID document with initial state "([^"]*)"$/, function (arg1, arg2, callback) {
+    this.When(/^client sends request to "([^"]*)" to resolve DID document with initial state$/, function (arg1, arg2, callback) {
         callback.pending();
     });
     this.Then(/^check success response contains "([^"]*)"$/, function (arg1, callback) {
