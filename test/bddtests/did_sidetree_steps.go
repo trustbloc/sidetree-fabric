@@ -267,6 +267,19 @@ func (d *DIDSideSteps) resolveDIDDocument(url string) error {
 	return d.httpGetWithRetry(url+"/"+documentHash, 20, http.StatusNotFound)
 }
 
+func (d *DIDSideSteps) resolveDIDDocumentWithAlias(url, alias string) error {
+	uniqueSuffix, err := d.getUniqueSuffix()
+	if err != nil {
+		return err
+	}
+
+	did := alias + docutil.NamespaceDelimiter + uniqueSuffix
+
+	logger.Infof("Resolving DID document %s from %s", did, url)
+
+	return d.httpGetWithRetry(url+"/"+did, 20, http.StatusNotFound)
+}
+
 func (d *DIDSideSteps) deactivateDIDDocument(url string) error {
 	uniqueSuffix, err := d.getUniqueSuffix()
 	if err != nil {
@@ -775,4 +788,5 @@ func (d *DIDSideSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^check success response contains "([^"]*)"$`, d.checkSuccessRespContains)
 	s.Step(`^check success response does NOT contain "([^"]*)"$`, d.checkSuccessRespDoesNotContain)
 	s.Step(`^client sends request to "([^"]*)" to resolve DID document$`, d.resolveDIDDocument)
+	s.Step(`^client sends request to "([^"]*)" to resolve DID document with alias "([^"]*)"$`, d.resolveDIDDocumentWithAlias)
 }

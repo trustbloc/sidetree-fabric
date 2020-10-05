@@ -21,6 +21,8 @@ type Config struct {
 	DocType common.DocumentType
 	// Namespace is the namespace prefix used in the ID of the document
 	Namespace string
+	// Aliases is the namespace aliases that can be used in the ID of the document
+	Aliases []string
 	// BasePath is the base context path of the REST endpoint
 	BasePath string
 }
