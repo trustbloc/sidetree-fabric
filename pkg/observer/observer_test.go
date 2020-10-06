@@ -610,6 +610,7 @@ func newMockProtocolVersion() protocol.Version {
 		MaxAnchorFileSize:            maxBatchFileSize,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256"},
+		Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
 	}
 
 	tp := &coremocks.TxnProcessor{}
@@ -663,6 +664,7 @@ func generateCreateOperations(num int) (*batch.Operation, error) {
 
 	parser := operationparser.New(protocol.Protocol{
 		HashAlgorithmInMultiHashCode: sha2_256,
+		Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
 	})
 	return parser.Parse(namespace, request)
 }
