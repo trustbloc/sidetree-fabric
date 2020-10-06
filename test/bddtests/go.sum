@@ -138,10 +138,8 @@ github.com/hyperledger/fabric-config v0.0.5 h1:khRkm8U9Ghdg8VmZfptgzCFlCzrka8bPf
 github.com/hyperledger/fabric-config v0.0.5/go.mod h1:YpITBI/+ZayA3XWY5lF302K7PAsFYjEEPM/zr3hegA8=
 github.com/hyperledger/fabric-lib-go v1.0.0 h1:UL1w7c9LvHZUSkIvHTDGklxFv2kTeva1QI2emOVc324=
 github.com/hyperledger/fabric-lib-go v1.0.0/go.mod h1:H362nMlunurmHwkYqR5uHL2UDWbQdbfz74n8kbCFsqc=
-github.com/hyperledger/fabric-sdk-go v1.0.0-beta3 h1:A/hog3Eqz2w3daj5WM99JDDI8KfJFPhw0sKttp1TMc4=
-github.com/hyperledger/fabric-sdk-go v1.0.0-beta3/go.mod h1:qWE9Syfg1KbwNjtILk70bJLilnmCvllIYFCSY/pa1RU=
-github.com/hyperledger/fabric-sdk-go v1.0.0-beta3.0.20200901131551-0c18d1aa90c3 h1:9GEaHWF2PoK4HiWUTSdC0IRlxp4MRae6UTvf4A915to=
-github.com/hyperledger/fabric-sdk-go v1.0.0-beta3.0.20200901131551-0c18d1aa90c3/go.mod h1:qWE9Syfg1KbwNjtILk70bJLilnmCvllIYFCSY/pa1RU=
+github.com/hyperledger/fabric-sdk-go v1.0.0-beta3.0.20201002210629-a64e1ef9f926 h1:/uDvlJrjQmV5WGxNa5qSc8KiBOZhFkjoeeu+R2YrU5c=
+github.com/hyperledger/fabric-sdk-go v1.0.0-beta3.0.20201002210629-a64e1ef9f926/go.mod h1:qWE9Syfg1KbwNjtILk70bJLilnmCvllIYFCSY/pa1RU=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/jessevdk/go-flags v0.0.0-20141203071132-1679536dcc89/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
@@ -311,10 +309,10 @@ github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhV
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/trustbloc/edge-core v0.1.4-0.20200709143857-e104bb29f6c6 h1:GlzMPygeehW/W8tq2vBiN6DLsTFY5xtvQysu1aqqGoQ=
 github.com/trustbloc/edge-core v0.1.4-0.20200709143857-e104bb29f6c6/go.mod h1:SZg7nAIc9FONS+G7MwEyGkCWCJR3R02bePwTpWxqH5w=
-github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20200924170026-94a1825995eb h1:+mjJgsfz4LH3vbIF5/tWwsWCk5caIfJqF4tf3O62irI=
-github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20200924170026-94a1825995eb/go.mod h1:7Cfp0qdzZYjLGoge4HNEO5yuosz0XaT/4F/2688x8Ug=
-github.com/trustbloc/fabric-protos-go-ext v0.1.4 h1:XaeZ4bPfGRsiJE2HbU9hEKzAtyYfbOFjVdKIVIKdmyw=
-github.com/trustbloc/fabric-protos-go-ext v0.1.4/go.mod h1:xVYTjK4DtZRBxZ2D9aE4y6AbLaPwue2o/criQyQbVD0=
+github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20201006134248-87348a5b3ae4 h1:7PTgfApCj5GxGjMgtRjdmzjSIe1gRlfP9OnPze6ZiNI=
+github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20201006134248-87348a5b3ae4/go.mod h1:+31f4Ca6QzxBqJm5XCAAyc3NkCTqpKa+zgLBpJB5tco=
+github.com/trustbloc/fabric-protos-go-ext v0.1.5-0.20201005203042-9fe8149374fc h1:eahUXb02Zpr5AeIeRFYBQONiJcqwvX16kERXaEfMBQ8=
+github.com/trustbloc/fabric-protos-go-ext v0.1.5-0.20201005203042-9fe8149374fc/go.mod h1:xVYTjK4DtZRBxZ2D9aE4y6AbLaPwue2o/criQyQbVD0=
 github.com/trustbloc/sidetree-core-go v0.1.5-0.20201005142809-d6a00a174403 h1:n+wv7GwOOrO9GA0D5uh8HmFzgz2YJj2iOWSPEU+IKw4=
 github.com/trustbloc/sidetree-core-go v0.1.5-0.20201005142809-d6a00a174403/go.mod h1:prRWqxBavkSxgKtPmUriSxCemrvl47yStMbW4jMFuRs=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
