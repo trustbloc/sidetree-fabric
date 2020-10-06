@@ -37,6 +37,8 @@ const (
 	namespace1 = "did:sidetree"
 	basePath2  = "/file"
 	namespace2 = "file:idx"
+	alias1     = "did:domain.com"
+	alias2     = "did:alias.com"
 
 	didSidetreeNamespace             = "did:sidetree"
 	didSidetreeCfgJSON               = `{"batchWriterTimeout":"5s"}`
@@ -44,7 +46,7 @@ const (
 	didSidetreeProtocol_V0_4_CfgJSON = `{"genesisTime":200000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000,"maxOperationCount":10}`
 	didSidetreeProtocol_V0_5_CfgJSON = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":10000,"maxOperationCount":100}`
 	sidetreePeerCfgJson              = `{"Observer":{"Period":"5s"}}`
-	sidetreeHandler1CfgJson          = `{"Namespace":"did:sidetree","BasePath":"/sidetree/0.0.1"}`
+	sidetreeHandler1CfgJson          = `{"Namespace":"did:sidetree","BasePath":"/sidetree/0.0.1","Aliases":["did:domain.com","did:alias.com"]}`
 	sidetreeHandler2CfgJson          = `{"Namespace":"file:idx","BasePath":"/file"}`
 	fileHandler1CfgJson              = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
 	fileHandler2CfgJson              = `{"BasePath":"/.well-known/trustbloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:5678"}`
@@ -202,10 +204,12 @@ func TestNewSidetreeProvider(t *testing.T) {
 		handler1 := handlers[0]
 		require.Equal(t, basePath1, handler1.BasePath)
 		require.Equal(t, namespace1, handler1.Namespace)
+		require.Equal(t, []string{alias1,alias2}, handler1.Aliases)
 
 		handler2 := handlers[1]
 		require.Equal(t, basePath2, handler2.BasePath)
 		require.Equal(t, namespace2, handler2.Namespace)
+		require.Equal(t, 0, len(handler2.Aliases))
 	})
 
 	t.Run("LoadSidetreeHandlers query error -> error", func(t *testing.T) {

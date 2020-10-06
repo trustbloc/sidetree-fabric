@@ -77,6 +77,9 @@ Feature:
 
     When client sends request to "https://localhost:48327/sidetree/0.0.1/identifiers" to resolve DID document
     Then check success response contains "#didDocumentHash"
+    When client sends request to "https://localhost:48327/sidetree/0.0.1/identifiers" to resolve DID document with alias "did:domain.com"
+    Then check success response contains "#didDocumentHash"
+    Then check success response contains "did:domain.com"
 
     When client sends request to "https://localhost:48426/trustbloc.dev/operations" to create DID document in namespace "did:bloc:trustbloc.dev"
     Then check success response contains "#didDocumentHash"

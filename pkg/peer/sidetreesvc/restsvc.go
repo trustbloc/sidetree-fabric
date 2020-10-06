@@ -112,6 +112,7 @@ func newRESTHandlers(
 
 	docHandler := dochandler.New(
 		cfg.Namespace,
+		cfg.Aliases,
 		pc,
 		getTransformer(sidetreeCfg),
 		batchWriter,
