@@ -25,7 +25,8 @@ const (
 		"maxMapFileSize": 1000000,
 		"maxChunkFileSize": 10000000,
 		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
-		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"],
+ 		"patches": ["add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"]
 	}`
 
 	protocolInvalidMulithashAlgoCfg = `{
@@ -39,7 +40,8 @@ const (
 		"maxMapFileSize": 1000000,
 		"maxChunkFileSize": 10000000,
 		"signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],
-		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"]
+		"keyAlgorithms": ["Ed25519", "P-256", "secp256k1"],
+ 		"patches": ["add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"]
 	}`
 
 	appCfg = `

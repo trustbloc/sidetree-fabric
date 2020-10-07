@@ -215,7 +215,7 @@ Feature:
     And the JSON path "max_map_file_size" of the numeric response equals "1000000"
     And the JSON path "max_chunk_file_size" of the numeric response equals "10000000"
     And the JSON path "compression_algorithm" of the response equals "GZIP"
-    And the JSON path "enable_replace_patch" of the boolean response equals "false"
+    And the JSON path "patches" of the array response is not empty
     And the JSON path "signature_algorithms" of the array response is not empty
     And the JSON path "key_algorithms" of the array response is not empty
 
@@ -231,7 +231,7 @@ Feature:
     And the JSON path "max_map_file_size" of the numeric response equals "2000000"
     And the JSON path "max_chunk_file_size" of the numeric response equals "20000000"
     And the JSON path "compression_algorithm" of the response equals "GZIP"
-    And the JSON path "enable_replace_patch" of the boolean response equals "true"
+    And the JSON path "patches" of the array response is not empty
     And the JSON path "signature_algorithms" of the array response is not empty
     And the JSON path "key_algorithms" of the array response is not empty
 

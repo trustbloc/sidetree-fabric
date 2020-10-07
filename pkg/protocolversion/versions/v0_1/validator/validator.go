@@ -46,6 +46,10 @@ func Validate(p *protocol.Protocol) error {
 		return errors.Errorf("field 'KeyAlgorithms' cannot be empty")
 	}
 
+	if len(p.Patches) == 0 {
+		return errors.Errorf("field 'Patches' cannot be empty")
+	}
+
 	return verifyBatchSizesV0(p)
 }
 

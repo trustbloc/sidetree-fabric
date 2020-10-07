@@ -204,7 +204,7 @@ func TestNewSidetreeProvider(t *testing.T) {
 		handler1 := handlers[0]
 		require.Equal(t, basePath1, handler1.BasePath)
 		require.Equal(t, namespace1, handler1.Namespace)
-		require.Equal(t, []string{alias1,alias2}, handler1.Aliases)
+		require.Equal(t, []string{alias1, alias2}, handler1.Aliases)
 
 		handler2 := handlers[1]
 		require.Equal(t, basePath2, handler2.BasePath)

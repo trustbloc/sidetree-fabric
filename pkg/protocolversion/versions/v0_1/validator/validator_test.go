@@ -27,6 +27,21 @@ var (
 		MaxChunkFileSize:             10000000,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
+	}
+
+	protocolInvalidPatches = &protocol.Protocol{
+		GenesisTime:                  500000,
+		HashAlgorithmInMultiHashCode: 18,
+		HashAlgorithm:                5,
+		MaxOperationSize:             2000,
+		MaxOperationCount:            10,
+		CompressionAlgorithm:         "GZIP",
+		MaxAnchorFileSize:            1000000,
+		MaxMapFileSize:               1000000,
+		MaxChunkFileSize:             10000000,
+		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
 	}
 
 	protocolInvalidMulithashAlgo = &protocol.Protocol{
@@ -41,6 +56,7 @@ var (
 		MaxChunkFileSize:             10000000,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidHashAlgo = &protocol.Protocol{
@@ -54,6 +70,7 @@ var (
 		MaxChunkFileSize:             10000000,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxOperationCount = &protocol.Protocol{
@@ -67,6 +84,7 @@ var (
 		MaxChunkFileSize:             10000000,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxOperationSize = &protocol.Protocol{
@@ -80,6 +98,7 @@ var (
 		MaxChunkFileSize:             10000000,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxAnchorSize = &protocol.Protocol{
@@ -93,6 +112,7 @@ var (
 		MaxChunkFileSize:             10000000,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxMapSize = &protocol.Protocol{
@@ -106,6 +126,7 @@ var (
 		MaxChunkFileSize:             10000000,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxChunkSize = &protocol.Protocol{
@@ -119,6 +140,7 @@ var (
 		MaxMapFileSize:               1000000,
 		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidCompressionAlgo = &protocol.Protocol{
@@ -218,6 +240,12 @@ func TestValidator_Validate(t *testing.T) {
 		err := Validate(protocolInvalidKeyAlgorithms)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "field 'KeyAlgorithms' cannot be empty")
+	})
+
+	t.Run("Invalid Patches -> error", func(t *testing.T) {
+		err := Validate(protocolInvalidPatches)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'Patches' cannot be empty")
 	})
 
 	t.Run("Invalid CompressionAlgorithm -> error", func(t *testing.T) {

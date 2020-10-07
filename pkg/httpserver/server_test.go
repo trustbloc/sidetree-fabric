@@ -58,6 +58,7 @@ var p = protocol.Protocol{
 	MaxAnchorFileSize:            1024,
 	SignatureAlgorithms:          []string{"EdDSA", "ES256"},
 	KeyAlgorithms:                []string{"Ed25519", "P-256"},
+	Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
 }
 
 func TestServer_Start(t *testing.T) {
