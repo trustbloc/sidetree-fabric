@@ -52,7 +52,7 @@ Feature:
 
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/version"
     Then the JSON path "name" of the response equals "Hyperledger Fabric"
-    And the JSON path "version" of the response equals "2.2.0"
+    And the JSON path "version" of the response equals "2.2.1"
 
     Given variable "peer0.org1" is assigned the value "https://localhost:48326/sidetree/0.0.1"
     And variable "peer1.org1" is assigned the value "https://localhost:48327/sidetree/0.0.1"
