@@ -26,7 +26,7 @@ func (v *authTokenValidator) Validate(cfg authhandler.Config, kv *config.KeyValu
 			return err
 		}
 	} else {
-		logger.Warnf("field 'ReadTokens' is not set for %s. No authorization will take place for reads on this endpoint.", kv.Key)
+		logger.Debugf("field 'ReadTokens' is not set for %s. No authorization will take place for reads on this endpoint.", kv.Key)
 	}
 
 	if len(cfg.WriteTokens) > 0 {
