@@ -4,15 +4,15 @@ package mocks
 import (
 	"sync"
 
-	batchapi "github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
 
 type OperationHandler struct {
-	PrepareTxnFilesStub        func(ops []*batchapi.Operation) (string, error)
+	PrepareTxnFilesStub        func([]*batch.OperationInfo) (string, error)
 	prepareTxnFilesMutex       sync.RWMutex
 	prepareTxnFilesArgsForCall []struct {
-		ops []*batchapi.Operation
+		arg1 []*batch.OperationInfo
 	}
 	prepareTxnFilesReturns struct {
 		result1 string
@@ -26,26 +26,27 @@ type OperationHandler struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OperationHandler) PrepareTxnFiles(ops []*batchapi.Operation) (string, error) {
-	var opsCopy []*batchapi.Operation
-	if ops != nil {
-		opsCopy = make([]*batchapi.Operation, len(ops))
-		copy(opsCopy, ops)
+func (fake *OperationHandler) PrepareTxnFiles(arg1 []*batch.OperationInfo) (string, error) {
+	var arg1Copy []*batch.OperationInfo
+	if arg1 != nil {
+		arg1Copy = make([]*batch.OperationInfo, len(arg1))
+		copy(arg1Copy, arg1)
 	}
 	fake.prepareTxnFilesMutex.Lock()
 	ret, specificReturn := fake.prepareTxnFilesReturnsOnCall[len(fake.prepareTxnFilesArgsForCall)]
 	fake.prepareTxnFilesArgsForCall = append(fake.prepareTxnFilesArgsForCall, struct {
-		ops []*batchapi.Operation
-	}{opsCopy})
-	fake.recordInvocation("PrepareTxnFiles", []interface{}{opsCopy})
+		arg1 []*batch.OperationInfo
+	}{arg1Copy})
+	fake.recordInvocation("PrepareTxnFiles", []interface{}{arg1Copy})
 	fake.prepareTxnFilesMutex.Unlock()
 	if fake.PrepareTxnFilesStub != nil {
-		return fake.PrepareTxnFilesStub(ops)
+		return fake.PrepareTxnFilesStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.prepareTxnFilesReturns.result1, fake.prepareTxnFilesReturns.result2
+	fakeReturns := fake.prepareTxnFilesReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *OperationHandler) PrepareTxnFilesCallCount() int {
@@ -54,13 +55,22 @@ func (fake *OperationHandler) PrepareTxnFilesCallCount() int {
 	return len(fake.prepareTxnFilesArgsForCall)
 }
 
-func (fake *OperationHandler) PrepareTxnFilesArgsForCall(i int) []*batchapi.Operation {
+func (fake *OperationHandler) PrepareTxnFilesCalls(stub func([]*batch.OperationInfo) (string, error)) {
+	fake.prepareTxnFilesMutex.Lock()
+	defer fake.prepareTxnFilesMutex.Unlock()
+	fake.PrepareTxnFilesStub = stub
+}
+
+func (fake *OperationHandler) PrepareTxnFilesArgsForCall(i int) []*batch.OperationInfo {
 	fake.prepareTxnFilesMutex.RLock()
 	defer fake.prepareTxnFilesMutex.RUnlock()
-	return fake.prepareTxnFilesArgsForCall[i].ops
+	argsForCall := fake.prepareTxnFilesArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *OperationHandler) PrepareTxnFilesReturns(result1 string, result2 error) {
+	fake.prepareTxnFilesMutex.Lock()
+	defer fake.prepareTxnFilesMutex.Unlock()
 	fake.PrepareTxnFilesStub = nil
 	fake.prepareTxnFilesReturns = struct {
 		result1 string
@@ -69,6 +79,8 @@ func (fake *OperationHandler) PrepareTxnFilesReturns(result1 string, result2 err
 }
 
 func (fake *OperationHandler) PrepareTxnFilesReturnsOnCall(i int, result1 string, result2 error) {
+	fake.prepareTxnFilesMutex.Lock()
+	defer fake.prepareTxnFilesMutex.Unlock()
 	fake.PrepareTxnFilesStub = nil
 	if fake.prepareTxnFilesReturnsOnCall == nil {
 		fake.prepareTxnFilesReturnsOnCall = make(map[int]struct {

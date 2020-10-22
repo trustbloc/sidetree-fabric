@@ -29,9 +29,9 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 )
 
 var logger = logrus.New()
@@ -100,7 +100,7 @@ const docTemplate = `{
 type DIDSideSteps struct {
 	httpSteps
 
-	createRequest model.CreateRequest
+	createRequest *model.CreateRequest
 	reqNamespace  string
 	recoveryKey   *ecdsa.PrivateKey
 	updateKey     *ecdsa.PrivateKey
@@ -121,19 +121,21 @@ func (d *DIDSideSteps) sendDIDDocument(url, namespace string) error {
 		return err
 	}
 
-	req, err := d.getCreateRequest(opaqueDoc)
+	reqBytes, err := d.getCreateRequest(opaqueDoc)
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(req, &d.createRequest)
+	var req model.CreateRequest
+	err = json.Unmarshal(reqBytes, &req)
 	if err != nil {
 		return err
 	}
 
+	d.createRequest = &req
 	d.reqNamespace = namespace
 
-	return d.httpPost(url, req, contentTypeJSON)
+	return d.httpPost(url, reqBytes, contentTypeJSON)
 }
 
 func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
@@ -153,31 +155,9 @@ func (d *DIDSideSteps) resolveDIDDocumentWithInitialValue(url string) error {
 }
 
 func (d *DIDSideSteps) getInitialState() (string, error) {
-	suffixDataBytes, err := docutil.DecodeString(d.createRequest.SuffixData)
-	if err != nil {
-		return "", err
-	}
-
-	var suffixData model.SuffixDataModel
-	err = json.Unmarshal(suffixDataBytes, &suffixData)
-	if err != nil {
-		return "", err
-	}
-
-	deltaBytes, err := docutil.DecodeString(d.createRequest.Delta)
-	if err != nil {
-		return "", err
-	}
-
-	var delta model.DeltaModel
-	err = json.Unmarshal(deltaBytes, &delta)
-	if err != nil {
-		return "", err
-	}
-
-	createReq := model.CreateRequestJCS{
-		Delta:      &delta,
-		SuffixData: &suffixData,
+	createReq := &model.CreateRequest{
+		Delta:      d.createRequest.Delta,
+		SuffixData: d.createRequest.SuffixData,
 	}
 
 	bytes, err := canonicalizer.MarshalCanonical(createReq)
@@ -328,7 +308,7 @@ func (d *DIDSideSteps) getDID() (string, error) {
 }
 
 func (d *DIDSideSteps) getUniqueSuffix() (string, error) {
-	return docutil.CalculateUniqueSuffix(d.createRequest.SuffixData, sha2_256)
+	return docutil.CalculateModelMultihash(d.createRequest.SuffixData, sha2_256)
 }
 
 func (d *DIDSideSteps) updateDIDDocumentWithJSONPatch(url, path, value string) error {

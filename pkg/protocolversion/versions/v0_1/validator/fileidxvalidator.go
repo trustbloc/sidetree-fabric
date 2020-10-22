@@ -13,10 +13,10 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
-	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/docvalidator/docvalidator"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 )
@@ -94,13 +94,18 @@ func (v *FileIdxValidator) IsValidPayload(payload []byte) error {
 }
 
 func validatePatch(p patch.Patch) error {
-	if p.GetAction() != patch.JSONPatch {
-		return errors.Errorf("patch action '%s' not supported", p.GetAction())
+	action, err := p.GetAction()
+	if err != nil {
+		return errors.New("unable to get patch action")
 	}
 
-	patches := p.GetValue(patch.PatchesKey)
-	if patches == "" {
-		return errors.New("missing patches string value")
+	if action != patch.JSONPatch {
+		return errors.Errorf("patch action '%s' not supported", action)
+	}
+
+	patches, err := p.GetValue()
+	if err != nil {
+		return errors.WithMessage(err, "invalid patch value")
 	}
 
 	bytes, err := json.Marshal(patches)
@@ -141,21 +146,7 @@ var unmarshalUpdateOperation = func(reqPayload []byte) (string, *model.DeltaMode
 		return "", nil, errors.New("invalid update request")
 	}
 
-	patchDataBytes, err := docutil.DecodeString(req.Delta)
-	if err != nil {
-		logger.Infof("Error decoding patch data for [%s]: %s", req.DidSuffix, err)
-		return req.DidSuffix, nil, errors.New("invalid patch data")
-	}
-
-	logger.Debugf("Validating patch data for [%s]: %s", req.DidSuffix, patchDataBytes)
-
-	op := &model.DeltaModel{}
-	if err := json.Unmarshal(patchDataBytes, op); err != nil {
-		logger.Infof("Error unmarshalling patch data for [%s]: %s", req.DidSuffix, err)
-		return req.DidSuffix, nil, errors.New("invalid patch data")
-	}
-
-	return req.DidSuffix, op, nil
+	return req.DidSuffix, req.Delta, nil
 }
 
 var jsonUnmarshal = func(bytes []byte, obj interface{}) error {
