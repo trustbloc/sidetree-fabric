@@ -39,7 +39,7 @@ func (v *Factory) Create(version string, p protocol.Protocol, casClient cas.Clie
 	parser := operationparser.New(p)
 	cp := compression.New(compression.WithDefaultAlgorithms())
 	opp := txnprovider.NewOperationProvider(p, parser, casClient, cp)
-	oh := txnprovider.NewOperationHandler(p, casClient, cp)
+	oh := txnprovider.NewOperationHandler(p, casClient, cp, parser)
 	dc := doccomposer.New()
 	oa := operationapplier.New(p, parser, dc)
 

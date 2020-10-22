@@ -17,12 +17,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
-	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
@@ -160,35 +159,6 @@ func TestUnmarshalUpdateOperation(t *testing.T) {
 		require.Nil(t, op)
 	})
 
-	t.Run("Invalid base64 encoding", func(t *testing.T) {
-		req := &model.UpdateRequest{
-			Delta: `{"%sde3":"-+"}`,
-		}
-
-		reqBytes, err := json.Marshal(req)
-		require.NoError(t, err)
-
-		suffix, op, err := unmarshalUpdateOperation(reqBytes)
-		require.EqualError(t, err, "invalid patch data")
-		require.Empty(t, suffix)
-		require.Nil(t, op)
-	})
-
-	t.Run("Invalid patch data", func(t *testing.T) {
-		encodedOp := docutil.EncodeToString([]byte("{"))
-
-		req := &model.UpdateRequest{
-			Delta: encodedOp,
-		}
-
-		reqBytes, err := json.Marshal(req)
-		require.NoError(t, err)
-
-		suffix, patchData, err := unmarshalUpdateOperation(reqBytes)
-		require.EqualError(t, err, "invalid patch data")
-		require.Empty(t, suffix)
-		require.Nil(t, patchData)
-	})
 }
 
 func TestValidatePatch(t *testing.T) {
@@ -200,14 +170,20 @@ func TestValidatePatch(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "patch action 'add-public-keys' not supported")
 	})
+	t.Run("missing patch action", func(t *testing.T) {
+		err := validatePatch(patch.Patch{})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unable to get patch action")
+	})
+
 	t.Run("missing patch value", func(t *testing.T) {
 		p, err := patch.NewJSONPatch(`[{"op": "add", "path": "path", "value": "value"}]`)
 		require.NoError(t, err)
-		p["patches"] = ""
+		delete(p, "patches")
 
 		err = validatePatch(p)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "missing patches string value")
+		require.Contains(t, err.Error(), "invalid patch value: ietf-json-patch patch is missing key: patches")
 	})
 	t.Run("invalid json patch", func(t *testing.T) {
 		p, err := patch.NewJSONPatch(`[{"op": "add", "path": "path", "value": "value"}]`)

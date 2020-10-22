@@ -28,7 +28,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/model"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"

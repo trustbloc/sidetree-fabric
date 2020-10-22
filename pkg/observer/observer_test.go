@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/require"
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"github.com/trustbloc/sidetree-core-go/pkg/compression"
@@ -29,6 +28,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider/models"
@@ -625,8 +625,8 @@ func newMockProtocolVersion() protocol.Version {
 	return pv
 }
 
-func getTestOperations(createOpsNum int) ([]*batch.Operation, error) {
-	var ops []*batch.Operation
+func getTestOperations(createOpsNum int) ([]*model.Operation, error) {
+	var ops []*model.Operation
 	for j := 1; j <= createOpsNum; j++ {
 		op, err := generateCreateOperations(j)
 		if err != nil {
@@ -639,7 +639,7 @@ func getTestOperations(createOpsNum int) ([]*batch.Operation, error) {
 	return ops, nil
 }
 
-func generateCreateOperations(num int) (*batch.Operation, error) {
+func generateCreateOperations(num int) (*model.Operation, error) {
 	testKey := &jws.JWK{
 		Crv: "crv",
 		Kty: "kty",
@@ -666,5 +666,5 @@ func generateCreateOperations(num int) (*batch.Operation, error) {
 		HashAlgorithmInMultiHashCode: sha2_256,
 		Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
 	})
-	return parser.Parse(namespace, request)
+	return parser.ParseOperation(namespace, request)
 }
