@@ -80,14 +80,14 @@ const (
 
 	didTrustblocNamespace             = "did:bloc:trustbloc.dev"
 	didTrustblocBasePath              = "/trustbloc.dev/identifiers"
-	didTrustblocProtocol_V0_5_CfgJSON = `{"genesisTime":250000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":20000,"maxOperationCount":200}`
+	didTrustblocProtocol_V0_5_CfgJSON = `{"genesisTime":0,"hashAlgorithmInMultihashCode":18,"maxOperationSize":20000,"maxOperationCount":200}`
 	didTrustblocCfgYaml               = `batchWriterTimeout: 1s`
 	didTrustblocCfgUpdateYaml         = `batchWriterTimeout: 5s`
 
 	didSidetreeNamespace             = "did:sidetree"
 	didSidetreeBasePath              = "/document/identifiers"
 	didSidetreeCfgJSON               = `{"batchWriterTimeout":"5s"}`
-	didSidetreeProtocol_V0_4_CfgJSON = `{"genesisTime":200000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000,"maxOperationCount":10}`
+	didSidetreeProtocol_V0_4_CfgJSON = `{"genesisTime":0,"hashAlgorithmInMultihashCode":18,"maxOperationSize":2000,"maxOperationCount":10}`
 	didSidetreeProtocol_V0_5_CfgJSON = `{"genesisTime":500000,"hashAlgorithmInMultihashCode":18,"maxOperationSize":10000,"maxOperationCount":100}`
 )
 
@@ -216,7 +216,7 @@ func TestInitialize(t *testing.T) {
 			Write(peerCfgKeyBytes, peerSidetreeCfgValueBytes)
 		blockpublisher.ForChannel(channelID).Publish(blockBuilder.Build(), nil)
 
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(2000 * time.Millisecond)
 
 		req.Response(didSidetreeBasePath, didSidetreeNamespace, http.StatusNotFound, docNotFound)
 		req.Response(didTrustblocBasePath, didTrustblocNamespace, http.StatusNotFound, pageNotFound)

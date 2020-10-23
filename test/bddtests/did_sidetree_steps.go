@@ -28,7 +28,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
@@ -409,7 +409,7 @@ func getCreateRequest(doc []byte) ([]byte, *ecdsa.PrivateKey, *ecdsa.PrivateKey,
 		return nil, nil, nil, err
 	}
 
-	data, err := helper.NewCreateRequest(&helper.CreateRequestInfo{
+	data, err := client.NewCreateRequest(&client.CreateRequestInfo{
 		OpaqueDocument:     string(doc),
 		RecoveryCommitment: recoveryCommitment,
 		UpdateCommitment:   updateCommitment,
@@ -462,7 +462,7 @@ func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byt
 		return nil, err
 	}
 
-	recoverRequest, err := helper.NewRecoverRequest(&helper.RecoverRequestInfo{
+	recoverRequest, err := client.NewRecoverRequest(&client.RecoverRequestInfo{
 		DidSuffix:          uniqueSuffix,
 		OpaqueDocument:     string(doc),
 		RecoveryKey:        recoveryPubKey,
@@ -490,7 +490,7 @@ func (d *DIDSideSteps) getDeactivateRequest(did string) ([]byte, error) {
 		return nil, err
 	}
 
-	return helper.NewDeactivateRequest(&helper.DeactivateRequestInfo{
+	return client.NewDeactivateRequest(&client.DeactivateRequestInfo{
 		DidSuffix:   did,
 		RecoveryKey: recoveryPubKey,
 		Signer:      ecsigner.New(d.recoveryKey, "ES256", ""),
@@ -509,7 +509,7 @@ func (d *DIDSideSteps) getUpdateRequest(did string, updatePatch patch.Patch) ([]
 		return nil, err
 	}
 
-	req, err := helper.NewUpdateRequest(&helper.UpdateRequestInfo{
+	req, err := client.NewUpdateRequest(&client.UpdateRequestInfo{
 		DidSuffix:        did,
 		UpdateCommitment: updateCommitment,
 		UpdateKey:        updatePubKey,

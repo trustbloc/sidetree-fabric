@@ -24,7 +24,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
 )
@@ -36,7 +36,7 @@ type FileHandlerSteps struct {
 	bddContext      *bddtests.BDDContext
 	recoveryKey     *ecdsa.PrivateKey
 	updateKey       *ecdsa.PrivateKey
-	updateKeySigner helper.Signer
+	updateKeySigner client.Signer
 	updatePublicKey *jws.JWK
 }
 
@@ -155,7 +155,7 @@ func (d *FileHandlerSteps) getCreateRequest(doc []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return helper.NewCreateRequest(&helper.CreateRequestInfo{
+	return client.NewCreateRequest(&client.CreateRequestInfo{
 		OpaqueDocument:     string(doc),
 		RecoveryCommitment: recoveryCommitment,
 		UpdateCommitment:   updateCommitment,
@@ -276,7 +276,7 @@ func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch strin
 		return nil, err
 	}
 
-	req, err := helper.NewUpdateRequest(&helper.UpdateRequestInfo{
+	req, err := client.NewUpdateRequest(&client.UpdateRequestInfo{
 		DidSuffix:        uniqueSuffix,
 		UpdateCommitment: updateCommitment,
 		UpdateKey:        updatePubKey,
