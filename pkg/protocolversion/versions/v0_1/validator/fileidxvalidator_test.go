@@ -18,9 +18,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
@@ -212,8 +212,8 @@ func getUpdateRequest(patches string) ([]byte, error) {
 		return nil, err
 	}
 
-	return helper.NewUpdateRequest(
-		&helper.UpdateRequestInfo{
+	return client.NewUpdateRequest(
+		&client.UpdateRequestInfo{
 			DidSuffix:     "1234",
 			Patches:       []patch.Patch{updatePatch},
 			MultihashCode: sha2_256,

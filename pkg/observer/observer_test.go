@@ -27,7 +27,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
-	"github.com/trustbloc/sidetree-core-go/pkg/restapi/helper"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
@@ -652,12 +652,12 @@ func generateCreateOperations(num int) (*model.Operation, error) {
 	}
 
 	doc := fmt.Sprintf(`{"test":%d}`, num)
-	info := &helper.CreateRequestInfo{OpaqueDocument: doc,
+	info := &client.CreateRequestInfo{OpaqueDocument: doc,
 		RecoveryCommitment: c,
 		UpdateCommitment:   c,
 		MultihashCode:      sha2_256}
 
-	request, err := helper.NewCreateRequest(info)
+	request, err := client.NewCreateRequest(info)
 	if err != nil {
 		return nil, err
 	}
