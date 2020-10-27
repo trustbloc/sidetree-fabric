@@ -206,42 +206,42 @@ Feature:
     # Protocol at time (block number) 50
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version?time=50"
     And the JSON path "version" of the response equals "0.1.1"
-    And the JSON path "genesis_time" of the numeric response equals "20"
-    And the JSON path "hash_algorithm" of the numeric response equals "5"
-    And the JSON path "multi_hash_algorithm" of the numeric response equals "18"
-    And the JSON path "max_operation_count" of the numeric response equals "30"
-    And the JSON path "max_operation_size" of the numeric response equals "200000"
-    And the JSON path "max_anchor_file_size" of the numeric response equals "1000000"
-    And the JSON path "max_map_file_size" of the numeric response equals "1000000"
-    And the JSON path "max_chunk_file_size" of the numeric response equals "10000000"
-    And the JSON path "compression_algorithm" of the response equals "GZIP"
+    And the JSON path "genesisTime" of the numeric response equals "20"
+    And the JSON path "hashAlgorithm" of the numeric response equals "5"
+    And the JSON path "multiHashAlgorithm" of the numeric response equals "18"
+    And the JSON path "maxOperationCount" of the numeric response equals "30"
+    And the JSON path "maxOperationSize" of the numeric response equals "200000"
+    And the JSON path "maxAnchorFileSize" of the numeric response equals "1000000"
+    And the JSON path "maxMapFileSize" of the numeric response equals "1000000"
+    And the JSON path "maxChunkFileSize" of the numeric response equals "10000000"
+    And the JSON path "compressionAlgorithm" of the response equals "GZIP"
     And the JSON path "patches" of the array response is not empty
-    And the JSON path "signature_algorithms" of the array response is not empty
-    And the JSON path "key_algorithms" of the array response is not empty
+    And the JSON path "signatureAlgorithms" of the array response is not empty
+    And the JSON path "keyAlgorithms" of the array response is not empty
 
     # Protocol at time (block number) 2000
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version?time=2000"
     And the JSON path "version" of the response equals "0.1.2"
-    And the JSON path "genesis_time" of the numeric response equals "1000"
-    And the JSON path "hash_algorithm" of the numeric response equals "5"
-    And the JSON path "multi_hash_algorithm" of the numeric response equals "18"
-    And the JSON path "max_operation_count" of the numeric response equals "50"
-    And the JSON path "max_operation_size" of the numeric response equals "300000"
-    And the JSON path "max_anchor_file_size" of the numeric response equals "2000000"
-    And the JSON path "max_map_file_size" of the numeric response equals "2000000"
-    And the JSON path "max_chunk_file_size" of the numeric response equals "20000000"
-    And the JSON path "compression_algorithm" of the response equals "GZIP"
+    And the JSON path "genesisTime" of the numeric response equals "1000"
+    And the JSON path "hashAlgorithm" of the numeric response equals "5"
+    And the JSON path "multiHashAlgorithm" of the numeric response equals "18"
+    And the JSON path "maxOperationCount" of the numeric response equals "50"
+    And the JSON path "maxOperationSize" of the numeric response equals "300000"
+    And the JSON path "maxAnchorFileSize" of the numeric response equals "2000000"
+    And the JSON path "maxMapFileSize" of the numeric response equals "2000000"
+    And the JSON path "maxChunkFileSize" of the numeric response equals "20000000"
+    And the JSON path "compressionAlgorithm" of the response equals "GZIP"
     And the JSON path "patches" of the array response is not empty
-    And the JSON path "signature_algorithms" of the array response is not empty
-    And the JSON path "key_algorithms" of the array response is not empty
+    And the JSON path "signatureAlgorithms" of the array response is not empty
+    And the JSON path "keyAlgorithms" of the array response is not empty
 
     # Current protocol
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version"
     # We can't check for actual version because we don't know how many blocks have been created
     # by the tests so far so we don't know which protocol is current
     And the JSON path "version" of the response is not empty
-    And the JSON path "hash_algorithm" of the numeric response equals "5"
-    And the JSON path "multi_hash_algorithm" of the numeric response equals "18"
-    And the JSON path "compression_algorithm" of the response equals "GZIP"
-    And the JSON path "signature_algorithms" of the array response is not empty
-    And the JSON path "key_algorithms" of the array response is not empty
+    And the JSON path "hashAlgorithm" of the numeric response equals "5"
+    And the JSON path "multiHashAlgorithm" of the numeric response equals "18"
+    And the JSON path "compressionAlgorithm" of the response equals "GZIP"
+    And the JSON path "signatureAlgorithms" of the array response is not empty
+    And the JSON path "keyAlgorithms" of the array response is not empty

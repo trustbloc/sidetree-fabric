@@ -118,10 +118,10 @@ Feature:
     # Ensure that the anchor hash resolves to a valid value stored in DCAS
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_address_9}?max-size=1000000"
     And response is decompressed using "GZIP"
-    And the JSON path "mapFileHash" of the response is saved to variable "mapFileHash"
+    And the JSON path "mapFileUri" of the response is saved to variable "mapFileURI"
 
     # Ensure that the batch file hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${mapFileHash}?max-size=1000000"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${mapFileURI}?max-size=1000000"
     And response is decompressed using "GZIP"
     And the JSON path "chunks" of the array response is not empty
 
@@ -159,7 +159,7 @@ Feature:
     # Retrieve the anchor file from DCAS
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
     And response is decompressed using "GZIP"
-    Then the JSON path "mapFileHash" of the response is not empty
+    Then the JSON path "mapFileUri" of the response is not empty
 
     # Retrieve the previous block using the previous hash from above
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Convert the string to base64URL-encoding.
@@ -177,7 +177,7 @@ Feature:
     # Retrieve the anchor file from DCAS
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
     And response is decompressed using "GZIP"
-    Then the JSON path "mapFileHash" of the response is not empty
+    Then the JSON path "mapFileUri" of the response is not empty
 
     # Retrieve the anchor file from the previous block hash
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${latest-previous-hash}"
@@ -188,7 +188,7 @@ Feature:
     # Retrieve the anchor file from DCAS
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
     And response is decompressed using "GZIP"
-    Then the JSON path "mapFileHash" of the response is not empty
+    Then the JSON path "mapFileUri" of the response is not empty
 
     # Get block by hash where the data is base64-encoded
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}?data-encoding=base64"

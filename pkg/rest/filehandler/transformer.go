@@ -45,9 +45,9 @@ func processKeys(internal document.Document) {
 		externalPK[document.IDProperty] = internal.ID() + "#" + pk.ID()
 		externalPK[document.TypeProperty] = pk.Type()
 		externalPK[document.ControllerProperty] = internal[document.IDProperty]
-		externalPK[document.PublicKeyJwkProperty] = pk.JWK()
+		externalPK[document.PublicKeyJwkProperty] = pk.PublicKeyJwk()
 
-		delete(pk, document.PurposeProperty)
+		delete(pk, document.PurposesProperty)
 
 		pubKeys = append(pubKeys, externalPK)
 	}

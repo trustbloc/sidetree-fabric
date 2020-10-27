@@ -157,15 +157,15 @@ Feature:
     # Protocol at time (block number) 50
     When an HTTP GET is sent to "https://localhost:48326/file/version?time=50"
     And the JSON path "version" of the response equals "0.1.1"
-    And the JSON path "genesis_time" of the numeric response equals "20"
-    And the JSON path "hash_algorithm" of the numeric response equals "5"
-    And the JSON path "multi_hash_algorithm" of the numeric response equals "18"
-    And the JSON path "max_operation_count" of the numeric response equals "30"
-    And the JSON path "max_operation_size" of the numeric response equals "200000"
-    And the JSON path "max_anchor_file_size" of the numeric response equals "1000000"
-    And the JSON path "max_map_file_size" of the numeric response equals "1000000"
-    And the JSON path "max_chunk_file_size" of the numeric response equals "10000000"
-    And the JSON path "compression_algorithm" of the response equals "GZIP"
+    And the JSON path "genesisTime" of the numeric response equals "20"
+    And the JSON path "hashAlgorithm" of the numeric response equals "5"
+    And the JSON path "multiHashAlgorithm" of the numeric response equals "18"
+    And the JSON path "maxOperationCount" of the numeric response equals "30"
+    And the JSON path "maxOperationSize" of the numeric response equals "200000"
+    And the JSON path "maxAnchorFileSize" of the numeric response equals "1000000"
+    And the JSON path "maxMapFileSize" of the numeric response equals "1000000"
+    And the JSON path "maxChunkFileSize" of the numeric response equals "10000000"
+    And the JSON path "compressionAlgorithm" of the response equals "GZIP"
     And the JSON path "patches" of the array response is not empty
-    And the JSON path "signature_algorithms" of the array response is not empty
-    And the JSON path "key_algorithms" of the array response is not empty
+    And the JSON path "signatureAlgorithms" of the array response is not empty
+    And the JSON path "keyAlgorithms" of the array response is not empty
