@@ -26,7 +26,7 @@ func TestDocumentTransformer_TransformDocument(t *testing.T) {
 	})
 
 	t.Run("document with no keys", func(t *testing.T) {
-		doc, err := document.FromBytes([]byte(validDocNoKeys))
+		doc, err := document.FromBytes([]byte(validDoc))
 		require.NoError(t, err)
 
 		result, err := v.TransformDocument(doc)
@@ -39,60 +39,11 @@ func TestDocumentTransformer_TransformDocument(t *testing.T) {
 		require.Equal(t, 0, len(didDoc.PublicKeys()))
 	})
 
-	t.Run("document with two general keys", func(t *testing.T) {
-		// most likely this scenario will not be used
-		doc, err := document.FromBytes([]byte(validDocWithKeys))
-		require.NoError(t, err)
-
-		result, err := v.TransformDocument(doc)
-		require.NoError(t, err)
-
-		jsonTransformed, err := json.Marshal(result.Document)
-		require.NoError(t, err)
-		didDoc, err := document.DidDocumentFromBytes(jsonTransformed)
-		require.NoError(t, err)
-		require.Equal(t, 2, len(didDoc.PublicKeys()))
-	})
 }
 
-const validDocNoKeys = `
+const validDoc = `
 {
   "id" : "doc:method:abc",
-  "other": [
-    {
-      "name": "name"
-    }
-  ]
-}`
-
-// TODO: Revisit if keys are needed for generic documents
-const validDocWithKeys = `
-{
-  "id" : "doc:method:abc",
-  "publicKey": [
-    {
-      "id": "auth-key",
-      "type": "JwsVerificationKey2020",
-      "purpose": ["general"],
-      "jwk": {
-        "kty": "EC",
-        "crv": "P-256K",
-        "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
-        "y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
-      }
-    },
-    {
-      "id": "general-key",
-      "type": "JwsVerificationKey2020",
-      "purpose": ["general"],
-      "jwk": {
-        "kty": "EC",
-        "crv": "P-256K",
-        "x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",
-        "y": "nM84jDHCMOTGTh_ZdHq4dBBdo4Z5PkEOW9jA8z8IsGc"
-      }
-    }
-  ],
   "other": [
     {
       "name": "name"
