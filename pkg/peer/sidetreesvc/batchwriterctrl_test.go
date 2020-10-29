@@ -24,7 +24,6 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
-//go:generate counterfeiter -o ../mocks/batchcontext.gen.go --fake-name BatchContext github.com/trustbloc/sidetree-core-go/pkg/batch.Context
 //go:generate counterfeiter -o ../../config/mocks/sidetreeconfigservice.gen.go --fake-name SidetreeConfigService ../../config SidetreeService
 
 const (

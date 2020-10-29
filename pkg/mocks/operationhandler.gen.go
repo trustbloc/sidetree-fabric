@@ -4,15 +4,15 @@ package mocks
 import (
 	"sync"
 
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
 
 type OperationHandler struct {
-	PrepareTxnFilesStub        func([]*batch.OperationInfo) (string, error)
+	PrepareTxnFilesStub        func([]*operation.QueuedOperation) (string, error)
 	prepareTxnFilesMutex       sync.RWMutex
 	prepareTxnFilesArgsForCall []struct {
-		arg1 []*batch.OperationInfo
+		arg1 []*operation.QueuedOperation
 	}
 	prepareTxnFilesReturns struct {
 		result1 string
@@ -26,16 +26,16 @@ type OperationHandler struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OperationHandler) PrepareTxnFiles(arg1 []*batch.OperationInfo) (string, error) {
-	var arg1Copy []*batch.OperationInfo
+func (fake *OperationHandler) PrepareTxnFiles(arg1 []*operation.QueuedOperation) (string, error) {
+	var arg1Copy []*operation.QueuedOperation
 	if arg1 != nil {
-		arg1Copy = make([]*batch.OperationInfo, len(arg1))
+		arg1Copy = make([]*operation.QueuedOperation, len(arg1))
 		copy(arg1Copy, arg1)
 	}
 	fake.prepareTxnFilesMutex.Lock()
 	ret, specificReturn := fake.prepareTxnFilesReturnsOnCall[len(fake.prepareTxnFilesArgsForCall)]
 	fake.prepareTxnFilesArgsForCall = append(fake.prepareTxnFilesArgsForCall, struct {
-		arg1 []*batch.OperationInfo
+		arg1 []*operation.QueuedOperation
 	}{arg1Copy})
 	fake.recordInvocation("PrepareTxnFiles", []interface{}{arg1Copy})
 	fake.prepareTxnFilesMutex.Unlock()
@@ -55,13 +55,13 @@ func (fake *OperationHandler) PrepareTxnFilesCallCount() int {
 	return len(fake.prepareTxnFilesArgsForCall)
 }
 
-func (fake *OperationHandler) PrepareTxnFilesCalls(stub func([]*batch.OperationInfo) (string, error)) {
+func (fake *OperationHandler) PrepareTxnFilesCalls(stub func([]*operation.QueuedOperation) (string, error)) {
 	fake.prepareTxnFilesMutex.Lock()
 	defer fake.prepareTxnFilesMutex.Unlock()
 	fake.PrepareTxnFilesStub = stub
 }
 
-func (fake *OperationHandler) PrepareTxnFilesArgsForCall(i int) []*batch.OperationInfo {
+func (fake *OperationHandler) PrepareTxnFilesArgsForCall(i int) []*operation.QueuedOperation {
 	fake.prepareTxnFilesMutex.RLock()
 	defer fake.prepareTxnFilesMutex.RUnlock()
 	argsForCall := fake.prepareTxnFilesArgsForCall[i]

@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/operationqueue/mocks"
 )
 
@@ -26,10 +26,10 @@ const (
 )
 
 var (
-	op1 = &batch.OperationInfo{UniqueSuffix: "op1"}
-	op2 = &batch.OperationInfo{UniqueSuffix: "op2"}
-	op3 = &batch.OperationInfo{UniqueSuffix: "op3"}
-	op4 = &batch.OperationInfo{UniqueSuffix: "op4"}
+	op1 = &operation.QueuedOperation{UniqueSuffix: "op1"}
+	op2 = &operation.QueuedOperation{UniqueSuffix: "op2"}
+	op3 = &operation.QueuedOperation{UniqueSuffix: "op3"}
+	op4 = &operation.QueuedOperation{UniqueSuffix: "op4"}
 )
 
 func TestLevelDBQueue(t *testing.T) {
@@ -59,9 +59,9 @@ func TestLevelDBQueue(t *testing.T) {
 	ops, err = q.Peek(2)
 	require.NoError(t, err)
 	require.Len(t, ops, 2)
-	require.Equal(t, *op1, ops[0].OperationInfo)
+	require.Equal(t, *op1, ops[0].QueuedOperation)
 	require.Equal(t, uint64(100), ops[0].ProtocolGenesisTime)
-	require.Equal(t, *op2, ops[1].OperationInfo)
+	require.Equal(t, *op2, ops[1].QueuedOperation)
 	require.Equal(t, uint64(101), ops[1].ProtocolGenesisTime)
 
 	removed, n, err := q.Remove(2)
@@ -148,7 +148,7 @@ func TestLevelDBQueue_Close(t *testing.T) {
 	q.Close()
 	require.NotPanicsf(t, func() { q.Close() }, "calling close twice should not panic")
 
-	_, err = q.Add(&batch.OperationInfo{}, 100)
+	_, err = q.Add(&operation.QueuedOperation{}, 100)
 	require.EqualError(t, err, errClosed.Error())
 
 	_, err = q.Peek(1)
@@ -188,7 +188,7 @@ func TestLevelDBQueue_Error(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, q)
 
-		_, err = q.Add(&batch.OperationInfo{}, 100)
+		_, err = q.Add(&operation.QueuedOperation{}, 100)
 		require.Error(t, err, errExpected.Error())
 	})
 
@@ -200,7 +200,7 @@ func TestLevelDBQueue_Error(t *testing.T) {
 			it.NextReturnsOnCall(0, true)
 			it.KeyReturns(toBytes(1000))
 
-			v, err := marshal(&batch.OperationInfoAtTime{})
+			v, err := marshal(&operation.QueuedOperationAtTime{})
 			require.NoError(t, err)
 			it.ValueReturns(v)
 
@@ -215,7 +215,7 @@ func TestLevelDBQueue_Error(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, q)
 
-		_, err = q.Add(&batch.OperationInfo{}, 100)
+		_, err = q.Add(&operation.QueuedOperation{}, 100)
 		require.NoError(t, err)
 
 		_, _, err = q.Remove(1)

@@ -4,28 +4,28 @@ package mocks
 import (
 	"sync"
 
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 )
 
 type OperationStore struct {
-	GetStub        func(suffix string) ([]*batch.AnchoredOperation, error)
+	GetStub        func(suffix string) ([]*operation.AnchoredOperation, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
 		suffix string
 	}
 	getReturns struct {
-		result1 []*batch.AnchoredOperation
+		result1 []*operation.AnchoredOperation
 		result2 error
 	}
 	getReturnsOnCall map[int]struct {
-		result1 []*batch.AnchoredOperation
+		result1 []*operation.AnchoredOperation
 		result2 error
 	}
-	PutStub        func(ops []*batch.AnchoredOperation) error
+	PutStub        func(ops []*operation.AnchoredOperation) error
 	putMutex       sync.RWMutex
 	putArgsForCall []struct {
-		ops []*batch.AnchoredOperation
+		ops []*operation.AnchoredOperation
 	}
 	putReturns struct {
 		result1 error
@@ -37,7 +37,7 @@ type OperationStore struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OperationStore) Get(suffix string) ([]*batch.AnchoredOperation, error) {
+func (fake *OperationStore) Get(suffix string) ([]*operation.AnchoredOperation, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
@@ -66,38 +66,38 @@ func (fake *OperationStore) GetArgsForCall(i int) string {
 	return fake.getArgsForCall[i].suffix
 }
 
-func (fake *OperationStore) GetReturns(result1 []*batch.AnchoredOperation, result2 error) {
+func (fake *OperationStore) GetReturns(result1 []*operation.AnchoredOperation, result2 error) {
 	fake.GetStub = nil
 	fake.getReturns = struct {
-		result1 []*batch.AnchoredOperation
+		result1 []*operation.AnchoredOperation
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *OperationStore) GetReturnsOnCall(i int, result1 []*batch.AnchoredOperation, result2 error) {
+func (fake *OperationStore) GetReturnsOnCall(i int, result1 []*operation.AnchoredOperation, result2 error) {
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
-			result1 []*batch.AnchoredOperation
+			result1 []*operation.AnchoredOperation
 			result2 error
 		})
 	}
 	fake.getReturnsOnCall[i] = struct {
-		result1 []*batch.AnchoredOperation
+		result1 []*operation.AnchoredOperation
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *OperationStore) Put(ops []*batch.AnchoredOperation) error {
-	var opsCopy []*batch.AnchoredOperation
+func (fake *OperationStore) Put(ops []*operation.AnchoredOperation) error {
+	var opsCopy []*operation.AnchoredOperation
 	if ops != nil {
-		opsCopy = make([]*batch.AnchoredOperation, len(ops))
+		opsCopy = make([]*operation.AnchoredOperation, len(ops))
 		copy(opsCopy, ops)
 	}
 	fake.putMutex.Lock()
 	ret, specificReturn := fake.putReturnsOnCall[len(fake.putArgsForCall)]
 	fake.putArgsForCall = append(fake.putArgsForCall, struct {
-		ops []*batch.AnchoredOperation
+		ops []*operation.AnchoredOperation
 	}{opsCopy})
 	fake.recordInvocation("Put", []interface{}{opsCopy})
 	fake.putMutex.Unlock()
@@ -116,7 +116,7 @@ func (fake *OperationStore) PutCallCount() int {
 	return len(fake.putArgsForCall)
 }
 
-func (fake *OperationStore) PutArgsForCall(i int) []*batch.AnchoredOperation {
+func (fake *OperationStore) PutArgsForCall(i int) []*operation.AnchoredOperation {
 	fake.putMutex.RLock()
 	defer fake.putMutex.RUnlock()
 	return fake.putArgsForCall[i].ops

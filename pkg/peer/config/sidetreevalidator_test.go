@@ -16,7 +16,7 @@ import (
 const (
 	protocolCfg = `{
 		"genesisTime":500000,
-		"hashAlgorithmInMultihashCode":18,
+		"multihashAlgorithm":18,
 		"hashAlgorithm":5,
 		"maxOperationSize":2000,
 		"maxOperationCount":10,
@@ -31,7 +31,7 @@ const (
 
 	protocolInvalidMulithashAlgoCfg = `{
 		"genesisTime":500000,
-		"hashAlgorithmInMultihashCode":2777,
+		"multihashAlgorithm":2777,
 		"hashAlgorithm":5,
 		"maxOperationSize":2000,
 		"maxOperationCount":10,

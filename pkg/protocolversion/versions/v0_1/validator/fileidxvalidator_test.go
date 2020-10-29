@@ -16,7 +16,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
@@ -99,7 +99,7 @@ func TestDocumentValidator_IsValidOriginalDocument(t *testing.T) {
 
 func TestDocumentValidator_IsValidPayload(t *testing.T) {
 	s := &mocks.OperationStore{}
-	s.GetReturns([]*batch.AnchoredOperation{{}}, nil)
+	s.GetReturns([]*operation.AnchoredOperation{{}}, nil)
 
 	v := NewFileIdxValidator(s)
 	require.NotNil(t, v)

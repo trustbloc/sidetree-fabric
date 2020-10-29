@@ -18,7 +18,7 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	commonledger "github.com/hyperledger/fabric/common/ledger"
 
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 )
 
@@ -50,7 +50,7 @@ func NewClient(channelID, namespace string, s store) *Client {
 }
 
 // Get retrieves all document operations for specified document ID
-func (c *Client) Get(uniqueSuffix string) ([]*batch.AnchoredOperation, error) {
+func (c *Client) Get(uniqueSuffix string) ([]*operation.AnchoredOperation, error) {
 	logger.Debugf("[%s-%s] Querying for operations for ID [%s]", c.channelID, c.namespace, uniqueSuffix)
 
 	iter, err := c.store.Query(fmt.Sprintf(queryByUniqueSuffixTemplate, uniqueSuffix))
@@ -82,7 +82,7 @@ func (c *Client) Get(uniqueSuffix string) ([]*batch.AnchoredOperation, error) {
 }
 
 // Put stores an operation
-func (c *Client) Put(ops []*batch.AnchoredOperation) error {
+func (c *Client) Put(ops []*operation.AnchoredOperation) error {
 	for _, op := range ops {
 		bytes, err := json.Marshal(op)
 		if err != nil {
@@ -100,10 +100,10 @@ func (c *Client) Put(ops []*batch.AnchoredOperation) error {
 	return nil
 }
 
-func getOperations(ops [][]byte) ([]*batch.AnchoredOperation, error) {
-	var operations []*batch.AnchoredOperation
+func getOperations(ops [][]byte) ([]*operation.AnchoredOperation, error) {
+	var operations []*operation.AnchoredOperation
 	for _, opBytes := range ops {
-		var op batch.AnchoredOperation
+		var op operation.AnchoredOperation
 		if err := json.Unmarshal(opBytes, &op); err != nil {
 			return nil, errors.Wrapf(err, "failed to unmarshal operation")
 		}
@@ -113,7 +113,7 @@ func getOperations(ops [][]byte) ([]*batch.AnchoredOperation, error) {
 	return sortChronologically(operations), nil
 }
 
-func sortChronologically(operations []*batch.AnchoredOperation) []*batch.AnchoredOperation {
+func sortChronologically(operations []*operation.AnchoredOperation) []*operation.AnchoredOperation {
 	if len(operations) <= 1 {
 		return operations
 	}

@@ -159,7 +159,7 @@ Feature:
     And the JSON path "version" of the response equals "0.1.1"
     And the JSON path "genesisTime" of the numeric response equals "20"
     And the JSON path "hashAlgorithm" of the numeric response equals "5"
-    And the JSON path "multiHashAlgorithm" of the numeric response equals "18"
+    And the JSON path "multihashAlgorithm" of the numeric response equals "18"
     And the JSON path "maxOperationCount" of the numeric response equals "30"
     And the JSON path "maxOperationSize" of the numeric response equals "200000"
     And the JSON path "maxAnchorFileSize" of the numeric response equals "1000000"

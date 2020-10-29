@@ -599,18 +599,18 @@ func newMockProtocolVersion() protocol.Version {
 	const maxOperationByteSize = 2000
 
 	p := protocol.Protocol{
-		GenesisTime:                  0,
-		HashAlgorithmInMultiHashCode: sha2_256,
-		HashAlgorithm:                5, // crypto code for sha256 hash function
-		MaxOperationCount:            2,
-		MaxOperationSize:             maxOperationByteSize,
-		CompressionAlgorithm:         "GZIP",
-		MaxChunkFileSize:             maxBatchFileSize,
-		MaxMapFileSize:               maxBatchFileSize,
-		MaxAnchorFileSize:            maxBatchFileSize,
-		SignatureAlgorithms:          []string{"EdDSA", "ES256"},
-		KeyAlgorithms:                []string{"Ed25519", "P-256"},
-		Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
+		GenesisTime:          0,
+		MultihashAlgorithm:   sha2_256,
+		HashAlgorithm:        5, // crypto code for sha256 hash function
+		MaxOperationCount:    2,
+		MaxOperationSize:     maxOperationByteSize,
+		CompressionAlgorithm: "GZIP",
+		MaxChunkFileSize:     maxBatchFileSize,
+		MaxMapFileSize:       maxBatchFileSize,
+		MaxAnchorFileSize:    maxBatchFileSize,
+		SignatureAlgorithms:  []string{"EdDSA", "ES256"},
+		KeyAlgorithms:        []string{"Ed25519", "P-256"},
+		Patches:              []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
 	}
 
 	tp := &coremocks.TxnProcessor{}
@@ -663,8 +663,8 @@ func generateCreateOperations(num int) (*model.Operation, error) {
 	}
 
 	parser := operationparser.New(protocol.Protocol{
-		HashAlgorithmInMultiHashCode: sha2_256,
-		Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
+		MultihashAlgorithm: sha2_256,
+		Patches:            []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
 	})
 	return parser.ParseOperation(namespace, request)
 }
