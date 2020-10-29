@@ -20,7 +20,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 )
 
 var (
@@ -116,7 +116,7 @@ func (q *LevelDBQueue) Drop() error {
 }
 
 // Add adds the given operation to the tail of the queue
-func (q *LevelDBQueue) Add(op *batch.OperationInfo, protocolGenesisTime uint64) (uint, error) {
+func (q *LevelDBQueue) Add(op *operation.QueuedOperation, protocolGenesisTime uint64) (uint, error) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -125,8 +125,8 @@ func (q *LevelDBQueue) Add(op *batch.OperationInfo, protocolGenesisTime uint64) 
 	}
 
 	b, err := marshal(
-		&batch.OperationInfoAtTime{
-			OperationInfo:       *op,
+		&operation.QueuedOperationAtTime{
+			QueuedOperation:     *op,
 			ProtocolGenesisTime: protocolGenesisTime,
 		},
 	)
@@ -192,7 +192,7 @@ func (q *LevelDBQueue) Remove(num uint) (uint, uint, error) {
 }
 
 // Peek returns the given number of operation at the head of the queue without removing them.
-func (q *LevelDBQueue) Peek(num uint) ([]*batch.OperationInfoAtTime, error) {
+func (q *LevelDBQueue) Peek(num uint) ([]*operation.QueuedOperationAtTime, error) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -217,9 +217,9 @@ func (q *LevelDBQueue) Peek(num uint) ([]*batch.OperationInfoAtTime, error) {
 		}, nil)
 	defer it.Release()
 
-	var ops []*batch.OperationInfoAtTime
+	var ops []*operation.QueuedOperationAtTime
 	for it.Next() {
-		op := &batch.OperationInfoAtTime{}
+		op := &operation.QueuedOperationAtTime{}
 		if err := unmarshal(it.Value(), op); err != nil {
 			return nil, err
 		}
@@ -262,7 +262,7 @@ func min(i, j uint64) uint64 {
 	return j
 }
 
-func marshal(op *batch.OperationInfoAtTime) ([]byte, error) {
+func marshal(op *operation.QueuedOperationAtTime) ([]byte, error) {
 	var buffer bytes.Buffer
 	if err := gob.NewEncoder(&buffer).Encode(op); err != nil {
 		return nil, err
@@ -271,7 +271,7 @@ func marshal(op *batch.OperationInfoAtTime) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func unmarshal(b []byte, op *batch.OperationInfoAtTime) error {
+func unmarshal(b []byte, op *operation.QueuedOperationAtTime) error {
 	return gob.NewDecoder(bytes.NewBuffer(b)).Decode(op)
 }
 

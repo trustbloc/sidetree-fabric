@@ -4,44 +4,45 @@ package mocks
 import (
 	"sync"
 
-	batchapi "github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/txn"
 )
 
 type OperationProvider struct {
-	GetTxnOperationsStub        func(sidetreeTxn *txn.SidetreeTxn) ([]*batchapi.AnchoredOperation, error)
+	GetTxnOperationsStub        func(*txn.SidetreeTxn) ([]*operation.AnchoredOperation, error)
 	getTxnOperationsMutex       sync.RWMutex
 	getTxnOperationsArgsForCall []struct {
-		sidetreeTxn *txn.SidetreeTxn
+		arg1 *txn.SidetreeTxn
 	}
 	getTxnOperationsReturns struct {
-		result1 []*batchapi.AnchoredOperation
+		result1 []*operation.AnchoredOperation
 		result2 error
 	}
 	getTxnOperationsReturnsOnCall map[int]struct {
-		result1 []*batchapi.AnchoredOperation
+		result1 []*operation.AnchoredOperation
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OperationProvider) GetTxnOperations(sidetreeTxn *txn.SidetreeTxn) ([]*batchapi.AnchoredOperation, error) {
+func (fake *OperationProvider) GetTxnOperations(arg1 *txn.SidetreeTxn) ([]*operation.AnchoredOperation, error) {
 	fake.getTxnOperationsMutex.Lock()
 	ret, specificReturn := fake.getTxnOperationsReturnsOnCall[len(fake.getTxnOperationsArgsForCall)]
 	fake.getTxnOperationsArgsForCall = append(fake.getTxnOperationsArgsForCall, struct {
-		sidetreeTxn *txn.SidetreeTxn
-	}{sidetreeTxn})
-	fake.recordInvocation("GetTxnOperations", []interface{}{sidetreeTxn})
+		arg1 *txn.SidetreeTxn
+	}{arg1})
+	fake.recordInvocation("GetTxnOperations", []interface{}{arg1})
 	fake.getTxnOperationsMutex.Unlock()
 	if fake.GetTxnOperationsStub != nil {
-		return fake.GetTxnOperationsStub(sidetreeTxn)
+		return fake.GetTxnOperationsStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.getTxnOperationsReturns.result1, fake.getTxnOperationsReturns.result2
+	fakeReturns := fake.getTxnOperationsReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *OperationProvider) GetTxnOperationsCallCount() int {
@@ -50,30 +51,41 @@ func (fake *OperationProvider) GetTxnOperationsCallCount() int {
 	return len(fake.getTxnOperationsArgsForCall)
 }
 
+func (fake *OperationProvider) GetTxnOperationsCalls(stub func(*txn.SidetreeTxn) ([]*operation.AnchoredOperation, error)) {
+	fake.getTxnOperationsMutex.Lock()
+	defer fake.getTxnOperationsMutex.Unlock()
+	fake.GetTxnOperationsStub = stub
+}
+
 func (fake *OperationProvider) GetTxnOperationsArgsForCall(i int) *txn.SidetreeTxn {
 	fake.getTxnOperationsMutex.RLock()
 	defer fake.getTxnOperationsMutex.RUnlock()
-	return fake.getTxnOperationsArgsForCall[i].sidetreeTxn
+	argsForCall := fake.getTxnOperationsArgsForCall[i]
+	return argsForCall.arg1
 }
 
-func (fake *OperationProvider) GetTxnOperationsReturns(result1 []*batchapi.AnchoredOperation, result2 error) {
+func (fake *OperationProvider) GetTxnOperationsReturns(result1 []*operation.AnchoredOperation, result2 error) {
+	fake.getTxnOperationsMutex.Lock()
+	defer fake.getTxnOperationsMutex.Unlock()
 	fake.GetTxnOperationsStub = nil
 	fake.getTxnOperationsReturns = struct {
-		result1 []*batchapi.AnchoredOperation
+		result1 []*operation.AnchoredOperation
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *OperationProvider) GetTxnOperationsReturnsOnCall(i int, result1 []*batchapi.AnchoredOperation, result2 error) {
+func (fake *OperationProvider) GetTxnOperationsReturnsOnCall(i int, result1 []*operation.AnchoredOperation, result2 error) {
+	fake.getTxnOperationsMutex.Lock()
+	defer fake.getTxnOperationsMutex.Unlock()
 	fake.GetTxnOperationsStub = nil
 	if fake.getTxnOperationsReturnsOnCall == nil {
 		fake.getTxnOperationsReturnsOnCall = make(map[int]struct {
-			result1 []*batchapi.AnchoredOperation
+			result1 []*operation.AnchoredOperation
 			result2 error
 		})
 	}
 	fake.getTxnOperationsReturnsOnCall[i] = struct {
-		result1 []*batchapi.AnchoredOperation
+		result1 []*operation.AnchoredOperation
 		result2 error
 	}{result1, result2}
 }

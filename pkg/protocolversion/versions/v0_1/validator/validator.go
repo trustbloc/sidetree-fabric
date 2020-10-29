@@ -18,7 +18,7 @@ import (
 
 // Validate validates the parameters on the given protococol
 func Validate(p *protocol.Protocol) error {
-	if _, err := docutil.GetHash(p.HashAlgorithmInMultiHashCode); err != nil {
+	if _, err := docutil.GetHash(p.MultihashAlgorithm); err != nil {
 		return errors.WithMessagef(err, "error in Sidetree protocol")
 	}
 

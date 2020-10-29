@@ -13,7 +13,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	"github.com/stretchr/testify/require"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
@@ -53,7 +53,7 @@ func TestProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, ops, 1)
 
-		require.NoError(t, s.Put([]*batch.AnchoredOperation{{Type: "create"}}))
+		require.NoError(t, s.Put([]*operation.AnchoredOperation{{Type: "create"}}))
 	})
 
 	t.Run("DCAS error", func(t *testing.T) {

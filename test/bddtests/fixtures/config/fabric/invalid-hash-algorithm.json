@@ -1,6 +1,6 @@
 {
   "genesisTime": 500000,
-  "hashAlgorithmInMultihashCode": 777,
+  "multihashAlgorithm": 777,
   "hashAlgorithm": 5,
   "maxOperationSize": 200000,
   "maxOperationCount": 10,

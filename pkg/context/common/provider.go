@@ -10,7 +10,7 @@ import (
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 )
 
@@ -25,8 +25,8 @@ type DCASClientProvider interface {
 
 // OperationStore interface to access operation store
 type OperationStore interface {
-	Get(suffix string) ([]*batch.AnchoredOperation, error)
-	Put(ops []*batch.AnchoredOperation) error
+	Get(suffix string) ([]*operation.AnchoredOperation, error)
+	Put(ops []*operation.AnchoredOperation) error
 }
 
 // OperationStoreProvider returns an operation store for the given namespace

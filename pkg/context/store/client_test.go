@@ -15,7 +15,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 
-	"github.com/trustbloc/sidetree-core-go/pkg/api/batch"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/context/store/mocks"
@@ -84,7 +84,7 @@ func TestClient_Put(t *testing.T) {
 		s := &mocks.Store{}
 		c := NewClient(chID, namespace, s)
 
-		require.NoError(t, c.Put([]*batch.AnchoredOperation{{}}))
+		require.NoError(t, c.Put([]*operation.AnchoredOperation{{}}))
 	})
 
 	t.Run("Store error", func(t *testing.T) {
@@ -94,7 +94,7 @@ func TestClient_Put(t *testing.T) {
 
 		c := NewClient(chID, namespace, s)
 
-		err := c.Put([]*batch.AnchoredOperation{{}})
+		err := c.Put([]*operation.AnchoredOperation{{}})
 		require.EqualError(t, err, errExpected.Error())
 	})
 }
@@ -112,12 +112,12 @@ func TestClient_Get(t *testing.T) {
 }
 
 func TestSort(t *testing.T) {
-	var operations []*batch.AnchoredOperation
+	var operations []*operation.AnchoredOperation
 
 	const testID = "id"
-	delete := &batch.AnchoredOperation{UniqueSuffix: testID, Type: "delete", TransactionTime: 2, TransactionNumber: 1}
-	update := &batch.AnchoredOperation{UniqueSuffix: testID, Type: "update", TransactionTime: 1, TransactionNumber: 7}
-	create := &batch.AnchoredOperation{UniqueSuffix: testID, Type: "create", TransactionTime: 1, TransactionNumber: 1}
+	delete := &operation.AnchoredOperation{UniqueSuffix: testID, Type: "delete", TransactionTime: 2, TransactionNumber: 1}
+	update := &operation.AnchoredOperation{UniqueSuffix: testID, Type: "update", TransactionTime: 1, TransactionNumber: 7}
+	create := &operation.AnchoredOperation{UniqueSuffix: testID, Type: "create", TransactionTime: 1, TransactionNumber: 1}
 
 	operations = append(operations, delete)
 	operations = append(operations, update)
