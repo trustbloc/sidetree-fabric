@@ -41,7 +41,6 @@ func TestNewRetrieveHandler(t *testing.T) {
 
 	require.Equal(t, "/cas/{hash}", h.Path())
 	require.Equal(t, http.MethodGet, h.Method())
-	require.NotEmpty(t, h.Params()[maxSizeParam])
 }
 
 func TestRetrieve_Handler(t *testing.T) {
