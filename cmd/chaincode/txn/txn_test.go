@@ -7,14 +7,16 @@ SPDX-License-Identifier: Apache-2.0
 package txn
 
 import (
-	"crypto"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"github.com/ipfs/go-cid"
+	mh "github.com/multiformats/go-multihash"
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
+	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 
@@ -24,6 +26,7 @@ import (
 )
 
 //go:generate counterfeiter -o ../mocks/protocolclientchannelprovider.gen.go --fake-name ProtocolClientChannelProvider . ProtocolClientChannelProvider
+//go:generate counterfeiter -o ../mocks/dcasstubwrapperfactory.gen.go --fake-name DCASStubWrapperFactory . DCASStubWrapperFactory
 
 const (
 	ccName = "sidetreetxncc"
@@ -34,8 +37,9 @@ func TestNew(t *testing.T) {
 	req := require.New(t)
 
 	pccp := &cmdmocks.ProtocolClientChannelProvider{}
+	dswf := &cmdmocks.DCASStubWrapperFactory{}
 
-	cc := New(ccName, pccp)
+	cc := New(ccName, pccp, dswf)
 	req.NotNil(cc)
 
 	req.Empty(cc.GetDBArtifacts([]string{coll1}))
@@ -45,8 +49,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestInvoke(t *testing.T) {
-
-	stub := prepareStub()
+	stub := prepareDefaultStub()
 
 	testInvalidFunctionName(t, stub)
 
@@ -55,34 +58,45 @@ func TestInvoke(t *testing.T) {
 }
 
 func TestWrite(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		stub := prepareDefaultStub()
 
-	stub := prepareStub()
+		testPayload := []byte("Test")
+		address, err := invoke(stub, [][]byte{[]byte(writeContent), []byte(coll1), testPayload})
+		require.NoError(t, err)
+		require.NoError(t, dcas.ValidateCID(string(address)))
 
-	testPayload := []byte("Test")
-	address, err := invoke(stub, [][]byte{[]byte(writeContent), []byte(coll1), testPayload})
-	require.Nil(t, err)
-	require.Equal(t, encodedSHA256Hash(testPayload), string(address))
+		payload, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte(address)})
+		require.Nil(t, err)
+		require.Equal(t, testPayload, payload)
+	})
 
-	payload, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte(address)})
-	require.Nil(t, err)
-	require.Equal(t, testPayload, payload)
-}
+	t.Run("Write error", func(t *testing.T) {
+		testErr := fmt.Errorf("write error")
+		dcasClient := mocks.NewDCASClient().WithPutError(testErr)
+		stub := prepareStub(protocol.Protocol{GenesisTime: 100}, dcasClient)
 
-func TestWriteError(t *testing.T) {
+		payload, err := invoke(stub, [][]byte{[]byte(writeContent), []byte(coll1), []byte("address")})
+		require.Error(t, err)
+		require.Nil(t, payload)
+		require.Contains(t, err.Error(), testErr.Error())
+	})
 
-	testErr := fmt.Errorf("write error")
-	stub := prepareStub()
-	stub.PutPrivateErr = testErr
+	t.Run("Factory error", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected factory error")
+		dswf := &cmdmocks.DCASStubWrapperFactory{}
+		dswf.CreateDCASClientStubWrapperReturns(nil, errExpected)
 
-	payload, err := invoke(stub, [][]byte{[]byte(writeContent), []byte(coll1), []byte("address")})
-	require.NotNil(t, err)
-	require.Nil(t, payload)
-	require.Contains(t, err.Error(), testErr.Error())
+		stub := prepareStubWithFactory(protocol.Protocol{GenesisTime: 100}, dswf)
+
+		_, err := invoke(stub, [][]byte{[]byte(writeContent), []byte(coll1), []byte("address")})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+	})
 }
 
 func TestWrite_MissingContent(t *testing.T) {
-
-	stub := prepareStub()
+	stub := prepareDefaultStub()
 
 	address, err := invoke(stub, [][]byte{[]byte(writeContent), []byte(coll1), []byte("")})
 	require.NotNil(t, err)
@@ -91,40 +105,52 @@ func TestWrite_MissingContent(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-
-	stub := prepareStub()
-
 	testPayload := []byte("Test")
-	testPayloadAddress := encodedSHA256Hash(testPayload)
+	testPayloadAddress, err := dcas.GetCID(testPayload, dcas.CIDV1, cid.Raw, mh.SHA2_256)
+	require.NoError(t, err)
 
-	payload, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte(testPayloadAddress)})
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "not found")
+	t.Run("Success", func(t *testing.T) {
+		stub := prepareDefaultStub()
 
-	address, err := invoke(stub, [][]byte{[]byte(writeContent), []byte(coll1), testPayload})
-	require.Nil(t, err)
-	require.Equal(t, testPayloadAddress, string(address))
+		payload, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte(testPayloadAddress)})
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "not found")
 
-	payload, err = invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte(testPayloadAddress)})
-	require.Nil(t, err)
-	require.Equal(t, testPayload, payload)
-}
+		address, err := invoke(stub, [][]byte{[]byte(writeContent), []byte(coll1), testPayload})
+		require.Nil(t, err)
+		require.Equal(t, testPayloadAddress, string(address))
 
-func TestReadError(t *testing.T) {
+		payload, err = invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte(testPayloadAddress)})
+		require.Nil(t, err)
+		require.Equal(t, testPayload, payload)
+	})
 
-	testErr := fmt.Errorf("read error")
-	stub := prepareStub()
-	stub.GetPrivateErr = testErr
+	t.Run("Read error", func(t *testing.T) {
+		testErr := fmt.Errorf("read error")
+		dcasClient := mocks.NewDCASClient().WithGetError(testErr)
+		stub := prepareStub(protocol.Protocol{GenesisTime: 100}, dcasClient)
 
-	payload, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte("address")})
-	require.NotNil(t, err)
-	require.Nil(t, payload)
-	require.Contains(t, err.Error(), testErr.Error())
+		payload, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte("address")})
+		require.NotNil(t, err)
+		require.Nil(t, payload)
+		require.Contains(t, err.Error(), testErr.Error())
+	})
+
+	t.Run("Factory error", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected factory error")
+		dswf := &cmdmocks.DCASStubWrapperFactory{}
+		dswf.CreateDCASClientStubWrapperReturns(nil, errExpected)
+
+		stub := prepareStubWithFactory(protocol.Protocol{GenesisTime: 100}, dswf)
+
+		_, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte(testPayloadAddress)})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), errExpected.Error())
+	})
 }
 
 func TestRead_MissingAddress(t *testing.T) {
-
-	stub := prepareStub()
+	stub := prepareDefaultStub()
 
 	address, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte("")})
 	require.NotNil(t, err)
@@ -133,7 +159,7 @@ func TestRead_MissingAddress(t *testing.T) {
 }
 
 func TestWriteAnchor(t *testing.T) {
-	stub := prepareStubWithProtocol(protocol.Protocol{GenesisTime: 100})
+	stub := prepareStub(protocol.Protocol{GenesisTime: 100}, mocks.NewDCASClient())
 
 	t.Run("Success", func(t *testing.T) {
 		anchor := []byte("anchor1")
@@ -175,8 +201,9 @@ func TestWriteAnchor(t *testing.T) {
 
 		pccp := &cmdmocks.ProtocolClientChannelProvider{}
 		pccp.ProtocolClientProviderForChannelReturns(nil, errExpected)
+		dswf := &cmdmocks.DCASStubWrapperFactory{}
 
-		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp))
+		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp, dswf))
 
 		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), []byte("anchor"), getTxnInfoBytes(t, 101)})
 		require.Error(t, err)
@@ -192,8 +219,9 @@ func TestWriteAnchor(t *testing.T) {
 
 		pccp := &cmdmocks.ProtocolClientChannelProvider{}
 		pccp.ProtocolClientProviderForChannelReturns(pcp, nil)
+		dswf := &cmdmocks.DCASStubWrapperFactory{}
 
-		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp))
+		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp, dswf))
 
 		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), []byte("anchor"), getTxnInfoBytes(t, 100)})
 		require.Error(t, err)
@@ -212,8 +240,9 @@ func TestWriteAnchor(t *testing.T) {
 
 		pccp := &cmdmocks.ProtocolClientChannelProvider{}
 		pccp.ProtocolClientProviderForChannelReturns(pcp, nil)
+		dswf := &cmdmocks.DCASStubWrapperFactory{}
 
-		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp))
+		stub := cmdmocks.NewMockStub(ccName, New(ccName, pccp, dswf))
 
 		payload, err := invoke(stub, [][]byte{[]byte(writeAnchor), []byte("anchor"), getTxnInfoBytes(t, 100)})
 		require.Error(t, err)
@@ -236,7 +265,7 @@ func getTxnInfoBytes(t *testing.T, protocolGenesisTime uint64) []byte {
 }
 
 func TestWriteAnchor_CheckRequiredArguments(t *testing.T) {
-	stub := prepareStub()
+	stub := prepareDefaultStub()
 
 	// missing args
 	payload, err := invoke(stub, [][]byte{[]byte(writeAnchor)})
@@ -264,8 +293,7 @@ func TestWriteAnchor_CheckRequiredArguments(t *testing.T) {
 }
 
 func TestWarmup(t *testing.T) {
-
-	stub := prepareStub()
+	stub := prepareDefaultStub()
 
 	payload, err := invoke(stub, [][]byte{[]byte(warmup)})
 	require.Nil(t, err)
@@ -273,9 +301,8 @@ func TestWarmup(t *testing.T) {
 }
 
 func TestHandlePanic(t *testing.T) {
-
-	stub := prepareStub()
-	stub.GetPrivateErr = fmt.Errorf("panic")
+	dcasClient := mocks.NewDCASClient().WithPanic("panic")
+	stub := prepareStub(protocol.Protocol{GenesisTime: 100}, dcasClient)
 
 	payload, err := invoke(stub, [][]byte{[]byte(readContent), []byte(coll1), []byte("address")})
 	require.NotNil(t, err)
@@ -283,18 +310,7 @@ func TestHandlePanic(t *testing.T) {
 	require.Contains(t, err.Error(), "panic")
 }
 
-func encodedSHA256Hash(bytes []byte) string {
-
-	h := crypto.SHA256.New()
-	if _, err := h.Write(bytes); err != nil {
-		panic(err)
-	}
-
-	return base64.URLEncoding.EncodeToString(h.Sum(nil))
-}
-
 func testInvalidFunctionName(t *testing.T, stub *cmdmocks.MockStub) {
-
 	// Test function name not provided
 	_, err := invoke(stub, [][]byte{})
 	require.NotNil(t, err, "Function name is mandatory")
@@ -302,14 +318,13 @@ func testInvalidFunctionName(t *testing.T, stub *cmdmocks.MockStub) {
 	// Test wrong function name provided
 	_, err = invoke(stub, [][]byte{[]byte("test")})
 	require.NotNil(t, err, "Should have failed due to wrong function name")
-
 }
 
-func prepareStub() *cmdmocks.MockStub {
-	return prepareStubWithProtocol(protocol.Protocol{GenesisTime: 100})
+func prepareDefaultStub() *cmdmocks.MockStub {
+	return prepareStub(protocol.Protocol{GenesisTime: 100}, mocks.NewDCASClient())
 }
 
-func prepareStubWithProtocol(p protocol.Protocol) *cmdmocks.MockStub {
+func prepareStub(p protocol.Protocol, dcasClient dcasclient.DCAS) *cmdmocks.MockStub {
 	pv := &coremocks.ProtocolVersion{}
 	pv.ProtocolReturns(p)
 
@@ -322,7 +337,26 @@ func prepareStubWithProtocol(p protocol.Protocol) *cmdmocks.MockStub {
 	pccp := &cmdmocks.ProtocolClientChannelProvider{}
 	pccp.ProtocolClientProviderForChannelReturns(pcp, nil)
 
-	return cmdmocks.NewMockStub(ccName, New(ccName, pccp))
+	dswf := &cmdmocks.DCASStubWrapperFactory{}
+	dswf.CreateDCASClientStubWrapperReturns(dcasClient, nil)
+
+	return cmdmocks.NewMockStub(ccName, New(ccName, pccp, dswf))
+}
+
+func prepareStubWithFactory(p protocol.Protocol, dswf DCASStubWrapperFactory) *cmdmocks.MockStub {
+	pv := &coremocks.ProtocolVersion{}
+	pv.ProtocolReturns(p)
+
+	pc := &mocks.ProtocolClient{}
+	pc.GetReturns(pv, nil)
+
+	pcp := &mocks.ProtocolClientProvider{}
+	pcp.ForNamespaceReturns(pc, nil)
+
+	pccp := &cmdmocks.ProtocolClientChannelProvider{}
+	pccp.ProtocolClientProviderForChannelReturns(pcp, nil)
+
+	return cmdmocks.NewMockStub(ccName, New(ccName, pccp, dswf))
 }
 
 func checkInit(t *testing.T, stub *cmdmocks.MockStub, args [][]byte) {

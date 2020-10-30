@@ -8,9 +8,9 @@ package context
 
 import (
 	"github.com/hyperledger/fabric/core/ledger"
-	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
+	olclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
+	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
-
 	casApi "github.com/trustbloc/sidetree-core-go/pkg/api/cas"
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
@@ -36,7 +36,11 @@ type txnServiceProvider interface {
 }
 
 type dcasClientProvider interface {
-	ForChannel(channelID string) (client.DCAS, error)
+	GetDCASClient(channelID string, namespace string, coll string) (dcasclient.DCAS, error)
+}
+
+type offLedgerClientProvider interface {
+	ForChannel(channelID string) (olclient.OffLedger, error)
 }
 
 type operationQueueProvider interface {
@@ -51,6 +55,7 @@ type ledgerProvider interface {
 type Providers struct {
 	TxnProvider            txnServiceProvider
 	DCASProvider           dcasClientProvider
+	OffLedgerProvider      offLedgerClientProvider
 	OperationQueueProvider operationQueueProvider
 	LedgerProvider         ledgerProvider
 }

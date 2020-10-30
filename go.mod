@@ -5,10 +5,9 @@
 module github.com/trustbloc/sidetree-fabric
 
 require (
-	github.com/Microsoft/hcsshim v0.8.9 // indirect
+	github.com/Microsoft/hcsshim v0.8.10 // indirect
 	github.com/Shopify/sarama v1.22.1 // indirect
 	github.com/bluele/gcache v0.0.0-20190301044115-79ae3b2d8680
-	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/golang/protobuf v1.3.3
@@ -19,13 +18,14 @@ require (
 	github.com/hyperledger/fabric-protos-go v0.0.0-20200707132912-fee30f3ccd23
 	github.com/hyperledger/fabric-sdk-go v1.0.0-beta3.0.20201006151309-9c426dcc5096
 	github.com/hyperledger/fabric/extensions v0.0.0
+	github.com/ipfs/go-cid v0.0.7
+	github.com/multiformats/go-multihash v0.0.14
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/procfs v0.0.5 // indirect
 	github.com/rs/cors v1.7.0
 	github.com/spf13/viper v1.7.0
 	github.com/spf13/viper2015 v1.3.2
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/syndtr/goleveldb v1.0.1-0.20190625010220-02440ea7a285
 	github.com/trustbloc/edge-core v0.1.4
 	github.com/trustbloc/fabric-peer-ext v0.0.0
@@ -37,7 +37,7 @@ replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.5-
 
 replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20201016134740-812f1a67d3f5
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.5-0.20201016134740-812f1a67d3f5
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.5-0.20201030154508-f88b1c62fe4d
 
 replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.5-0.20201005203042-9fe8149374fc
 

@@ -8,16 +8,16 @@ package store
 
 import (
 	"errors"
+	"hash"
 	"testing"
 
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	"github.com/stretchr/testify/require"
-	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
-	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 )
 
 const (
@@ -26,23 +26,22 @@ const (
 )
 
 func TestProvider(t *testing.T) {
-	dcasClient := &mocks.DCASClient{}
-
 	vk1 := &queryresult.KV{
 		Namespace: "document~diddoc",
 		Key:       "did:sidetree:suffix",
 		Value:     []byte("{}"),
 	}
-	it := extmocks.NewResultsIterator().WithResults([]*queryresult.KV{vk1})
-	dcasClient.QueryReturns(it, nil)
+
+	offLedgerClient := obmocks.NewMockOffLedgerClient().
+		WithDefaultQueryResults([]*queryresult.KV{vk1})
 
 	cfgService := &cfgmocks.SidetreeConfigService{}
 
 	t.Run("Get and Put", func(t *testing.T) {
-		dcasProvider := &mocks.DCASClientProvider{}
-		dcasProvider.ForChannelReturns(dcasClient, nil)
+		offLedgerProvider := &obmocks.OffLedgerClientProvider{}
+		offLedgerProvider.ForChannelReturns(offLedgerClient, nil)
 
-		p := NewProvider(channel1, cfgService, dcasProvider)
+		p := NewProvider(channel1, cfgService, offLedgerProvider)
 		require.NotNil(t, p)
 
 		s, err := p.ForNamespace(ns1)
@@ -58,10 +57,10 @@ func TestProvider(t *testing.T) {
 
 	t.Run("DCAS error", func(t *testing.T) {
 		errExpected := errors.New("injected DCAS provider error")
-		dcasProvider := &mocks.DCASClientProvider{}
-		dcasProvider.ForChannelReturns(nil, errExpected)
+		offLedgerProvider := &obmocks.OffLedgerClientProvider{}
+		offLedgerProvider.ForChannelReturns(nil, errExpected)
 
-		p := NewProvider(channel1, cfgService, dcasProvider)
+		p := NewProvider(channel1, cfgService, offLedgerProvider)
 		require.NotNil(t, p)
 
 		s, err := p.ForNamespace(ns1)
@@ -75,14 +74,27 @@ func TestProvider(t *testing.T) {
 		cfgService := &cfgmocks.SidetreeConfigService{}
 		cfgService.LoadSidetreeReturns(config.Sidetree{}, errExpected)
 
-		dcasProvider := &mocks.DCASClientProvider{}
-		dcasProvider.ForChannelReturns(dcasClient, nil)
+		offLedgerProvider := &obmocks.OffLedgerClientProvider{}
+		offLedgerProvider.ForChannelReturns(offLedgerClient, nil)
 
-		p := NewProvider(channel1, cfgService, dcasProvider)
+		p := NewProvider(channel1, cfgService, offLedgerProvider)
 		require.NotNil(t, p)
 
 		s, err := p.ForNamespace(ns1)
 		require.EqualError(t, err, errExpected.Error())
 		require.Nil(t, s)
 	})
+}
+
+type mockHash struct {
+	hash.Hash
+	err error
+}
+
+func (m *mockHash) Write(p []byte) (n int, err error) {
+	if m.err != nil {
+		return -1, m.err
+	}
+
+	return m.Hash.Write(p)
 }

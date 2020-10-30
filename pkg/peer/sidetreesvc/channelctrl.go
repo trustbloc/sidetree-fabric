@@ -148,7 +148,7 @@ func (c *channelController) load() error {
 
 	logger.Debugf("[%s] Updating Sidetree service channelController ...", c.channelID)
 
-	storeProvider := store.NewProvider(c.channelID, c.sidetreeCfgService, c.DCASProvider)
+	storeProvider := store.NewProvider(c.channelID, c.sidetreeCfgService, c.OffLedgerProvider)
 
 	if err := c.loadContexts(restHandlerCfg.sidetree, dcasCfg, storeProvider); err != nil {
 		return err

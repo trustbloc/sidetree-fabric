@@ -15,10 +15,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/httpserver"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
-	handlermocks "github.com/trustbloc/sidetree-fabric/pkg/rest/dcashandler/mocks"
 )
 
 //go:generate counterfeiter -o ./mocks/ioreader.gen.go --fake-name IOReader io.Reader
@@ -39,7 +38,7 @@ func TestUpload_Handler(t *testing.T) {
 
 	t.Run("DCAS provider error -> Server Error", func(t *testing.T) {
 		errExpected := errors.New("injected DCAS provider error")
-		dcasProvider.ForChannelReturns(nil, errExpected)
+		dcasProvider.GetDCASClientReturns(nil, errExpected)
 
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/cas", bytes.NewReader([]byte{1, 2, 3, 4}))
@@ -57,45 +56,10 @@ func TestUpload_Handler(t *testing.T) {
 		errExpected := errors.New("injected DCAS client error")
 		dcasClient := &mocks.DCASClient{}
 		dcasClient.PutReturns("", errExpected)
-		dcasProvider.ForChannelReturns(dcasClient, nil)
+		dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/cas", bytes.NewReader([]byte{1, 2, 3, 4}))
-		h.Handler()(rw, req)
-
-		require.Equal(t, http.StatusInternalServerError, rw.Result().StatusCode)
-		require.Equal(t, httpserver.ContentTypeText, rw.Header().Get(httpserver.ContentTypeHeader))
-		require.Equal(t, httpserver.StatusServerError, rw.Body.String())
-	})
-
-	t.Run("No content -> Bad Request", func(t *testing.T) {
-		restoreParams := setParams(hash, maxSize)
-		defer restoreParams()
-
-		dcasClient := &mocks.DCASClient{}
-		dcasProvider.ForChannelReturns(dcasClient, nil)
-
-		rw := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/cas", nil)
-		h.Handler()(rw, req)
-
-		require.Equal(t, http.StatusBadRequest, rw.Result().StatusCode)
-		require.Equal(t, httpserver.ContentTypeText, rw.Header().Get(httpserver.ContentTypeHeader))
-		require.Equal(t, httpserver.StatusEmptyContent, rw.Body.String())
-	})
-
-	t.Run("Read error -> Server Error", func(t *testing.T) {
-		restoreParams := setParams(hash, maxSize)
-		defer restoreParams()
-
-		dcasClient := &mocks.DCASClient{}
-		dcasProvider.ForChannelReturns(dcasClient, nil)
-
-		reader := &handlermocks.IOReader{}
-		reader.ReadReturns(0, errors.New("injected read error"))
-
-		rw := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/cas", reader)
 		h.Handler()(rw, req)
 
 		require.Equal(t, http.StatusInternalServerError, rw.Result().StatusCode)
@@ -111,7 +75,7 @@ func TestUpload_Handler(t *testing.T) {
 
 		dcasClient := &mocks.DCASClient{}
 		dcasClient.PutReturns(hash, nil)
-		dcasProvider.ForChannelReturns(dcasClient, nil)
+		dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/cas", bytes.NewReader(content))

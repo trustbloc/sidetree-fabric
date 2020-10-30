@@ -13,6 +13,7 @@ import (
 
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/stretchr/testify/require"
+	olmocks "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/mocks"
 	ledgerconfig "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
 	cfgservice "github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/service"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
@@ -27,7 +28,7 @@ import (
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
-	mocks2 "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 	peerconfig "github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/discovery"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
@@ -139,7 +140,11 @@ func TestChannelController_Update(t *testing.T) {
 
 	dcas := &mocks.DCASClient{}
 	dcasProvider := &mocks.DCASClientProvider{}
-	dcasProvider.ForChannelReturns(dcas, nil)
+	dcasProvider.GetDCASClientReturns(dcas, nil)
+
+	olClient := &olmocks.OffLedgerClient{}
+	olProvider := &obmocks.OffLedgerClientProvider{}
+	olProvider.ForChannelReturns(olClient, nil)
 
 	observerProviders := &observer.ClientProviders{}
 
@@ -171,6 +176,7 @@ func TestChannelController_Update(t *testing.T) {
 		ContextProviders: &ContextProviders{
 			Providers: &sidetreectx.Providers{
 				DCASProvider:           dcasProvider,
+				OffLedgerProvider:      olProvider,
 				OperationQueueProvider: opQueueProvider,
 				LedgerProvider:         ledgerProvider,
 			},
@@ -363,7 +369,11 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 
 	dcas := &mocks.DCASClient{}
 	dcasProvider := &mocks.DCASClientProvider{}
-	dcasProvider.ForChannelReturns(dcas, nil)
+	dcasProvider.GetDCASClientReturns(dcas, nil)
+
+	olClient := &olmocks.OffLedgerClient{}
+	olProvider := &obmocks.OffLedgerClientProvider{}
+	olProvider.ForChannelReturns(olClient, nil)
 
 	discoveryProvider := &peermocks.DiscoveryProvider{}
 
@@ -379,6 +389,7 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 		ContextProviders: &ContextProviders{
 			Providers: &sidetreectx.Providers{
 				DCASProvider:           dcasProvider,
+				OffLedgerProvider:      olProvider,
 				OperationQueueProvider: opQueueProvider,
 				LedgerProvider:         ledgerProvider,
 			},
@@ -433,7 +444,7 @@ func TestChannelController_LoadBlockchainHandlers(t *testing.T) {
 	opQueueProvider := &mocks.OperationQueueProvider{}
 	opQueueProvider.CreateReturns(opQueue, nil)
 
-	blockchainProvider := &mocks2.BlockchainClientProvider{}
+	blockchainProvider := &obmocks.BlockchainClientProvider{}
 
 	discoveryProvider := &peermocks.DiscoveryProvider{}
 
@@ -511,7 +522,7 @@ func TestChannelController_LoadDiscoveryHandlers(t *testing.T) {
 	opQueueProvider := &mocks.OperationQueueProvider{}
 	opQueueProvider.CreateReturns(opQueue, nil)
 
-	blockchainProvider := &mocks2.BlockchainClientProvider{}
+	blockchainProvider := &obmocks.BlockchainClientProvider{}
 
 	discoveryProvider := &peermocks.DiscoveryProvider{}
 	ledgerProvider := &extmocks.LedgerProvider{}

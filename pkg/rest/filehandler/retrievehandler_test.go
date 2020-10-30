@@ -31,8 +31,8 @@ func TestFileRetrieveHandler(t *testing.T) {
 	docResolver := &mocks.DocumentResolver{}
 	dcasProvider := &mocks.DCASClientProvider{}
 
-	dcasClient := &mocks.DCASClient{}
-	dcasProvider.ForChannelReturns(dcasClient, nil)
+	dcasClient := mocks.NewDCASClient()
+	dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 	cfg := Config{
 		BasePath:       "/schema",
@@ -159,7 +159,6 @@ func TestFileRetrieveHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
-		dcasClient.GetReturns(nil, nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()
@@ -170,8 +169,8 @@ func TestFileRetrieveHandler(t *testing.T) {
 	})
 
 	t.Run("DCAS provider error", func(t *testing.T) {
-		dcasProvider.ForChannelReturns(nil, errors.New("injected DCAS provider error"))
-		defer func() { dcasProvider.ForChannelReturns(dcasClient, nil) }()
+		dcasProvider.GetDCASClientReturns(nil, errors.New("injected DCAS provider error"))
+		defer func() { dcasProvider.GetDCASClientReturns(dcasClient, nil) }()
 
 		fileIndexDoc := &FileIndexDoc{
 			ID: "file:idx:1234",
@@ -187,7 +186,8 @@ func TestFileRetrieveHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
-		dcasClient.GetReturns(nil, errors.New("injected DCAS error"))
+		dcasClient.WithGetError(errors.New("injected DCAS error"))
+		defer dcasClient.WithGetError(nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()
@@ -212,7 +212,8 @@ func TestFileRetrieveHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		docResolver.ResolveDocumentReturns(&document.ResolutionResult{Document: doc}, nil)
-		dcasClient.GetReturns(nil, errors.New("injected DCAS error"))
+		dcasClient.WithGetError(errors.New("injected DCAS error"))
+		defer dcasClient.WithGetError(nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()
@@ -240,7 +241,8 @@ func TestFileRetrieveHandler(t *testing.T) {
 		getResourceName = func(req *http.Request) string { return schema1 }
 
 		t.Run("Invalid file", func(t *testing.T) {
-			dcasClient.GetReturns([]byte("{"), nil)
+			dcasClient.WithData("1234567890", []byte("{"))
+
 			rw := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodGet, "/schema/schema1.json", nil)
 			h.Handler()(rw, req)
@@ -249,7 +251,8 @@ func TestFileRetrieveHandler(t *testing.T) {
 		})
 
 		t.Run("Missing content-type", func(t *testing.T) {
-			dcasClient.GetReturns([]byte("{}"), nil)
+			dcasClient.WithData("1234567890", []byte("{}"))
+
 			rw := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodGet, "/schema/schema1.json", nil)
 			h.Handler()(rw, req)
@@ -265,7 +268,8 @@ func TestFileRetrieveHandler(t *testing.T) {
 			fileBytes, err := json.Marshal(f)
 			require.NoError(t, err)
 
-			dcasClient.GetReturns(fileBytes, nil)
+			dcasClient.WithData("1234567890", fileBytes)
+
 			rw := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodGet, "/schema/schema1.json", nil)
 			h.Handler()(rw, req)
@@ -282,7 +286,8 @@ func TestFileRetrieveHandler(t *testing.T) {
 			fileBytes, err := json.Marshal(f)
 			require.NoError(t, err)
 
-			dcasClient.GetReturns(fileBytes, nil)
+			dcasClient.WithData("1234567890", fileBytes)
+
 			rw := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodGet, "/schema/schema1.json", nil)
 			h.Handler()(rw, req)

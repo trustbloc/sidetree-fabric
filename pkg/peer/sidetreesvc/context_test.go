@@ -41,7 +41,7 @@ func TestContext(t *testing.T) {
 	ctxProviders := &ContextProviders{
 		Providers: &sidetreectx.Providers{
 			TxnProvider:            &peermocks.TxnServiceProvider{},
-			DCASProvider:           &peermocks.DCASClientProvider{},
+			DCASProvider:           &mocks.DCASClientProvider{},
 			OperationQueueProvider: &mocks.OperationQueueProvider{},
 			LedgerProvider:         &extmocks.LedgerProvider{},
 		},

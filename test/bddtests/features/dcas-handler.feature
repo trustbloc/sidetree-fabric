@@ -66,4 +66,5 @@ Feature:
     And the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_w}"
     When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/version" and the returned status code is 200
     When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/hash1234?max-size=1024" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/hash1234?max-size=1024" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/bafkreigm3kar2skv2vuzanwect4fvdbmtwjx46qmhgxi34j7i4pexptexy?max-size=1024" and the returned status code is 404

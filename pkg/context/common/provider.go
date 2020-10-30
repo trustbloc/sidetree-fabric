@@ -8,6 +8,7 @@ package common
 
 import (
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
+	"github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
@@ -20,7 +21,12 @@ import (
 
 // DCASClientProvider is a DCAS client provider
 type DCASClientProvider interface {
-	ForChannel(channelID string) (dcasclient.DCAS, error)
+	GetDCASClient(channelID string, namespace string, coll string) (dcasclient.DCAS, error)
+}
+
+// OffLedgerClientProvider is an off-ledger client provider
+type OffLedgerClientProvider interface {
+	ForChannel(channelID string) (client.OffLedger, error)
 }
 
 // OperationStore interface to access operation store

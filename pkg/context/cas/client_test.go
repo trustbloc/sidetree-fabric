@@ -12,38 +12,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/config"
-	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
-)
-
-const (
-	ccName = "cc1"
-	coll   = "coll1"
+	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
 func TestNew(t *testing.T) {
-	c := New(
-		config.DCAS{
-			ChaincodeName: ccName,
-			Collection:    coll,
-		},
-		&stmocks.DCASClient{})
+	c := New(&mocks.DCASClient{})
 	require.NotNil(t, c)
 }
 
 func TestWriteContent(t *testing.T) {
 	content := []byte("content")
 
-	dcasClient := &stmocks.DCASClient{}
-	dcasClient.PutReturns("address", nil)
-	dcasClient.GetReturns(content, nil)
+	dcasClient := mocks.NewDCASClient()
 
-	cas := New(
-		config.DCAS{
-			ChaincodeName: ccName,
-			Collection:    coll,
-		},
-		dcasClient)
+	cas := New(dcasClient)
 	require.NotNil(t, cas)
 
 	address, err := cas.Write(content)
@@ -59,15 +41,10 @@ func TestWriteContent(t *testing.T) {
 func TestWriteContentError(t *testing.T) {
 	testErr := errors.New("channel error")
 
-	dcasClient := &stmocks.DCASClient{}
+	dcasClient := &mocks.DCASClient{}
 	dcasClient.PutReturns("", testErr)
 
-	cas := New(
-		config.DCAS{
-			ChaincodeName: ccName,
-			Collection:    coll,
-		},
-		dcasClient)
+	cas := New(dcasClient)
 
 	content := []byte("content")
 	address, err := cas.Write(content)
@@ -77,18 +54,14 @@ func TestWriteContentError(t *testing.T) {
 }
 
 func TestReadContentError(t *testing.T) {
-	dcasClient := &stmocks.DCASClient{}
+	dcasClient := mocks.NewDCASClient()
 
-	cas := New(
-		config.DCAS{
-			ChaincodeName: ccName,
-			Collection:    coll,
-		},
-		dcasClient)
+	cas := New(dcasClient)
 
 	t.Run("Error", func(t *testing.T) {
 		testErr := errors.New("channel error")
-		dcasClient.GetReturns(nil, testErr)
+		dcasClient.WithGetError(testErr)
+		defer dcasClient.WithGetError(nil)
 
 		read, err := cas.Read("address")
 		require.Error(t, err)
@@ -97,8 +70,6 @@ func TestReadContentError(t *testing.T) {
 	})
 
 	t.Run("Error", func(t *testing.T) {
-		dcasClient.GetReturns(nil, nil)
-
 		read, err := cas.Read("address")
 		require.Error(t, err)
 		require.Nil(t, read)

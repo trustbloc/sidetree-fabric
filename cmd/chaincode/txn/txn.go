@@ -15,6 +15,7 @@ import (
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/flogging"
 	ccapi "github.com/hyperledger/fabric/extensions/chaincode/api"
+	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/cas"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
@@ -41,19 +42,26 @@ type ProtocolClientChannelProvider interface {
 	ProtocolClientProviderForChannel(channelID string) (ctxcommon.ProtocolClientProvider, error)
 }
 
+// DCASStubWrapperFactory creates a DCAS client wrapper around a stub
+type DCASStubWrapperFactory interface {
+	CreateDCASClientStubWrapper(coll string, stub shim.ChaincodeStubInterface) (dcasclient.DCAS, error)
+}
+
 // SidetreeTxnCC ...
 type SidetreeTxnCC struct {
 	name      string
 	functions funcMap
 	ProtocolClientChannelProvider
+	DCASStubWrapperFactory
 }
 
 // New returns chaincode
-func New(name string, pccp ProtocolClientChannelProvider) *SidetreeTxnCC {
+func New(name string, pccp ProtocolClientChannelProvider, dcasClientFactory DCASStubWrapperFactory) *SidetreeTxnCC {
 	cc := &SidetreeTxnCC{
 		name:                          name,
 		functions:                     make(funcMap),
 		ProtocolClientChannelProvider: pccp,
+		DCASStubWrapperFactory:        dcasClientFactory,
 	}
 
 	cc.functions[writeContent] = cc.write
@@ -120,7 +128,14 @@ func (cc *SidetreeTxnCC) write(stub shim.ChaincodeStubInterface, args [][]byte) 
 		return shim.Error(err)
 	}
 
-	client := cas.New(stub, string(args[0]))
+	dcasClient, err := cc.CreateDCASClientStubWrapper(string(args[0]), stub)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to create DCAS client: %s", err.Error())
+		logger.Errorf("[txID %s] %s", txID, errMsg)
+		return shim.Error(errMsg)
+	}
+
+	client := cas.New(dcasClient)
 
 	address, err := client.Write(args[1])
 	if err != nil {
@@ -141,7 +156,14 @@ func (cc *SidetreeTxnCC) read(stub shim.ChaincodeStubInterface, args [][]byte) p
 		return shim.Error(errMsg)
 	}
 
-	client := cas.New(stub, string(args[0]))
+	dcasClient, err := cc.CreateDCASClientStubWrapper(string(args[0]), stub)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to create DCAS client: %s", err.Error())
+		logger.Errorf("[txID %s] %s", txID, errMsg)
+		return shim.Error(errMsg)
+	}
+
+	client := cas.New(dcasClient)
 
 	address := string(args[1])
 	payload, err := client.Read(address)

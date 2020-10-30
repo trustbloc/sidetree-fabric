@@ -7,9 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 package dcashandler
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/fabric/common/flogging"
@@ -23,6 +25,8 @@ var logger = flogging.MustGetLogger("sidetree_peer")
 const (
 	hashParam    = "hash"
 	maxSizeParam = "max-size"
+
+	encodingErrMsg = "selected encoding not supported"
 )
 
 // Retrieve manages file retrievals from the DCAS store
@@ -35,7 +39,7 @@ type Retrieve struct {
 }
 
 type dcasClientProvider interface {
-	ForChannel(channelID string) (dcas.DCAS, error)
+	GetDCASClient(channelID, namespace, coll string) (dcas.DCAS, error)
 }
 
 // NewRetrieveHandler returns a new Retrieve handler
@@ -112,27 +116,35 @@ func (h *Retrieve) doRetrieve(hash string, maxSize int) ([]byte, error) {
 }
 
 func (h *Retrieve) retrieveContent(hash string) ([]byte, error) {
-	dcasClient, err := h.dcasProvider.ForChannel(h.channelID)
+	dcasClient, err := h.dcasProvider.GetDCASClient(h.channelID, h.ChaincodeName, h.Collection)
 	if err != nil {
 		logger.Errorf("[%s:%s:%s] Could not get DCAS client: %s", h.channelID, h.ChaincodeName, h.Collection, err)
 
 		return nil, newRetrieveError(http.StatusInternalServerError, CodeCasNotReachable)
 	}
 
-	content, err := dcasClient.Get(h.ChaincodeName, h.Collection, hash)
+	content := bytes.NewBuffer(nil)
+
+	err = dcasClient.Get(hash, content)
 	if err != nil {
+		if strings.Contains(err.Error(), encodingErrMsg) {
+			logger.Debugf("[%s:%s:%s] Error retrieving DCAS document for hash [%s]: %s", h.channelID, h.ChaincodeName, h.Collection, hash, err)
+
+			return nil, newRetrieveError(http.StatusBadRequest, CodeInvalidHash)
+		}
+
 		logger.Errorf("[%s:%s:%s] Error retrieving DCAS document for hash [%s]: %s", h.channelID, h.ChaincodeName, h.Collection, hash, err)
 
 		return nil, newRetrieveError(http.StatusInternalServerError, CodeCasNotReachable)
 	}
 
-	if len(content) == 0 {
+	if len(content.Bytes()) == 0 {
 		logger.Debugf("[%s:%s:%s] Content not found in DCAS for hash [%s]", h.channelID, h.ChaincodeName, h.Collection, hash)
 
 		return nil, newRetrieveError(http.StatusNotFound, CodeNotFound)
 	}
 
-	return content, nil
+	return content.Bytes(), nil
 }
 
 var getHash = func(req *http.Request) string {

@@ -23,16 +23,14 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
-	"github.com/trustbloc/sidetree-core-go/pkg/compression"
-	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider/models"
 
+	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	stmocks "github.com/trustbloc/sidetree-fabric/pkg/mocks"
@@ -74,9 +72,6 @@ var (
 )
 
 func TestObserver(t *testing.T) {
-	opStoreProvider := &stmocks.OperationStoreProvider{}
-	opStoreProvider.ForNamespaceReturns(&stmocks.OperationStore{}, nil)
-
 	meta := newMetadata(peer1, 1001)
 	metaBytes, err := json.Marshal(meta)
 	require.NoError(t, err)
@@ -92,7 +87,7 @@ func TestObserver(t *testing.T) {
 		}
 
 		txnChan := make(chan gossipapi.TxMetadata, 1)
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -124,7 +119,7 @@ func TestObserver(t *testing.T) {
 		}
 
 		txnChan := make(chan gossipapi.TxMetadata, 1)
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -158,7 +153,7 @@ func TestObserver(t *testing.T) {
 		}
 
 		txnChan := make(chan gossipapi.TxMetadata, 1)
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -193,7 +188,7 @@ func TestObserver(t *testing.T) {
 		}
 
 		txnChan := make(chan gossipapi.TxMetadata, 1)
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -246,7 +241,7 @@ func TestObserver_Error(t *testing.T) {
 		clients := newMockClients(t)
 		clients.blockchainProvider.ForChannelReturns(nil, errors.New("blockchain.ForChannel error"))
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -256,7 +251,7 @@ func TestObserver_Error(t *testing.T) {
 		clients := newMockClients(t)
 		clients.blockchain.GetBlockchainInfoReturns(nil, errors.New("blockchain.GetBlockchainInfo error"))
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -275,9 +270,10 @@ func TestObserver_Error(t *testing.T) {
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 		require.NoError(t, clients.offLedger.Put(cfg.MetaDataChaincodeName, MetaDataColName, peer1, metaBytes))
-		clients.dcas.GetReturns(nil, errors.New("injected DCAS error"))
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		clients.txnProcessor.ProcessReturns(errors.New("injected DCAS error"))
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -287,7 +283,7 @@ func TestObserver_Error(t *testing.T) {
 		clients := newMockClients(t)
 		clients.offLedger.GetErr = errors.New("injected off-ledger error")
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
@@ -299,7 +295,7 @@ func TestObserver_Error(t *testing.T) {
 		bcInfo := &cb.BlockchainInfo{Height: 1002}
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -313,7 +309,7 @@ func TestObserver_Error(t *testing.T) {
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 		clients.offLedger.WithGetErrorForKey(metaDataCCName, MetaDataColName, peer1, errors.New("getLastBlockProcessed error"))
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -325,61 +321,9 @@ func TestObserver_Error(t *testing.T) {
 		bcInfo := &cb.BlockchainInfo{Height: 1002}
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-		clients.dcas.GetReturnsOnCall(0, nil, errors.New("getAnchorFile error"))
+		clients.txnProcessor.ProcessReturnsOnCall(0, errors.New("getAnchorFile error"))
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
-
-		require.NoError(t, m.Start())
-		time.Sleep(sleepTime)
-		m.Stop()
-	})
-
-	t.Run("anchor file unmarshal error", func(t *testing.T) {
-		clients := newMockClients(t)
-		bcInfo := &cb.BlockchainInfo{Height: 1002}
-		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
-		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-		clients.dcas.GetReturns([]byte("invalid anchor file"), nil)
-
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
-
-		require.NoError(t, m.Start())
-		time.Sleep(sleepTime)
-		m.Stop()
-	})
-
-	t.Run("getBatchFile error", func(t *testing.T) {
-		clients := newMockClients(t)
-		bcInfo := &cb.BlockchainInfo{Height: 1002}
-		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
-		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-
-		anchorFile := &models.AnchorFile{}
-		anchorFileBytes, err := json.Marshal(anchorFile)
-		require.NoError(t, err)
-		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-		clients.dcas.GetReturnsOnCall(1, nil, errors.New("get batch file error"))
-
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
-
-		require.NoError(t, m.Start())
-		time.Sleep(sleepTime)
-		m.Stop()
-	})
-
-	t.Run("batch file unmarshal error", func(t *testing.T) {
-		clients := newMockClients(t)
-		bcInfo := &cb.BlockchainInfo{Height: 1002}
-		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
-		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-
-		anchorFile := &models.AnchorFile{}
-		anchorFileBytes, err := json.Marshal(anchorFile)
-		require.NoError(t, err)
-		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
-
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -399,13 +343,7 @@ func TestObserver_Error(t *testing.T) {
 			},
 		}, nil)
 
-		anchorFile := &models.AnchorFile{}
-		anchorFileBytes, err := json.Marshal(anchorFile)
-		require.NoError(t, err)
-		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-		clients.dcas.GetReturnsOnCall(1, []byte("invalid batch file"), nil)
-
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -431,37 +369,41 @@ func TestObserver_Error(t *testing.T) {
 		errExpected := errors.New("injected off-ledger client error")
 		clients.offLedger.PutErr = errExpected
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
 		m.Stop()
 	})
 
-	t.Run("Retry on transient error", func(t *testing.T) {
+	t.Run("Retry on transient error and succeed", func(t *testing.T) {
 		clients := newMockClients(t)
 		bcInfo := &cb.BlockchainInfo{Height: 1002}
 		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 
-		ops, err := getTestOperations(2)
-		require.NoError(t, err)
+		clients.txnProcessor.ProcessReturnsOnCall(1, transienterr.New(errors.New("get batch file error"), transienterr.CodeBlockchain))
+		clients.txnProcessor.ProcessReturnsOnCall(2, transienterr.New(errors.New("get batch file error"), transienterr.CodeBlockchain))
 
-		op1Bytes, err := json.Marshal(ops[0])
-		require.NoError(t, err)
-		op2Bytes, err := json.Marshal(ops[1])
-		require.NoError(t, err)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
-		anchorFileBytes, err := json.Marshal(models.CreateAnchorFile("", ops))
-		require.NoError(t, err)
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+		m.Stop()
+	})
 
-		clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-		clients.dcas.GetReturnsOnCall(1, nil, errors.New("get batch file error"))
-		clients.dcas.GetReturnsOnCall(2, anchorFileBytes, nil)
-		clients.dcas.GetReturnsOnCall(3, op1Bytes, nil)
-		clients.dcas.GetReturnsOnCall(4, op2Bytes, nil)
+	t.Run("Retry on transient error and give up", func(t *testing.T) {
+		clients := newMockClients(t)
+		bcInfo := &cb.BlockchainInfo{Height: 1002}
+		clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
+		clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
 
-		m := newObserverWithMocks(t, channel1, cfg, clients, opStoreProvider, txnChan)
+		clients.txnProcessor.ProcessReturnsOnCall(1, transienterr.New(errors.New("get batch file error"), transienterr.CodeBlockchain))
+		clients.txnProcessor.ProcessReturnsOnCall(2, transienterr.New(errors.New("get batch file error"), transienterr.CodeBlockchain))
+		clients.txnProcessor.ProcessReturnsOnCall(3, transienterr.New(errors.New("get batch file error"), transienterr.CodeBlockchain))
+		clients.txnProcessor.ProcessReturnsOnCall(4, transienterr.New(errors.New("get batch file error"), transienterr.CodeBlockchain))
+
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
 
 		require.NoError(t, m.Start())
 		time.Sleep(sleepTime)
@@ -471,18 +413,17 @@ func TestObserver_Error(t *testing.T) {
 
 type mockClients struct {
 	offLedgerProvider  *obmocks.OffLedgerClientProvider
-	dcasProvider       *stmocks.DCASClientProvider
 	blockchainProvider *obmocks.BlockchainClientProvider
 	blockchain         *obmocks.BlockchainClient
 	offLedger          *obmocks.MockOffLedgerClient
-	dcas               *stmocks.DCASClient
+	pcp                ctxcommon.ProtocolClientProvider
+	txnProcessor       *coremocks.TxnProcessor
 }
 
 func newMockClients(t *testing.T) *mockClients {
 	clients := &mockClients{}
 
 	clients.offLedgerProvider = &obmocks.OffLedgerClientProvider{}
-	clients.dcasProvider = &stmocks.DCASClientProvider{}
 	clients.blockchainProvider = &obmocks.BlockchainClientProvider{}
 
 	clients.blockchain = &obmocks.BlockchainClient{}
@@ -490,9 +431,6 @@ func newMockClients(t *testing.T) *mockClients {
 
 	clients.offLedger = obmocks.NewMockOffLedgerClient()
 	clients.offLedgerProvider.ForChannelReturns(clients.offLedger, nil)
-
-	clients.dcas = &stmocks.DCASClient{}
-	clients.dcasProvider.ForChannelReturns(clients.dcas, nil)
 
 	bcInfo := &cb.BlockchainInfo{
 		Height: 1003,
@@ -520,46 +458,24 @@ func newMockClients(t *testing.T) *mockClients {
 	tb1.ChaincodeAction("some_other_cc").
 		Write("some_key", []byte("some value"))
 
-	ops, err := getTestOperations(numOfOps)
-	require.NoError(t, err)
+	pv, txnp := newMockProtocolVersion()
 
-	op1Bytes, err := json.Marshal(ops[0])
-	require.NoError(t, err)
-	op2Bytes, err := json.Marshal(ops[1])
-	require.NoError(t, err)
+	pc := &stmocks.ProtocolClient{}
+	pc.CurrentReturns(pv, nil)
+	pc.GetReturns(pv, nil)
 
-	anchorFileBytes, err := compress(models.CreateAnchorFile("map", ops))
-	require.NoError(t, err)
-
-	mapFileBytes, err := compress(models.CreateMapFile([]string{"chunk"}, ops))
-	require.NoError(t, err)
-
-	chunkFileBytes, err := compress(models.CreateChunkFile(ops))
-	require.NoError(t, err)
+	pcp := &stmocks.ProtocolClientProvider{}
+	pcp.ForNamespaceReturns(pc, nil)
+	clients.pcp = pcp
+	clients.txnProcessor = txnp
 
 	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 	clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
-	clients.dcas.GetReturnsOnCall(0, anchorFileBytes, nil)
-	clients.dcas.GetReturnsOnCall(1, mapFileBytes, nil)
-	clients.dcas.GetReturnsOnCall(2, chunkFileBytes, nil)
-	clients.dcas.GetReturnsOnCall(3, op1Bytes, nil)
-	clients.dcas.GetReturnsOnCall(4, op2Bytes, nil)
 
 	return clients
 }
 
-func compress(model interface{}) ([]byte, error) {
-	bytes, err := docutil.MarshalCanonical(model)
-	if err != nil {
-		return nil, err
-	}
-
-	cp := compression.New(compression.WithDefaultAlgorithms())
-
-	return cp.Compress("GZIP", bytes)
-}
-
-func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, clients *mockClients, opStoreProvider ctxcommon.OperationStoreProvider, txnChan <-chan gossipapi.TxMetadata) *Observer {
+func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, clients *mockClients, txnChan <-chan gossipapi.TxMetadata) *Observer {
 	peerCfg := &peermocks.PeerConfig{}
 	peerCfg.MSPIDReturns(org1)
 	peerCfg.PeerIDReturns(peer1)
@@ -570,31 +486,21 @@ func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, c
 	gossipProvider := &peerextmocks.GossipProvider{}
 	gossipProvider.GetGossipServiceReturns(gossip)
 
-	pv := newMockProtocolVersion()
-
-	pc := &stmocks.ProtocolClient{}
-	pc.CurrentReturns(pv, nil)
-	pc.GetReturns(pv, nil)
-
-	pcp := &stmocks.ProtocolClientProvider{}
-	pcp.ForNamespaceReturns(pc, nil)
-
 	m := New(
 		channelID, peerCfg, cfg,
 		&ClientProviders{
 			OffLedger:  clients.offLedgerProvider,
-			DCAS:       clients.dcasProvider,
 			Blockchain: clients.blockchainProvider,
 			Gossip:     gossipProvider,
 		},
-		txnChan, pcp,
+		txnChan, clients.pcp,
 	)
 	require.NotNil(t, m)
 
 	return m
 }
 
-func newMockProtocolVersion() protocol.Version {
+func newMockProtocolVersion() (*coremocks.ProtocolVersion, *coremocks.TxnProcessor) {
 	const maxBatchFileSize = 20000
 	const maxOperationByteSize = 2000
 
@@ -622,7 +528,7 @@ func newMockProtocolVersion() protocol.Version {
 	opp := &stmocks.OperationProvider{}
 	pv.OperationProviderReturns(opp)
 
-	return pv
+	return pv, tp
 }
 
 func getTestOperations(createOpsNum int) ([]*model.Operation, error) {

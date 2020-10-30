@@ -22,7 +22,7 @@ import (
 
 // DCASClientProvider is a DCAS client provider
 type DCASClientProvider interface {
-	ForChannel(channelID string) (dcasclient.DCAS, error)
+	GetDCASClient(channelID string, namespace string, coll string) (dcasclient.DCAS, error)
 }
 
 // OffLedgerClientProvider is an off-ledger client provider

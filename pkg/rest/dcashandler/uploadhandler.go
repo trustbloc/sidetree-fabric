@@ -8,7 +8,7 @@ package dcashandler
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
@@ -51,15 +51,7 @@ func (h *Upload) Handler() common.HTTPRequestHandler {
 func (h *Upload) upload(w http.ResponseWriter, req *http.Request) {
 	rw := newUploadWriter(w)
 
-	content, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		logger.Debugf("Error reading request content: %s", err)
-
-		rw.WriteError(httpserver.ServerError)
-		return
-	}
-
-	hash, err := h.doUpload(content)
+	hash, err := h.doUpload(req.Body)
 	if err != nil {
 		rw.WriteError(err)
 		return
@@ -68,26 +60,22 @@ func (h *Upload) upload(w http.ResponseWriter, req *http.Request) {
 	rw.Write(hash)
 }
 
-func (h *Upload) doUpload(content []byte) (string, error) {
-	if len(content) == 0 {
-		return "", httpserver.NewError(http.StatusBadRequest, httpserver.StatusEmptyContent)
-	}
-
-	client, err := h.dcasProvider.ForChannel(h.channelID)
+func (h *Upload) doUpload(content io.Reader) (string, error) {
+	client, err := h.dcasProvider.GetDCASClient(h.channelID, h.ChaincodeName, h.Collection)
 	if err != nil {
-		logger.Errorf("[%s] Could not get DCAS client: %s", h.channelID, err)
+		logger.Errorf("[%s:%s:%s] Could not get DCAS client: %s", h.channelID, h.ChaincodeName, h.Collection, err)
 
 		return "", httpserver.ServerError
 	}
 
-	hash, err := client.Put(h.ChaincodeName, h.Collection, content)
+	hash, err := client.Put(content)
 	if err != nil {
-		logger.Errorf("[%s] Error storing content to DCAS collection [%s:%s]: %s", h.channelID, h.ChaincodeName, h.Collection, err)
+		logger.Errorf("[%s:%s:%s] Error storing content to DCAS: %s", h.channelID, h.ChaincodeName, h.Collection, err)
 
 		return "", httpserver.ServerError
 	}
 
-	logger.Debugf("[%s] Successfully uploaded content to DCAS [%s:%s:%s]", h.channelID, h.ChaincodeName, h.Collection, hash)
+	logger.Debugf("[%s:%s:%s] Successfully uploaded content to DCAS with hash [%s]", h.channelID, h.ChaincodeName, h.Collection, hash)
 
 	return hash, nil
 }
