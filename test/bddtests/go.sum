@@ -309,8 +309,8 @@ github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhV
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/trustbloc/edge-core v0.1.4-0.20200709143857-e104bb29f6c6 h1:GlzMPygeehW/W8tq2vBiN6DLsTFY5xtvQysu1aqqGoQ=
 github.com/trustbloc/edge-core v0.1.4-0.20200709143857-e104bb29f6c6/go.mod h1:SZg7nAIc9FONS+G7MwEyGkCWCJR3R02bePwTpWxqH5w=
-github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20201006134248-87348a5b3ae4 h1:7PTgfApCj5GxGjMgtRjdmzjSIe1gRlfP9OnPze6ZiNI=
-github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20201006134248-87348a5b3ae4/go.mod h1:+31f4Ca6QzxBqJm5XCAAyc3NkCTqpKa+zgLBpJB5tco=
+github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20201029180125-c96c1cfc0bd0 h1:sFxLrGZyHvroq5FA7pt+vOKz3839GS+MJQTP3PQjmC0=
+github.com/trustbloc/fabric-peer-test-common v0.1.5-0.20201029180125-c96c1cfc0bd0/go.mod h1:+31f4Ca6QzxBqJm5XCAAyc3NkCTqpKa+zgLBpJB5tco=
 github.com/trustbloc/fabric-protos-go-ext v0.1.5-0.20201005203042-9fe8149374fc h1:eahUXb02Zpr5AeIeRFYBQONiJcqwvX16kERXaEfMBQ8=
 github.com/trustbloc/fabric-protos-go-ext v0.1.5-0.20201005203042-9fe8149374fc/go.mod h1:xVYTjK4DtZRBxZ2D9aE4y6AbLaPwue2o/criQyQbVD0=
 github.com/trustbloc/sidetree-core-go v0.1.5-0.20201029224912-2c4c336bf323 h1:xOKv6VaQh97VEuyzUTv7rkiAhN0fF7BxE33WLT/D29o=

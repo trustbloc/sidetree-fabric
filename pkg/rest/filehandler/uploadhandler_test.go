@@ -22,8 +22,8 @@ import (
 func TestFileUploadHandler(t *testing.T) {
 	dcasProvider := &mocks.DCASClientProvider{}
 
-	dcasClient := &mocks.DCASClient{}
-	dcasProvider.ForChannelReturns(dcasClient, nil)
+	dcasClient := mocks.NewDCASClient()
+	dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 	cfg := Config{
 		BasePath:       "/schema",
@@ -71,8 +71,8 @@ func TestFileUploadHandler(t *testing.T) {
 	})
 
 	t.Run("DCAS provider error", func(t *testing.T) {
-		dcasProvider.ForChannelReturns(nil, errors.New("injected DCAS provider error"))
-		defer func() { dcasProvider.ForChannelReturns(dcasClient, nil) }()
+		dcasProvider.GetDCASClientReturns(nil, errors.New("injected DCAS provider error"))
+		defer func() { dcasProvider.GetDCASClientReturns(dcasClient, nil) }()
 
 		content := `{"field1","value1"}`
 		f := &File{
@@ -90,8 +90,8 @@ func TestFileUploadHandler(t *testing.T) {
 	})
 
 	t.Run("DCAS error", func(t *testing.T) {
-		dcasClient.PutReturns("", errors.New("injected DCAS error"))
-		defer func() { dcasClient.PutReturns("", nil) }()
+		dcasClient.WithPutError(errors.New("injected DCAS error"))
+		defer dcasClient.WithPutError(nil)
 
 		content := `{"field1","value1"}`
 		f := &File{

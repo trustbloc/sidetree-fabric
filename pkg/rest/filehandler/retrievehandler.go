@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package filehandler
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -41,7 +42,7 @@ type Retrieve struct {
 }
 
 type dcasClientProvider interface {
-	ForChannel(channelID string) (dcas.DCAS, error)
+	GetDCASClient(channelID, namespace, coll string) (dcas.DCAS, error)
 }
 
 // NewRetrieveHandler returns a new file retrieve handler
@@ -75,7 +76,7 @@ func (h *Retrieve) Handler() common.HTTPRequestHandler {
 func (h *Retrieve) retrieve(rw http.ResponseWriter, req *http.Request) {
 	resourceName := getResourceName(req)
 
-	logger.Debugf("Retrieving document for name [%s]", resourceName)
+	logger.Debugf("[%s:%s:%s] Retrieving document for name [%s]", h.channelID, h.ChaincodeName, h.Collection, resourceName)
 
 	fileBytes, contentType, err := h.doRetrieve(resourceName)
 	if err != nil {
@@ -83,7 +84,7 @@ func (h *Retrieve) retrieve(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	logger.Debugf("... retrieved file [%s]: %s", resourceName, fileBytes)
+	logger.Debugf("[%s:%s:%s] ... retrieved file [%s]: %s", h.channelID, h.ChaincodeName, h.Collection, resourceName, fileBytes)
 	writeResponse(rw, http.StatusOK, fileBytes, contentType)
 }
 
@@ -92,28 +93,28 @@ func (h *Retrieve) doRetrieve(resourceName string) ([]byte, string, error) {
 		return nil, "", common.NewHTTPError(http.StatusBadRequest, errors.New("resource name not provided"))
 	}
 
-	logger.Debugf("Resolving index file [%s]", h.IndexDocID)
+	logger.Debugf("[%s:%s:%s] Resolving index file [%s]", h.channelID, h.ChaincodeName, h.Collection, h.IndexDocID)
 
 	fileIndex, err := h.retrieveIndexDoc()
 	if err != nil {
 		return nil, "", err
 	}
 
-	key := fileIndex.Mappings[resourceName]
-	if key == "" {
-		logger.Debugf("Resource [%s] not found in index file", resourceName)
+	cID := fileIndex.Mappings[resourceName]
+	if cID == "" {
+		logger.Debugf("[%s:%s:%s] Resource [%s] not found in index file", h.channelID, h.ChaincodeName, h.Collection, resourceName)
 		return nil, "", common.NewHTTPError(http.StatusNotFound, errors.New(fileNotFound))
 	}
 
-	logger.Debugf("Got CAS key for [%s]: %s", resourceName, key)
+	logger.Debugf("[%s:%s:%s] Got CID for [%s]: %s", h.channelID, h.ChaincodeName, h.Collection, resourceName, cID)
 
-	fileBytes, contentType, err := h.retrieveFile(key)
+	fileBytes, contentType, err := h.retrieveFile(cID)
 	if err != nil {
 		return nil, "", err
 	}
 
 	if len(fileBytes) == 0 {
-		logger.Debugf("[%s] Key [%s:%s:%s] not found in DCAS", h.channelID, h.ChaincodeName, h.Collection, key)
+		logger.Debugf("[%s:%s:%s] CID [%s] not found in DCAS", h.channelID, h.ChaincodeName, h.Collection, cID)
 		return nil, "", common.NewHTTPError(http.StatusNotFound, errors.New(fileNotFound))
 	}
 
@@ -121,12 +122,12 @@ func (h *Retrieve) doRetrieve(resourceName string) ([]byte, string, error) {
 }
 
 func (h *Retrieve) retrieveIndexDoc() (*FileIndex, error) {
-	logger.Debugf("Retrieving index document [%s]", h.IndexDocID)
+	logger.Debugf("[%s:%s:%s] Retrieving index document [%s]", h.channelID, h.ChaincodeName, h.Collection, h.IndexDocID)
 
 	result, err := h.resolver.ResolveDocument(h.IndexDocID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			logger.Warnf("File index document not found in document store: [%s]", h.IndexDocID)
+			logger.Warnf("[%s:%s:%s] File index document not found in document store: [%s]", h.channelID, h.ChaincodeName, h.Collection, h.IndexDocID)
 			return nil, common.NewHTTPError(http.StatusNotFound, errors.New("file index document not found"))
 		}
 
@@ -139,58 +140,60 @@ func (h *Retrieve) retrieveIndexDoc() (*FileIndex, error) {
 
 	docBytes, err := json.Marshal(result.Document)
 	if err != nil {
-		logger.Errorf("Error marshalling file index document [%s]: %s", h.IndexDocID, err)
+		logger.Errorf("[%s:%s:%s] Error marshalling file index document [%s]: %s", h.channelID, h.ChaincodeName, h.Collection, h.IndexDocID, err)
 		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
-	logger.Debugf("Got index indexDoc: %s", docBytes)
+	logger.Debugf("[%s:%s:%s] Got index indexDoc: %s", h.channelID, h.ChaincodeName, h.Collection, docBytes)
 
 	fileIndexDoc := &FileIndexDoc{}
 	err = json.Unmarshal(docBytes, fileIndexDoc)
 	if err != nil {
-		logger.Errorf("Error unmarshalling file index document [%s]: %s", h.IndexDocID, err)
+		logger.Errorf("[%s:%s:%s] Error unmarshalling file index document [%s]: %s", h.channelID, h.ChaincodeName, h.Collection, h.IndexDocID, err)
 		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
 	if fileIndexDoc.ID != h.IndexDocID {
-		logger.Errorf("Invalid file index payload: id [%s] in file index doc [%s] does not match [%s]", fileIndexDoc.ID, h.IndexDocID)
+		logger.Errorf("[%s:%s:%s] Invalid file index payload: id [%s] in file index doc [%s] does not match [%s]", h.channelID, h.ChaincodeName, h.Collection, fileIndexDoc.ID, h.IndexDocID)
 		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
 	if fileIndexDoc.FileIndex.BasePath != h.BasePath {
-		logger.Errorf("Invalid file index payload: basePath [%s] in file index doc [%s] does not match base path of this endpoint [%s]", fileIndexDoc.FileIndex.BasePath, h.IndexDocID, h.BasePath)
+		logger.Errorf("[%s:%s:%s] Invalid file index payload: basePath [%s] in file index doc [%s] does not match base path of this endpoint [%s]", h.channelID, h.ChaincodeName, h.Collection, fileIndexDoc.FileIndex.BasePath, h.IndexDocID, h.BasePath)
 		return nil, common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
 	return &fileIndexDoc.FileIndex, nil
 }
 
-func (h *Retrieve) retrieveFile(key string) ([]byte, string, error) {
-	dcasClient, err := h.dcasProvider.ForChannel(h.channelID)
+func (h *Retrieve) retrieveFile(cID string) ([]byte, string, error) {
+	dcasClient, err := h.dcasProvider.GetDCASClient(h.channelID, h.ChaincodeName, h.Collection)
 	if err != nil {
-		logger.Errorf("[%s] Could not get DCAS client: %s", h.channelID, err)
+		logger.Errorf("[%s:%s:%s] Could not get DCAS client: %s", h.channelID, h.ChaincodeName, h.Collection, err)
 		return nil, "", common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
-	value, err := dcasClient.Get(h.ChaincodeName, h.Collection, key)
+	content := bytes.NewBuffer(nil)
+
+	err = dcasClient.Get(cID, content)
 	if err != nil {
-		logger.Errorf("[%s] Error retrieving DCAS document for key [%s:%s:%s]: %s", h.channelID, h.ChaincodeName, h.Collection, key, err)
+		logger.Errorf("[%s:%s:%s] Error retrieving DCAS document for CID [%s]: %s", h.channelID, h.ChaincodeName, h.Collection, cID, err)
 		return nil, "", common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
-	if len(value) == 0 {
-		logger.Debugf("[%s] File not found in DCAS for key [%s:%s:%s]", h.channelID, h.ChaincodeName, h.Collection, key)
+	if len(content.Bytes()) == 0 {
+		logger.Debugf("[%s:%s:%s] File not found in DCAS for CID [%s]", h.channelID, h.ChaincodeName, h.Collection, cID)
 		return nil, "", common.NewHTTPError(http.StatusNotFound, errors.New(fileNotFound))
 	}
 
 	f := &File{}
-	if err := json.Unmarshal(value, f); err != nil {
-		logger.Errorf("[%s] Error unmarshalling data for key [%s:%s:%s]: %s", h.channelID, h.ChaincodeName, h.Collection, key, err)
+	if err := json.Unmarshal(content.Bytes(), f); err != nil {
+		logger.Errorf("[%s:%s:%s] Error unmarshalling data for CID [%s]: %s", h.channelID, h.ChaincodeName, h.Collection, cID, err)
 		return nil, "", common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
 	if f.ContentType == "" {
-		logger.Errorf("[%s] Content-type missing from file retrieved from DCAS for key [%s:%s:%s]", h.channelID, h.ChaincodeName, h.Collection, key)
+		logger.Errorf("[%s:%s:%s] Content-type missing from file retrieved from DCAS for cID [%s]", h.channelID, h.ChaincodeName, h.Collection, cID)
 		return nil, "", common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 

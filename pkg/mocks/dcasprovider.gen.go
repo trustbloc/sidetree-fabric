@@ -9,16 +9,18 @@ import (
 )
 
 type DCASClientProvider struct {
-	ForChannelStub        func(channelID string) (dcasclient.DCAS, error)
-	forChannelMutex       sync.RWMutex
-	forChannelArgsForCall []struct {
+	GetDCASClientStub        func(channelID string, namespace string, coll string) (dcasclient.DCAS, error)
+	getDCASClientMutex       sync.RWMutex
+	getDCASClientArgsForCall []struct {
 		channelID string
+		namespace string
+		coll      string
 	}
-	forChannelReturns struct {
+	getDCASClientReturns struct {
 		result1 dcasclient.DCAS
 		result2 error
 	}
-	forChannelReturnsOnCall map[int]struct {
+	getDCASClientReturnsOnCall map[int]struct {
 		result1 dcasclient.DCAS
 		result2 error
 	}
@@ -26,52 +28,54 @@ type DCASClientProvider struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *DCASClientProvider) ForChannel(channelID string) (dcasclient.DCAS, error) {
-	fake.forChannelMutex.Lock()
-	ret, specificReturn := fake.forChannelReturnsOnCall[len(fake.forChannelArgsForCall)]
-	fake.forChannelArgsForCall = append(fake.forChannelArgsForCall, struct {
+func (fake *DCASClientProvider) GetDCASClient(channelID string, namespace string, coll string) (dcasclient.DCAS, error) {
+	fake.getDCASClientMutex.Lock()
+	ret, specificReturn := fake.getDCASClientReturnsOnCall[len(fake.getDCASClientArgsForCall)]
+	fake.getDCASClientArgsForCall = append(fake.getDCASClientArgsForCall, struct {
 		channelID string
-	}{channelID})
-	fake.recordInvocation("ForChannel", []interface{}{channelID})
-	fake.forChannelMutex.Unlock()
-	if fake.ForChannelStub != nil {
-		return fake.ForChannelStub(channelID)
+		namespace string
+		coll      string
+	}{channelID, namespace, coll})
+	fake.recordInvocation("GetDCASClient", []interface{}{channelID, namespace, coll})
+	fake.getDCASClientMutex.Unlock()
+	if fake.GetDCASClientStub != nil {
+		return fake.GetDCASClientStub(channelID, namespace, coll)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.forChannelReturns.result1, fake.forChannelReturns.result2
+	return fake.getDCASClientReturns.result1, fake.getDCASClientReturns.result2
 }
 
-func (fake *DCASClientProvider) ForChannelCallCount() int {
-	fake.forChannelMutex.RLock()
-	defer fake.forChannelMutex.RUnlock()
-	return len(fake.forChannelArgsForCall)
+func (fake *DCASClientProvider) GetDCASClientCallCount() int {
+	fake.getDCASClientMutex.RLock()
+	defer fake.getDCASClientMutex.RUnlock()
+	return len(fake.getDCASClientArgsForCall)
 }
 
-func (fake *DCASClientProvider) ForChannelArgsForCall(i int) string {
-	fake.forChannelMutex.RLock()
-	defer fake.forChannelMutex.RUnlock()
-	return fake.forChannelArgsForCall[i].channelID
+func (fake *DCASClientProvider) GetDCASClientArgsForCall(i int) (string, string, string) {
+	fake.getDCASClientMutex.RLock()
+	defer fake.getDCASClientMutex.RUnlock()
+	return fake.getDCASClientArgsForCall[i].channelID, fake.getDCASClientArgsForCall[i].namespace, fake.getDCASClientArgsForCall[i].coll
 }
 
-func (fake *DCASClientProvider) ForChannelReturns(result1 dcasclient.DCAS, result2 error) {
-	fake.ForChannelStub = nil
-	fake.forChannelReturns = struct {
+func (fake *DCASClientProvider) GetDCASClientReturns(result1 dcasclient.DCAS, result2 error) {
+	fake.GetDCASClientStub = nil
+	fake.getDCASClientReturns = struct {
 		result1 dcasclient.DCAS
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *DCASClientProvider) ForChannelReturnsOnCall(i int, result1 dcasclient.DCAS, result2 error) {
-	fake.ForChannelStub = nil
-	if fake.forChannelReturnsOnCall == nil {
-		fake.forChannelReturnsOnCall = make(map[int]struct {
+func (fake *DCASClientProvider) GetDCASClientReturnsOnCall(i int, result1 dcasclient.DCAS, result2 error) {
+	fake.GetDCASClientStub = nil
+	if fake.getDCASClientReturnsOnCall == nil {
+		fake.getDCASClientReturnsOnCall = make(map[int]struct {
 			result1 dcasclient.DCAS
 			result2 error
 		})
 	}
-	fake.forChannelReturnsOnCall[i] = struct {
+	fake.getDCASClientReturnsOnCall[i] = struct {
 		result1 dcasclient.DCAS
 		result2 error
 	}{result1, result2}
@@ -80,8 +84,8 @@ func (fake *DCASClientProvider) ForChannelReturnsOnCall(i int, result1 dcasclien
 func (fake *DCASClientProvider) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.forChannelMutex.RLock()
-	defer fake.forChannelMutex.RUnlock()
+	fake.getDCASClientMutex.RLock()
+	defer fake.getDCASClientMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

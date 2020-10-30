@@ -54,7 +54,6 @@ func newMetadata(leaseOwner string, lastBlockProcessed uint64) *Metadata {
 // ClientProviders contains the providers for off-ledger, DCAS, and blockchain clients
 type ClientProviders struct {
 	OffLedger  common.OffLedgerClientProvider
-	DCAS       common.DCASClientProvider
 	Blockchain common.BlockchainClientProvider
 	Gossip     common.GossipProvider
 }

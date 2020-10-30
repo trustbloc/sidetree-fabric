@@ -7,10 +7,14 @@ SPDX-License-Identifier: Apache-2.0
 package store
 
 import (
+	"crypto"
+	"fmt"
+	"hash"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
 
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
@@ -96,6 +100,22 @@ func TestClient_Put(t *testing.T) {
 
 		err := c.Put([]*operation.AnchoredOperation{{}})
 		require.EqualError(t, err, errExpected.Error())
+	})
+
+	t.Run("Hash error", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected hashing error")
+
+		s := newStore(obmocks.NewMockOffLedgerClient(), "cc1", "coll1")
+		s.getHash = func() hash.Hash {
+			return &mockHash{
+				Hash: crypto.SHA256.New(),
+				err:  errExpected,
+			}
+		}
+
+		c := NewClient(chID, namespace, s)
+
+		require.EqualError(t, c.Put([]*operation.AnchoredOperation{{Type: "create"}}), errExpected.Error())
 	})
 }
 

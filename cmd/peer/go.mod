@@ -15,7 +15,7 @@ replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.5-
 
 replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20201016134740-812f1a67d3f5
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.5-0.20201016134740-812f1a67d3f5
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.5-0.20201030154508-f88b1c62fe4d
 
 replace github.com/trustbloc/sidetree-fabric => ../..
 

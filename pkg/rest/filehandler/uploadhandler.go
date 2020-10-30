@@ -7,10 +7,12 @@ SPDX-License-Identifier: Apache-2.0
 package filehandler
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 
 	"github.com/pkg/errors"
+	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 )
@@ -53,7 +55,7 @@ func (h *Upload) Handler() common.HTTPRequestHandler {
 func (h *Upload) upload(rw http.ResponseWriter, req *http.Request) {
 	request := &File{}
 	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
-		logger.Debugf("Error unmarshalling request: %s", err)
+		logger.Debugf("[%s:%s:%s] Error unmarshalling request: %s", h.channelID, h.ChaincodeName, h.Collection, err)
 		common.WriteError(rw, http.StatusBadRequest, errors.New(badRequest))
 		return
 	}
@@ -77,25 +79,25 @@ func (h *Upload) doUpload(request *File) (string, error) {
 		return "", common.NewHTTPError(http.StatusBadRequest, errors.New("content is required"))
 	}
 
-	bytes, err := json.Marshal(request)
+	content, err := json.Marshal(request)
 	if err != nil {
-		logger.Errorf("[%s] Could not marshal data: %s", h.channelID, err)
+		logger.Errorf("[%s:%s:%s] Could not marshal data: %s", h.channelID, h.ChaincodeName, h.Collection, err)
 		return "", common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
-	client, err := h.dcasProvider.ForChannel(h.channelID)
+	client, err := h.dcasProvider.GetDCASClient(h.channelID, h.ChaincodeName, h.Collection)
 	if err != nil {
-		logger.Errorf("[%s] Could not get DCAS client: %s", h.channelID, err)
+		logger.Errorf("[%s:%s:%s] Could not get DCAS client: %s", h.channelID, h.ChaincodeName, h.Collection, err)
 		return "", common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
-	key, err := client.Put(h.ChaincodeName, h.Collection, bytes)
+	cID, err := client.Put(bytes.NewReader(content), dcasclient.WithNodeType(dcasclient.FileNodeType))
 	if err != nil {
-		logger.Errorf("[%s] Error storing file to DCAS collection [%s:%s]: %s", h.channelID, h.ChaincodeName, h.Collection, err)
+		logger.Errorf("[%s:%s:%s] Error storing file to DCAS collection: %s", h.channelID, h.ChaincodeName, h.Collection, err)
 		return "", common.NewHTTPError(http.StatusInternalServerError, errors.New(serverError))
 	}
 
-	logger.Debugf("[%s] Successfully uploaded file to DCAS [%s:%s:%s]", h.channelID, h.ChaincodeName, h.Collection, key)
+	logger.Debugf("[%s:%s:%s] Successfully uploaded file to DCAS with CID [%s]", h.channelID, h.ChaincodeName, h.Collection, cID)
 
-	return key, nil
+	return cID, nil
 }

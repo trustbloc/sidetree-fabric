@@ -2,19 +2,18 @@
 package mocks
 
 import (
+	"io"
 	"sync"
 
-	commonledger "github.com/hyperledger/fabric/common/ledger"
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 )
 
 type DCASClient struct {
-	PutStub        func(ns, coll string, value []byte) (string, error)
+	PutStub        func(data io.Reader, opts ...client.Option) (string, error)
 	putMutex       sync.RWMutex
 	putArgsForCall []struct {
-		ns    string
-		coll  string
-		value []byte
+		data io.Reader
+		opts []client.Option
 	}
 	putReturns struct {
 		result1 string
@@ -24,27 +23,10 @@ type DCASClient struct {
 		result1 string
 		result2 error
 	}
-	PutMultipleValuesStub        func(ns, coll string, values [][]byte) ([]string, error)
-	putMultipleValuesMutex       sync.RWMutex
-	putMultipleValuesArgsForCall []struct {
-		ns     string
-		coll   string
-		values [][]byte
-	}
-	putMultipleValuesReturns struct {
-		result1 []string
-		result2 error
-	}
-	putMultipleValuesReturnsOnCall map[int]struct {
-		result1 []string
-		result2 error
-	}
-	DeleteStub        func(ns, coll string, keys ...string) error
+	DeleteStub        func(cids ...string) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []struct {
-		ns   string
-		coll string
-		keys []string
+		cids []string
 	}
 	deleteReturns struct {
 		result1 error
@@ -52,72 +34,46 @@ type DCASClient struct {
 	deleteReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetStub        func(ns, coll, key string) ([]byte, error)
+	GetStub        func(cid string, w io.Writer) error
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
-		ns   string
-		coll string
-		key  string
+		cid string
+		w   io.Writer
 	}
 	getReturns struct {
-		result1 []byte
-		result2 error
+		result1 error
 	}
 	getReturnsOnCall map[int]struct {
-		result1 []byte
+		result1 error
+	}
+	GetNodeStub        func(cid string) (*client.Node, error)
+	getNodeMutex       sync.RWMutex
+	getNodeArgsForCall []struct {
+		cid string
+	}
+	getNodeReturns struct {
+		result1 *client.Node
 		result2 error
 	}
-	GetMultipleKeysStub        func(ns, coll string, keys ...string) ([][]byte, error)
-	getMultipleKeysMutex       sync.RWMutex
-	getMultipleKeysArgsForCall []struct {
-		ns   string
-		coll string
-		keys []string
-	}
-	getMultipleKeysReturns struct {
-		result1 [][]byte
-		result2 error
-	}
-	getMultipleKeysReturnsOnCall map[int]struct {
-		result1 [][]byte
-		result2 error
-	}
-	QueryStub        func(ns, coll, query string) (commonledger.ResultsIterator, error)
-	queryMutex       sync.RWMutex
-	queryArgsForCall []struct {
-		ns    string
-		coll  string
-		query string
-	}
-	queryReturns struct {
-		result1 commonledger.ResultsIterator
-		result2 error
-	}
-	queryReturnsOnCall map[int]struct {
-		result1 commonledger.ResultsIterator
+	getNodeReturnsOnCall map[int]struct {
+		result1 *client.Node
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *DCASClient) Put(ns string, coll string, value []byte) (string, error) {
-	var valueCopy []byte
-	if value != nil {
-		valueCopy = make([]byte, len(value))
-		copy(valueCopy, value)
-	}
+func (fake *DCASClient) Put(data io.Reader, opts ...client.Option) (string, error) {
 	fake.putMutex.Lock()
 	ret, specificReturn := fake.putReturnsOnCall[len(fake.putArgsForCall)]
 	fake.putArgsForCall = append(fake.putArgsForCall, struct {
-		ns    string
-		coll  string
-		value []byte
-	}{ns, coll, valueCopy})
-	fake.recordInvocation("Put", []interface{}{ns, coll, valueCopy})
+		data io.Reader
+		opts []client.Option
+	}{data, opts})
+	fake.recordInvocation("Put", []interface{}{data, opts})
 	fake.putMutex.Unlock()
 	if fake.PutStub != nil {
-		return fake.PutStub(ns, coll, value)
+		return fake.PutStub(data, opts...)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -131,10 +87,10 @@ func (fake *DCASClient) PutCallCount() int {
 	return len(fake.putArgsForCall)
 }
 
-func (fake *DCASClient) PutArgsForCall(i int) (string, string, []byte) {
+func (fake *DCASClient) PutArgsForCall(i int) (io.Reader, []client.Option) {
 	fake.putMutex.RLock()
 	defer fake.putMutex.RUnlock()
-	return fake.putArgsForCall[i].ns, fake.putArgsForCall[i].coll, fake.putArgsForCall[i].value
+	return fake.putArgsForCall[i].data, fake.putArgsForCall[i].opts
 }
 
 func (fake *DCASClient) PutReturns(result1 string, result2 error) {
@@ -159,76 +115,16 @@ func (fake *DCASClient) PutReturnsOnCall(i int, result1 string, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *DCASClient) PutMultipleValues(ns string, coll string, values [][]byte) ([]string, error) {
-	var valuesCopy [][]byte
-	if values != nil {
-		valuesCopy = make([][]byte, len(values))
-		copy(valuesCopy, values)
-	}
-	fake.putMultipleValuesMutex.Lock()
-	ret, specificReturn := fake.putMultipleValuesReturnsOnCall[len(fake.putMultipleValuesArgsForCall)]
-	fake.putMultipleValuesArgsForCall = append(fake.putMultipleValuesArgsForCall, struct {
-		ns     string
-		coll   string
-		values [][]byte
-	}{ns, coll, valuesCopy})
-	fake.recordInvocation("PutMultipleValues", []interface{}{ns, coll, valuesCopy})
-	fake.putMultipleValuesMutex.Unlock()
-	if fake.PutMultipleValuesStub != nil {
-		return fake.PutMultipleValuesStub(ns, coll, values)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.putMultipleValuesReturns.result1, fake.putMultipleValuesReturns.result2
-}
-
-func (fake *DCASClient) PutMultipleValuesCallCount() int {
-	fake.putMultipleValuesMutex.RLock()
-	defer fake.putMultipleValuesMutex.RUnlock()
-	return len(fake.putMultipleValuesArgsForCall)
-}
-
-func (fake *DCASClient) PutMultipleValuesArgsForCall(i int) (string, string, [][]byte) {
-	fake.putMultipleValuesMutex.RLock()
-	defer fake.putMultipleValuesMutex.RUnlock()
-	return fake.putMultipleValuesArgsForCall[i].ns, fake.putMultipleValuesArgsForCall[i].coll, fake.putMultipleValuesArgsForCall[i].values
-}
-
-func (fake *DCASClient) PutMultipleValuesReturns(result1 []string, result2 error) {
-	fake.PutMultipleValuesStub = nil
-	fake.putMultipleValuesReturns = struct {
-		result1 []string
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *DCASClient) PutMultipleValuesReturnsOnCall(i int, result1 []string, result2 error) {
-	fake.PutMultipleValuesStub = nil
-	if fake.putMultipleValuesReturnsOnCall == nil {
-		fake.putMultipleValuesReturnsOnCall = make(map[int]struct {
-			result1 []string
-			result2 error
-		})
-	}
-	fake.putMultipleValuesReturnsOnCall[i] = struct {
-		result1 []string
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *DCASClient) Delete(ns string, coll string, keys ...string) error {
+func (fake *DCASClient) Delete(cids ...string) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
-		ns   string
-		coll string
-		keys []string
-	}{ns, coll, keys})
-	fake.recordInvocation("Delete", []interface{}{ns, coll, keys})
+		cids []string
+	}{cids})
+	fake.recordInvocation("Delete", []interface{}{cids})
 	fake.deleteMutex.Unlock()
 	if fake.DeleteStub != nil {
-		return fake.DeleteStub(ns, coll, keys...)
+		return fake.DeleteStub(cids...)
 	}
 	if specificReturn {
 		return ret.result1
@@ -242,10 +138,10 @@ func (fake *DCASClient) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *DCASClient) DeleteArgsForCall(i int) (string, string, []string) {
+func (fake *DCASClient) DeleteArgsForCall(i int) []string {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
-	return fake.deleteArgsForCall[i].ns, fake.deleteArgsForCall[i].coll, fake.deleteArgsForCall[i].keys
+	return fake.deleteArgsForCall[i].cids
 }
 
 func (fake *DCASClient) DeleteReturns(result1 error) {
@@ -267,23 +163,22 @@ func (fake *DCASClient) DeleteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *DCASClient) Get(ns string, coll string, key string) ([]byte, error) {
+func (fake *DCASClient) Get(cid string, w io.Writer) error {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
-		ns   string
-		coll string
-		key  string
-	}{ns, coll, key})
-	fake.recordInvocation("Get", []interface{}{ns, coll, key})
+		cid string
+		w   io.Writer
+	}{cid, w})
+	fake.recordInvocation("Get", []interface{}{cid, w})
 	fake.getMutex.Unlock()
 	if fake.GetStub != nil {
-		return fake.GetStub(ns, coll, key)
+		return fake.GetStub(cid, w)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fake.getReturns.result1, fake.getReturns.result2
+	return fake.getReturns.result1
 }
 
 func (fake *DCASClient) GetCallCount() int {
@@ -292,136 +187,78 @@ func (fake *DCASClient) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *DCASClient) GetArgsForCall(i int) (string, string, string) {
+func (fake *DCASClient) GetArgsForCall(i int) (string, io.Writer) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
-	return fake.getArgsForCall[i].ns, fake.getArgsForCall[i].coll, fake.getArgsForCall[i].key
+	return fake.getArgsForCall[i].cid, fake.getArgsForCall[i].w
 }
 
-func (fake *DCASClient) GetReturns(result1 []byte, result2 error) {
+func (fake *DCASClient) GetReturns(result1 error) {
 	fake.GetStub = nil
 	fake.getReturns = struct {
-		result1 []byte
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
-func (fake *DCASClient) GetReturnsOnCall(i int, result1 []byte, result2 error) {
+func (fake *DCASClient) GetReturnsOnCall(i int, result1 error) {
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
-			result1 []byte
-			result2 error
+			result1 error
 		})
 	}
 	fake.getReturnsOnCall[i] = struct {
-		result1 []byte
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
-func (fake *DCASClient) GetMultipleKeys(ns string, coll string, keys ...string) ([][]byte, error) {
-	fake.getMultipleKeysMutex.Lock()
-	ret, specificReturn := fake.getMultipleKeysReturnsOnCall[len(fake.getMultipleKeysArgsForCall)]
-	fake.getMultipleKeysArgsForCall = append(fake.getMultipleKeysArgsForCall, struct {
-		ns   string
-		coll string
-		keys []string
-	}{ns, coll, keys})
-	fake.recordInvocation("GetMultipleKeys", []interface{}{ns, coll, keys})
-	fake.getMultipleKeysMutex.Unlock()
-	if fake.GetMultipleKeysStub != nil {
-		return fake.GetMultipleKeysStub(ns, coll, keys...)
+func (fake *DCASClient) GetNode(cid string) (*client.Node, error) {
+	fake.getNodeMutex.Lock()
+	ret, specificReturn := fake.getNodeReturnsOnCall[len(fake.getNodeArgsForCall)]
+	fake.getNodeArgsForCall = append(fake.getNodeArgsForCall, struct {
+		cid string
+	}{cid})
+	fake.recordInvocation("GetNode", []interface{}{cid})
+	fake.getNodeMutex.Unlock()
+	if fake.GetNodeStub != nil {
+		return fake.GetNodeStub(cid)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.getMultipleKeysReturns.result1, fake.getMultipleKeysReturns.result2
+	return fake.getNodeReturns.result1, fake.getNodeReturns.result2
 }
 
-func (fake *DCASClient) GetMultipleKeysCallCount() int {
-	fake.getMultipleKeysMutex.RLock()
-	defer fake.getMultipleKeysMutex.RUnlock()
-	return len(fake.getMultipleKeysArgsForCall)
+func (fake *DCASClient) GetNodeCallCount() int {
+	fake.getNodeMutex.RLock()
+	defer fake.getNodeMutex.RUnlock()
+	return len(fake.getNodeArgsForCall)
 }
 
-func (fake *DCASClient) GetMultipleKeysArgsForCall(i int) (string, string, []string) {
-	fake.getMultipleKeysMutex.RLock()
-	defer fake.getMultipleKeysMutex.RUnlock()
-	return fake.getMultipleKeysArgsForCall[i].ns, fake.getMultipleKeysArgsForCall[i].coll, fake.getMultipleKeysArgsForCall[i].keys
+func (fake *DCASClient) GetNodeArgsForCall(i int) string {
+	fake.getNodeMutex.RLock()
+	defer fake.getNodeMutex.RUnlock()
+	return fake.getNodeArgsForCall[i].cid
 }
 
-func (fake *DCASClient) GetMultipleKeysReturns(result1 [][]byte, result2 error) {
-	fake.GetMultipleKeysStub = nil
-	fake.getMultipleKeysReturns = struct {
-		result1 [][]byte
+func (fake *DCASClient) GetNodeReturns(result1 *client.Node, result2 error) {
+	fake.GetNodeStub = nil
+	fake.getNodeReturns = struct {
+		result1 *client.Node
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *DCASClient) GetMultipleKeysReturnsOnCall(i int, result1 [][]byte, result2 error) {
-	fake.GetMultipleKeysStub = nil
-	if fake.getMultipleKeysReturnsOnCall == nil {
-		fake.getMultipleKeysReturnsOnCall = make(map[int]struct {
-			result1 [][]byte
+func (fake *DCASClient) GetNodeReturnsOnCall(i int, result1 *client.Node, result2 error) {
+	fake.GetNodeStub = nil
+	if fake.getNodeReturnsOnCall == nil {
+		fake.getNodeReturnsOnCall = make(map[int]struct {
+			result1 *client.Node
 			result2 error
 		})
 	}
-	fake.getMultipleKeysReturnsOnCall[i] = struct {
-		result1 [][]byte
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *DCASClient) Query(ns string, coll string, query string) (commonledger.ResultsIterator, error) {
-	fake.queryMutex.Lock()
-	ret, specificReturn := fake.queryReturnsOnCall[len(fake.queryArgsForCall)]
-	fake.queryArgsForCall = append(fake.queryArgsForCall, struct {
-		ns    string
-		coll  string
-		query string
-	}{ns, coll, query})
-	fake.recordInvocation("Query", []interface{}{ns, coll, query})
-	fake.queryMutex.Unlock()
-	if fake.QueryStub != nil {
-		return fake.QueryStub(ns, coll, query)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.queryReturns.result1, fake.queryReturns.result2
-}
-
-func (fake *DCASClient) QueryCallCount() int {
-	fake.queryMutex.RLock()
-	defer fake.queryMutex.RUnlock()
-	return len(fake.queryArgsForCall)
-}
-
-func (fake *DCASClient) QueryArgsForCall(i int) (string, string, string) {
-	fake.queryMutex.RLock()
-	defer fake.queryMutex.RUnlock()
-	return fake.queryArgsForCall[i].ns, fake.queryArgsForCall[i].coll, fake.queryArgsForCall[i].query
-}
-
-func (fake *DCASClient) QueryReturns(result1 commonledger.ResultsIterator, result2 error) {
-	fake.QueryStub = nil
-	fake.queryReturns = struct {
-		result1 commonledger.ResultsIterator
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *DCASClient) QueryReturnsOnCall(i int, result1 commonledger.ResultsIterator, result2 error) {
-	fake.QueryStub = nil
-	if fake.queryReturnsOnCall == nil {
-		fake.queryReturnsOnCall = make(map[int]struct {
-			result1 commonledger.ResultsIterator
-			result2 error
-		})
-	}
-	fake.queryReturnsOnCall[i] = struct {
-		result1 commonledger.ResultsIterator
+	fake.getNodeReturnsOnCall[i] = struct {
+		result1 *client.Node
 		result2 error
 	}{result1, result2}
 }
@@ -431,16 +268,12 @@ func (fake *DCASClient) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.putMutex.RLock()
 	defer fake.putMutex.RUnlock()
-	fake.putMultipleValuesMutex.RLock()
-	defer fake.putMultipleValuesMutex.RUnlock()
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
-	fake.getMultipleKeysMutex.RLock()
-	defer fake.getMultipleKeysMutex.RUnlock()
-	fake.queryMutex.RLock()
-	defer fake.queryMutex.RUnlock()
+	fake.getNodeMutex.RLock()
+	defer fake.getNodeMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

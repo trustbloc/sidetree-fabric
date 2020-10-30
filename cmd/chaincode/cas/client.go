@@ -7,75 +7,47 @@ SPDX-License-Identifier: Apache-2.0
 package cas
 
 import (
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"bytes"
+
 	"github.com/pkg/errors"
-	"github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas"
+	dcasclient "github.com/trustbloc/fabric-peer-ext/pkg/collections/offledger/dcas/client"
 )
 
 // New returns a new client for managing content
-func New(stub shim.ChaincodeStubInterface, collection string) *Client {
-	client := &Client{stub: stub, collection: collection}
-	client.Init(stub)
-	return client
-}
+func New(casClient dcasclient.DCAS) *Client {
+	client := &Client{
+		casClient: casClient,
+	}
 
-// Init initializes the client
-func (mc *Client) Init(stub shim.ChaincodeStubInterface) {
-	mc.stub = stub
+	return client
 }
 
 // Client implements writing and reading content
 type Client struct {
-	stub       shim.ChaincodeStubInterface
-	collection string
+	casClient dcasclient.DCAS
 }
 
 // Write stores content to DCAS.
-// returns the SHA256 hash in base64url encoding which represents the address of the content
+// returns the content ID (CID) in V1 format (https://docs.ipfs.io/concepts/content-addressing/#version-1-v1)
 func (mc *Client) Write(content []byte) (string, error) {
-
-	address, bytes, err := dcas.GetCASKeyAndValue(content)
+	address, err := mc.casClient.Put(bytes.NewReader(content))
 	if err != nil {
-		return "", err
-	}
-
-	if err := mc.stub.PutPrivateData(mc.collection, base58.Encode([]byte(address)), bytes); err != nil {
 		return "", errors.Wrap(err, "failed to store content")
 	}
 
 	return address, nil
 }
 
-// Read reads the content of the given address in DCAS.
-// returns the content of the given address
-func (mc *Client) Read(address string) ([]byte, error) {
+// Read reads the content of the given content ID (CID) in DCAS.
+// returns the content for the given CID. The CID must be encoded in the proper format,
+// according to https://docs.ipfs.io/concepts/content-addressing/#identifier-formats
+func (mc *Client) Read(cID string) ([]byte, error) {
+	payload := bytes.NewBuffer(nil)
 
-	payload, err := mc.stub.GetPrivateData(mc.collection, base58.Encode([]byte(address)))
+	err := mc.casClient.Get(cID, payload)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read content")
 	}
 
-	return payload, nil
-}
-
-// Query performs a "rich" query against a given private collection.
-// It is only supported for state databases that support rich query.
-func (mc *Client) Query(query string) ([][]byte, error) {
-
-	iter, err := mc.stub.GetPrivateDataQueryResult(mc.collection, query)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to query content for: %s", query)
-	}
-
-	var results [][]byte
-	for iter.HasNext() {
-		elem, err := iter.Next()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to retrieve key and value in the range")
-		}
-		results = append(results, elem.GetValue())
-	}
-
-	return results, nil
+	return payload.Bytes(), nil
 }

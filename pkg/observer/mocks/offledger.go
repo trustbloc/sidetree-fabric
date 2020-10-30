@@ -14,6 +14,10 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/collections/client"
 )
 
+const (
+	defaultQueryResultsKey = ""
+)
+
 // MockOffLedgerClient mocks the off-ledger client
 type MockOffLedgerClient struct {
 	sync.RWMutex
@@ -62,6 +66,12 @@ func (m *MockOffLedgerClient) WithGetErrorForKey(ns, coll, key string, err error
 // WithQueryResults sets the query results for the given query
 func (m *MockOffLedgerClient) WithQueryResults(ns, coll, query string, results []*queryresult.KV) *MockOffLedgerClient {
 	m.qr[getKey(ns, coll, query)] = results
+	return m
+}
+
+// WithDefaultQueryResults sets the default query results that are returned if no result was found for a given query
+func (m *MockOffLedgerClient) WithDefaultQueryResults(results []*queryresult.KV) *MockOffLedgerClient {
+	m.qr[defaultQueryResultsKey] = results
 	return m
 }
 
@@ -138,7 +148,11 @@ func (m *MockOffLedgerClient) GetMultipleKeys(ns, coll string, keys ...string) (
 // (Note that this function is not supported by transient data collections)
 // The returned ResultsIterator contains results of type *KV which is defined in protos/ledger/queryresult.
 func (m *MockOffLedgerClient) Query(ns, coll, query string) (commonledger.ResultsIterator, error) {
-	return newResultsIterator(m.qr[getKey(ns, coll, query)]), nil
+	qr, ok := m.qr[getKey(ns, coll, query)]
+	if !ok {
+		qr = m.qr[defaultQueryResultsKey]
+	}
+	return newResultsIterator(qr), nil
 }
 
 type resultsIterator struct {

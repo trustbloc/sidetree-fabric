@@ -92,7 +92,7 @@ func TestProvider(t *testing.T) {
 
 	dcasClient := &mocks.DCASClient{}
 	dcasProvider := &mocks.DCASClientProvider{}
-	dcasProvider.ForChannelReturns(dcasClient, nil)
+	dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 	observerProviders := &observer.ClientProviders{}
 	gossip := extmocks.NewMockGossipAdapter()

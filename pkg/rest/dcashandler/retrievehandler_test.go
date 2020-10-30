@@ -8,6 +8,7 @@ package dcashandler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -54,7 +55,7 @@ func TestRetrieve_Handler(t *testing.T) {
 		defer restoreParams()
 
 		errExpected := errors.New("injected DCAS provider error")
-		dcasProvider.ForChannelReturns(nil, errExpected)
+		dcasProvider.GetDCASClientReturns(nil, errExpected)
 
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/cas", nil)
@@ -70,9 +71,8 @@ func TestRetrieve_Handler(t *testing.T) {
 		defer restoreParams()
 
 		errExpected := errors.New("injected DCAS client error")
-		dcasClient := &mocks.DCASClient{}
-		dcasClient.GetReturns(nil, errExpected)
-		dcasProvider.ForChannelReturns(dcasClient, nil)
+		dcasClient := mocks.NewDCASClient().WithGetError(errExpected)
+		dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/cas", nil)
@@ -84,6 +84,22 @@ func TestRetrieve_Handler(t *testing.T) {
 	})
 
 	t.Run("No hash -> Bad Request", func(t *testing.T) {
+		rw := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/cas", nil)
+		h.Handler()(rw, req)
+
+		require.Equal(t, http.StatusBadRequest, rw.Result().StatusCode)
+		require.Equal(t, httpserver.ContentTypeText, rw.Header().Get(httpserver.ContentTypeHeader))
+		require.Equal(t, CodeInvalidHash, rw.Body.String())
+	})
+
+	t.Run("Invalid hash -> Bad Request", func(t *testing.T) {
+		restoreParams := setParams(hash, maxSize)
+		defer restoreParams()
+
+		dcasClient := mocks.NewDCASClient().WithGetError(fmt.Errorf(encodingErrMsg))
+		dcasProvider.GetDCASClientReturns(dcasClient, nil)
+
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/cas", nil)
 		h.Handler()(rw, req)
@@ -124,7 +140,7 @@ func TestRetrieve_Handler(t *testing.T) {
 		defer restoreParams()
 
 		dcasClient := &mocks.DCASClient{}
-		dcasProvider.ForChannelReturns(dcasClient, nil)
+		dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/cas", nil)
@@ -141,9 +157,8 @@ func TestRetrieve_Handler(t *testing.T) {
 		restoreParams := setParams(hash, maxSize)
 		defer restoreParams()
 
-		dcasClient := &mocks.DCASClient{}
-		dcasClient.GetReturns(content, nil)
-		dcasProvider.ForChannelReturns(dcasClient, nil)
+		dcasClient := mocks.NewDCASClient().WithData("123456", content)
+		dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/cas", nil)
@@ -160,9 +175,8 @@ func TestRetrieve_Handler(t *testing.T) {
 		restoreParams := setParams(hash, "1")
 		defer restoreParams()
 
-		dcasClient := &mocks.DCASClient{}
-		dcasClient.GetReturns(content, nil)
-		dcasProvider.ForChannelReturns(dcasClient, nil)
+		dcasClient := mocks.NewDCASClient().WithData("123456", content)
+		dcasProvider.GetDCASClientReturns(dcasClient, nil)
 
 		rw := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/cas", nil)

@@ -73,12 +73,12 @@ type ContextProviders struct {
 func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider ctxcommon.OperationStoreProvider, tokenProvider tokenProvider) (*context, error) {
 	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, handlerCfg.Namespace)
 
-	dcasClient, err := providers.DCASProvider.ForChannel(channelID)
+	dcasClient, err := providers.DCASProvider.GetDCASClient(channelID, dcasCfg.ChaincodeName, dcasCfg.Collection)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx, err := newSidetreeContext(channelID, handlerCfg.Namespace, cfg, handlerCfg.DocType, dcasCfg, opStoreProvider, cas.New(dcasCfg, dcasClient), providers)
+	ctx, err := newSidetreeContext(channelID, handlerCfg.Namespace, cfg, handlerCfg.DocType, dcasCfg, opStoreProvider, cas.New(dcasClient), providers)
 	if err != nil {
 		return nil, err
 	}
