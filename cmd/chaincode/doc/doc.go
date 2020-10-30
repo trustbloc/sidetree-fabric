@@ -21,7 +21,7 @@ const (
 	ccVersion = "v1"
 
 	couchDB       = "couchdb"
-	docsCollIndex = `{"index": {"fields": ["unique_suffix"]}, "ddoc": "indexUniqueSuffixDoc", "name": "indexUniqueSuffix", "type": "json"}`
+	docsCollIndex = `{"index": {"fields": ["uniqueSuffix"]}, "ddoc": "indexUniqueSuffixDoc", "name": "indexUniqueSuffix", "type": "json"}`
 )
 
 // DocumentCC is used to setup database, collection and indexes for documents
