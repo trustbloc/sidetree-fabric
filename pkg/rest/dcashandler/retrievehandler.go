@@ -33,7 +33,6 @@ const (
 type Retrieve struct {
 	Config
 	path         string
-	params       map[string]string
 	channelID    string
 	dcasProvider dcasClientProvider
 }
@@ -47,7 +46,6 @@ func NewRetrieveHandler(channelID string, cfg Config, dcasProvider dcasClientPro
 	return &Retrieve{
 		Config:       cfg,
 		path:         fmt.Sprintf("%s/{%s}", cfg.BasePath, hashParam),
-		params:       map[string]string{maxSizeParam: fmt.Sprintf("{%s:[0-9]+}", maxSizeParam)},
 		dcasProvider: dcasProvider,
 		channelID:    channelID,
 	}
@@ -56,11 +54,6 @@ func NewRetrieveHandler(channelID string, cfg Config, dcasProvider dcasClientPro
 // Path returns the context path
 func (h *Retrieve) Path() string {
 	return h.path
-}
-
-// Params returns the accepted parameters
-func (h *Retrieve) Params() map[string]string {
-	return h.params
 }
 
 // Method returns the HTTP method
@@ -152,14 +145,17 @@ var getHash = func(req *http.Request) string {
 }
 
 var getMaxSize = func(req *http.Request) int {
-	return maxSizeFromString(mux.Vars(req)[maxSizeParam])
+	params := getParams(req)
+
+	values := params[maxSizeParam]
+	if len(values) > 0 && values[0] != "" {
+		return maxSizeFromString(values[0])
+	}
+
+	return 0
 }
 
 func maxSizeFromString(str string) int {
-	if str == "" {
-		return 0
-	}
-
 	size, err := strconv.Atoi(str)
 	if err != nil {
 		logger.Debugf("Invalid value for parameter [max-size]: %s", err)
@@ -192,4 +188,8 @@ func (rw *retrieveWriter) WriteError(err error) {
 	}
 
 	rw.ResponseWriter.WriteError(err)
+}
+
+var getParams = func(req *http.Request) map[string][]string {
+	return req.URL.Query()
 }

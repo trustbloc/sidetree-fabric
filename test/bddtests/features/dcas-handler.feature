@@ -49,6 +49,9 @@ Feature:
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json"
     Then the JSON path "hash" of the response is saved to variable "contentHash"
 
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${contentHash}" and the returned status code is 400
+    Then the response equals "content_max_size_not_specified"
+
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${contentHash}?max-size=1" and the returned status code is 400
     Then the response equals "content_exceeds_maximum_allowed_size"
 
