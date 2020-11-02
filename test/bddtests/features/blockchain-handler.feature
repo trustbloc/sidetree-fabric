@@ -74,14 +74,14 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time"
     Then the JSON path "time" of the response is not empty
     And the JSON path "hash" of the response is not empty
-    And the JSON path "previous_hash" of the response is not empty
+    And the JSON path "previousHash" of the response is not empty
     And the JSON path "time" of the response is saved to variable "latest-time"
     And the JSON path "hash" of the response is saved to variable "latest-hash"
-    And the JSON path "previous_hash" of the response is saved to variable "latest-previous-hash"
+    And the JSON path "previousHash" of the response is saved to variable "latest-previous-hash"
 
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/time/${latest-hash}"
     Then the JSON path "hash" of the response equals "${latest-hash}"
-    And the JSON path "previous_hash" of the response equals "${latest-previous-hash}"
+    And the JSON path "previousHash" of the response equals "${latest-previous-hash}"
     And the JSON path "time" of the response equals "${latest-time}"
 
     # Invalid hash - Bad Request (400)
@@ -92,27 +92,27 @@ Feature:
 
     # The config setting for maxTransactionsInResponse is 10 so we should expect 10 transactions in the query for all transactions
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions"
-    And the JSON path "more_transactions" of the boolean response equals "true"
-    And the JSON path "transactions.0.transaction_time_hash" of the response is not empty
-    And the JSON path "transactions.0.anchor_string" of the response is not empty
-    And the JSON path "transactions.0.transaction_time" of the numeric response is saved to variable "time_0"
-    And the JSON path "transactions.0.transaction_time_hash" of the response is saved to variable "timeHash_0"
-    And the JSON path "transactions.0.transaction_number" of the numeric response is saved to variable "txnNum_0"
-    And the JSON path "transactions.0.anchor_string" of the response is saved to variable "anchor_string_0"
-    And the JSON path "transactions.9.transaction_time_hash" of the response is not empty
-    And the JSON path "transactions.9.anchor_string" of the response is not empty
-    And the JSON path "transactions.9.transaction_time" of the numeric response is saved to variable "time_9"
-    And the JSON path "transactions.9.transaction_time_hash" of the response is saved to variable "timeHash_9"
-    And the JSON path "transactions.9.transaction_number" of the numeric response is saved to variable "txnNum_9"
-    And the JSON path "transactions.9.anchor_string" of the response is saved to variable "anchor_string_9"
+    And the JSON path "moreTransactions" of the boolean response equals "true"
+    And the JSON path "transactions.0.transactionTimeHash" of the response is not empty
+    And the JSON path "transactions.0.anchorString" of the response is not empty
+    And the JSON path "transactions.0.transactionTime" of the numeric response is saved to variable "time_0"
+    And the JSON path "transactions.0.transactionTimeHash" of the response is saved to variable "timeHash_0"
+    And the JSON path "transactions.0.transactionNumber" of the numeric response is saved to variable "txnNum_0"
+    And the JSON path "transactions.0.anchorString" of the response is saved to variable "anchor_string_0"
+    And the JSON path "transactions.9.transactionTimeHash" of the response is not empty
+    And the JSON path "transactions.9.anchorString" of the response is not empty
+    And the JSON path "transactions.9.transactionTime" of the numeric response is saved to variable "time_9"
+    And the JSON path "transactions.9.transactionTimeHash" of the response is saved to variable "timeHash_9"
+    And the JSON path "transactions.9.transactionNumber" of the numeric response is saved to variable "txnNum_9"
+    And the JSON path "transactions.9.anchorString" of the response is saved to variable "anchor_string_9"
     And anchor address is parsed from anchor string "anchor_string_9" and saved to variable "anchor_address_9"
 
     # Get more transactions from where we left off
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=${txnNum_9}&transaction-time-hash=${timeHash_9}"
-    And the JSON path "transactions.0.transaction_time" of the numeric response equals "${time_9}"
-    And the JSON path "transactions.0.transaction_time_hash" of the response equals "${timeHash_9}"
-    And the JSON path "transactions.0.transaction_number" of the numeric response equals "${txnNum_9}"
-    And the JSON path "transactions.0.anchor_string" of the response equals "${anchor_string_9}"
+    And the JSON path "transactions.0.transactionTime" of the numeric response equals "${time_9}"
+    And the JSON path "transactions.0.transactionTimeHash" of the response equals "${timeHash_9}"
+    And the JSON path "transactions.0.transactionNumber" of the numeric response equals "${txnNum_9}"
+    And the JSON path "transactions.0.anchorString" of the response equals "${anchor_string_9}"
     And the JSON path "transactions" of the raw response is saved to variable "transactions"
 
     # Ensure that the anchor hash resolves to a valid value stored in DCAS
@@ -138,13 +138,13 @@ Feature:
 
     # Valid transactions
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/first-valid" with content "${transactions}" of type "application/json"
-    Then the JSON path "transaction_time" of the numeric response equals "${time_9}"
-    And the JSON path "transaction_time_hash" of the response equals "${timeHash_9}"
-    And the JSON path "transaction_number" of the numeric response equals "${txnNum_9}"
-    And the JSON path "anchor_string" of the response equals "${anchor_string_9}"
+    Then the JSON path "transactionTime" of the numeric response equals "${time_9}"
+    And the JSON path "transactionTimeHash" of the response equals "${timeHash_9}"
+    And the JSON path "transactionNumber" of the numeric response equals "${txnNum_9}"
+    And the JSON path "anchorString" of the response equals "${anchor_string_9}"
 
     # Invalid transactions
-    Given variable "invalidTransactions" is assigned the JSON value '[{"transaction_number":3,"transaction_time":10,"transaction_time_hash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
+    Given variable "invalidTransactions" is assigned the JSON value '[{"transactionNumber":3,"transactionTime":10,"transactionTimeHash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/first-valid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
 
     # Retrieve the anchor file from the transaction time in transaction 0 above
@@ -194,7 +194,7 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}?data-encoding=base64"
     Then the JSON path "#" of the response has 1 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
-    And the JSON path "0.header.data_hash" of the response is saved to variable "data-hash"
+    And the JSON path "0.header.dataHash" of the response is saved to variable "data-hash"
     And the JSON path "0.data" of the response is saved to variable "block-data"
     Then the hash of the base64-encoded value "${block-data}" equals "${data-hash}"
 
@@ -202,7 +202,7 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}?data-encoding=base64url"
     Then the JSON path "#" of the response has 1 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
-    And the JSON path "0.header.data_hash" of the response is saved to variable "data-hash"
+    And the JSON path "0.header.dataHash" of the response is saved to variable "data-hash"
     And the JSON path "0.data" of the response is saved to variable "block-data"
     Then the hash of the base64URL-encoded value "${block-data}" equals "${data-hash}"
 
@@ -210,7 +210,7 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from-time=${time_0}&max-blocks=2&data-encoding=base64"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
-    And the JSON path "0.header.data_hash" of the response is saved to variable "data-hash"
+    And the JSON path "0.header.dataHash" of the response is saved to variable "data-hash"
     And the JSON path "0.data" of the response is saved to variable "block-data"
     Then the hash of the base64-encoded value "${block-data}" equals "${data-hash}"
 
@@ -218,7 +218,7 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from-time=${time_0}&max-blocks=2&data-encoding=base64url"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
-    And the JSON path "0.header.data_hash" of the response is saved to variable "data-hash"
+    And the JSON path "0.header.dataHash" of the response is saved to variable "data-hash"
     And the JSON path "0.data" of the response is saved to variable "block-data"
     Then the hash of the base64URL-encoded value "${block-data}" equals "${data-hash}"
 
@@ -238,12 +238,12 @@ Feature:
     And the JSON path "data.data.0.payload.header.channel_header.type" of the numeric response equals "1"
     # Get the latest config block (the data is base64-encoded)
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block?data-encoding=base64"
-    And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
+    And the JSON path "header.dataHash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64-encoded value "${config-data}" equals "${config-data-hash}"
     # Get the latest config block (the data is base64URL-encoded)
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block?data-encoding=base64url"
-    And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
+    And the JSON path "header.dataHash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64URL-encoded value "${config-data}" equals "${config-data-hash}"
 
@@ -252,12 +252,12 @@ Feature:
     And the JSON path "data.data.0.payload.header.channel_header.type" of the numeric response equals "1"
     # Get the config block that was used by the block with the given hash (the data is base64-encoded)
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block/${url-encoded-previous-hash}?data-encoding=base64"
-    And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
+    And the JSON path "header.dataHash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64-encoded value "${config-data}" equals "${config-data-hash}"
     # Get the config block that was used by the block with the given hash (the data is base64URL-encoded)
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/config-block/${url-encoded-previous-hash}?data-encoding=base64url"
-    And the JSON path "header.data_hash" of the response is saved to variable "config-data-hash"
+    And the JSON path "header.dataHash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64URL-encoded value "${config-data}" equals "${config-data-hash}"
 

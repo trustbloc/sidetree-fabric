@@ -23,8 +23,8 @@ const (
 const (
 	headerField       = "header"
 	numberField       = "number"
-	dataHashField     = "data_hash"
-	previousHashField = "previous_Hash"
+	dataHashField     = "dataHash"
+	previousHashField = "previousHash"
 	dataField         = "data"
 	metadataField     = "metadata"
 )
@@ -55,22 +55,22 @@ type TimeResponse struct {
 	// PreviousHash is the base64 URL-encoded hash of the previous block's header.
 	// This value may be used as the hash value to retrieve the previous block
 	// using the '/time/{hash}' endpoint.
-	PreviousHash string `json:"previous_hash"`
+	PreviousHash string `json:"previousHash"`
 }
 
 // TransactionsResponse contains a set of transactions and a boolean that indicates
 // whether or not there are more transactions available to return.
 type TransactionsResponse struct {
-	More         bool          `json:"more_transactions"`
+	More         bool          `json:"moreTransactions"`
 	Transactions []Transaction `json:"transactions"`
 }
 
 // Transaction contains data for a single Sidetree transaction
 type Transaction struct {
-	TransactionNumber   uint64 `json:"transaction_number"`
-	TransactionTime     uint64 `json:"transaction_time"`
-	TransactionTimeHash string `json:"transaction_time_hash"`
-	AnchorString        string `json:"anchor_string"`
+	TransactionNumber   uint64 `json:"transactionNumber"`
+	TransactionTime     uint64 `json:"transactionTime"`
+	TransactionTimeHash string `json:"transactionTimeHash"`
+	AnchorString        string `json:"anchorString"`
 }
 
 // ErrorResponse contains the error code for a failed response
@@ -84,8 +84,8 @@ type Block map[string]interface{}
 // BlockHeader contains a block header.
 type BlockHeader struct {
 	Number       uint64 `json:"number"`
-	DataHash     string `json:"data_hash"`
-	PreviousHash string `json:"previous_hash"`
+	DataHash     string `json:"dataHash"`
+	PreviousHash string `json:"previousHash"`
 }
 
 // BlockResponse contains a block.
