@@ -14,9 +14,9 @@ Following are some JSON examples:
 [
   {
     "service": "did:sidetree",
-    "api_version": "0.0.1",
+    "apiVersion": "0.0.1",
     "domain": "org1.com",
-    "root_endpoint": "https://peer0.org1.com:48326/sidetree/0.0.1",
+    "rootEndpoint": "https://peer0.org1.com:48326/sidetree/0.0.1",
     "endpoints": [
       {
         "path": "/identifiers",
@@ -34,9 +34,9 @@ Following are some JSON examples:
   },
   {
     "service": "cas",
-    "api_version": "0.0.1",
+    "apiVersion": "0.0.1",
     "domain": "org2.com",
-    "root_endpoint": "https://peer0.org2.com:48326/sidetree/0.0.1/cas",
+    "rootEndpoint": "https://peer0.org2.com:48326/sidetree/0.0.1/cas",
     "endpoints": [
       {
 	    "method": "GET"
@@ -56,9 +56,9 @@ Following are some JSON examples:
 // Service contains information about one or more endpoints for a service
 type Service struct {
 	Service      string     `json:"service"`
-	APIVersion   string     `json:"api_version,omitempty"`
+	APIVersion   string     `json:"apiVersion,omitempty"`
 	Domain       string     `json:"domain"`
-	RootEndpoint string     `json:"root_endpoint"`
+	RootEndpoint string     `json:"rootEndpoint"`
 	Endpoints    []Endpoint `json:"endpoints"`
 }
 

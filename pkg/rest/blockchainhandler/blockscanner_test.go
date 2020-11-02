@@ -150,5 +150,5 @@ func TestBlockScanner(t *testing.T) {
 }
 
 func getTxnInfo(anchor string) []byte {
-	return []byte(fmt.Sprintf(`{"anchor_string":"%s", "namespace": "ns"}`, anchor))
+	return []byte(fmt.Sprintf(`{"anchorString":"%s", "namespace": "ns"}`, anchor))
 }

@@ -13,8 +13,8 @@ const (
 
 // TxnInfo contains info that gets recorded on blockchain as part of Sidetree transaction
 type TxnInfo struct {
-	AnchorString string `json:"anchor_string"`
+	AnchorString string `json:"anchorString"`
 	Namespace    string `json:"namespace"`
 	// ProtocolGenesisTime is the genesis time of the protocol that was used to create the anchor
-	ProtocolGenesisTime uint64 `json:"protocol_genesis_time"`
+	ProtocolGenesisTime uint64 `json:"protocolGenesisTime"`
 }

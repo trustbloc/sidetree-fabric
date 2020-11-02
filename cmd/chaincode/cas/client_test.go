@@ -93,5 +93,5 @@ func getCreateOperation() *Operation {
 // Operation defines sample operation
 type Operation struct {
 	Type         string `json:"type"`
-	UniqueSuffix string `json:"unique_suffix"`
+	UniqueSuffix string `json:"uniqueSuffix"`
 }

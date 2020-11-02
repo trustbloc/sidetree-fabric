@@ -27,7 +27,7 @@ type BlockchainSteps struct {
 
 //TxnInfo
 type TxnInfo struct {
-	AnchorString string `json:"anchor_string"`
+	AnchorString string `json:"anchorString"`
 	Namespace    string `json:"namespace"`
 }
 
