@@ -6,6 +6,7 @@
   "maxOperationCount": 50,
   "compressionAlgorithm": "GZIP",
   "maxAnchorFileSize": 2000000,
+  "maxProofFileSize": 2000000,
   "maxMapFileSize": 2000000,
   "maxChunkFileSize": 20000000,
   "signatureAlgorithms": ["EdDSA", "ES256", "ES256K"],

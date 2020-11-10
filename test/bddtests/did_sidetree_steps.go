@@ -45,7 +45,7 @@ const (
 const addPublicKeysTemplate = `[{
       "id": "%s",
       "type": "JwsVerificationKey2020",
-      "purposes": ["verificationMethod"],
+      "purposes": ["authentication"],
       "publicKeyJwk": {
         	"kty": "EC",
         	"crv": "P-256K",
@@ -72,13 +72,13 @@ const docTemplate = `{
    {
      "id": "%s",
      "type": "JwsVerificationKey2020",
-     "purposes": ["authentication", "verificationMethod"],
+     "purposes": ["authentication"],
      "publicKeyJwk": %s
    },
    {
      "id": "dual-assertion-gen",
      "type": "Ed25519VerificationKey2018",
-     "purposes": ["assertionMethod", "verificationMethod"],
+     "purposes": ["assertionMethod"],
      "publicKeyJwk": %s
    }
   ],
