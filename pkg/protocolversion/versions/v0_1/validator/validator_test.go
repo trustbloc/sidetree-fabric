@@ -23,6 +23,7 @@ var (
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
+		MaxProofFileSize:     1000000,
 		MaxMapFileSize:       1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
@@ -38,6 +39,7 @@ var (
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
+		MaxProofFileSize:     1000000,
 		MaxMapFileSize:       1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
@@ -52,6 +54,7 @@ var (
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
+		MaxProofFileSize:     1000000,
 		MaxMapFileSize:       1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
@@ -66,6 +69,7 @@ var (
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
+		MaxProofFileSize:     1000000,
 		MaxMapFileSize:       1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
@@ -80,6 +84,7 @@ var (
 		MaxOperationSize:     2000,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
+		MaxProofFileSize:     1000000,
 		MaxMapFileSize:       1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
@@ -94,6 +99,7 @@ var (
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
+		MaxProofFileSize:     1000000,
 		MaxMapFileSize:       1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
@@ -108,6 +114,22 @@ var (
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
+		MaxProofFileSize:     1000000,
+		MaxMapFileSize:       1000000,
+		MaxChunkFileSize:     10000000,
+		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:              []string{"ietf-json-patch"},
+	}
+
+	protocolInvalidMaxProofSize = &protocol.Protocol{
+		GenesisTime:          500000,
+		MultihashAlgorithm:   18,
+		HashAlgorithm:        5,
+		MaxOperationSize:     2000,
+		MaxOperationCount:    10,
+		CompressionAlgorithm: "GZIP",
+		MaxAnchorFileSize:    1000000,
 		MaxMapFileSize:       1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
@@ -123,6 +145,7 @@ var (
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
+		MaxProofFileSize:     1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
@@ -137,6 +160,7 @@ var (
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
+		MaxProofFileSize:     1000000,
 		MaxMapFileSize:       1000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
 		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
@@ -216,6 +240,12 @@ func TestValidator_Validate(t *testing.T) {
 		err := Validate(protocolInvalidMaxAnchorSize)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "field 'MaxAnchorFileSize' must contain a value greater than 0")
+	})
+
+	t.Run("Invalid MaxProofFileSize -> error", func(t *testing.T) {
+		err := Validate(protocolInvalidMaxProofSize)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'MaxProofFileSize' must contain a value greater than 0")
 	})
 
 	t.Run("Invalid MaxMapFileSize -> error", func(t *testing.T) {

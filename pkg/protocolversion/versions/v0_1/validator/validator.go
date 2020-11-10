@@ -68,5 +68,9 @@ func verifyBatchSizesV0(p *protocol.Protocol) error {
 		return errors.Errorf(errMsg, "MaxChunkFileSize")
 	}
 
+	if p.MaxProofFileSize == 0 {
+		return errors.Errorf(errMsg, "MaxProofFileSize")
+	}
+
 	return nil
 }
