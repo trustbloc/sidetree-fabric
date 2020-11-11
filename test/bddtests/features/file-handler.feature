@@ -158,7 +158,6 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/file/version?time=50"
     And the JSON path "version" of the response equals "0.1.1"
     And the JSON path "genesisTime" of the numeric response equals "20"
-    And the JSON path "hashAlgorithm" of the numeric response equals "5"
     And the JSON path "multihashAlgorithm" of the numeric response equals "18"
     And the JSON path "maxOperationCount" of the numeric response equals "30"
     And the JSON path "maxOperationSize" of the numeric response equals "200000"

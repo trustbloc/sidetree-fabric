@@ -207,7 +207,6 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version?time=50"
     And the JSON path "version" of the response equals "0.1.1"
     And the JSON path "genesisTime" of the numeric response equals "20"
-    And the JSON path "hashAlgorithm" of the numeric response equals "5"
     And the JSON path "multihashAlgorithm" of the numeric response equals "18"
     And the JSON path "maxOperationCount" of the numeric response equals "30"
     And the JSON path "maxOperationSize" of the numeric response equals "200000"
@@ -224,7 +223,6 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version?time=2000"
     And the JSON path "version" of the response equals "0.1.2"
     And the JSON path "genesisTime" of the numeric response equals "1000"
-    And the JSON path "hashAlgorithm" of the numeric response equals "5"
     And the JSON path "multihashAlgorithm" of the numeric response equals "18"
     And the JSON path "maxOperationCount" of the numeric response equals "50"
     And the JSON path "maxOperationSize" of the numeric response equals "300000"
@@ -242,7 +240,6 @@ Feature:
     # We can't check for actual version because we don't know how many blocks have been created
     # by the tests so far so we don't know which protocol is current
     And the JSON path "version" of the response is not empty
-    And the JSON path "hashAlgorithm" of the numeric response equals "5"
     And the JSON path "multihashAlgorithm" of the numeric response equals "18"
     And the JSON path "compressionAlgorithm" of the response equals "GZIP"
     And the JSON path "signatureAlgorithms" of the array response is not empty

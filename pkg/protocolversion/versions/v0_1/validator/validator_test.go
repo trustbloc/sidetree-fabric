@@ -18,7 +18,6 @@ var (
 	p = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -34,7 +33,6 @@ var (
 	protocolInvalidPatches = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -49,22 +47,6 @@ var (
 	protocolInvalidMulithashAlgo = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   2777,
-		HashAlgorithm:        5,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxProofFileSize:     1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:              []string{"ietf-json-patch"},
-	}
-
-	protocolInvalidHashAlgo = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -80,7 +62,6 @@ var (
 	protocolInvalidMaxOperationCount = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
@@ -95,7 +76,6 @@ var (
 	protocolInvalidMaxOperationSize = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
 		MaxAnchorFileSize:    1000000,
@@ -110,7 +90,6 @@ var (
 	protocolInvalidMaxAnchorSize = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -125,7 +104,6 @@ var (
 	protocolInvalidMaxProofSize = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -140,7 +118,6 @@ var (
 	protocolInvalidMaxMapSize = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -155,7 +132,6 @@ var (
 	protocolInvalidMaxChunkSize = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -170,7 +146,6 @@ var (
 	protocolInvalidCompressionAlgo = &protocol.Protocol{
 		GenesisTime:         500000,
 		MultihashAlgorithm:  18,
-		HashAlgorithm:       5,
 		MaxOperationSize:    2000,
 		MaxOperationCount:   10,
 		MaxAnchorFileSize:   1000000,
@@ -183,7 +158,6 @@ var (
 	protocolInvalidSignatureAlgorithms = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -196,7 +170,6 @@ var (
 	protocolInvalidKeyAlgorithms = &protocol.Protocol{
 		GenesisTime:          500000,
 		MultihashAlgorithm:   18,
-		HashAlgorithm:        5,
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
@@ -216,12 +189,6 @@ func TestValidator_Validate(t *testing.T) {
 		err := Validate(protocolInvalidMulithashAlgo)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "algorithm not supported")
-	})
-
-	t.Run("Invalid hash algorithm -> error", func(t *testing.T) {
-		err := Validate(protocolInvalidHashAlgo)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "hash function not available for: 0")
 	})
 
 	t.Run("Invalid MaxOperationCount -> error", func(t *testing.T) {

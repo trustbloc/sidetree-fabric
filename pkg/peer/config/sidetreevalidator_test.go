@@ -17,7 +17,6 @@ const (
 	protocolCfg = `{
 		"genesisTime":500000,
 		"multihashAlgorithm":18,
-		"hashAlgorithm":5,
 		"maxOperationSize":2000,
 		"maxOperationCount":10,
 		"compressionAlgorithm": "GZIP",
@@ -33,7 +32,6 @@ const (
 	protocolInvalidMulithashAlgoCfg = `{
 		"genesisTime":500000,
 		"multihashAlgorithm":2777,
-		"hashAlgorithm":5,
 		"maxOperationSize":2000,
 		"maxOperationCount":10,
 		"compressionAlgorithm": "GZIP",
