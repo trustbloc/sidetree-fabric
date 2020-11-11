@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
-	"crypto"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -507,7 +506,6 @@ func newMockProtocolVersion() (*coremocks.ProtocolVersion, *coremocks.TxnProcess
 	p := protocol.Protocol{
 		GenesisTime:          0,
 		MultihashAlgorithm:   sha2_256,
-		HashAlgorithm:        5, // crypto code for sha256 hash function
 		MaxOperationCount:    2,
 		MaxOperationSize:     maxOperationByteSize,
 		CompressionAlgorithm: "GZIP",
@@ -552,7 +550,7 @@ func generateCreateOperations(num int) (*model.Operation, error) {
 		X:   "x",
 	}
 
-	c, err := commitment.Calculate(testKey, sha2_256, crypto.SHA256)
+	c, err := commitment.Calculate(testKey, sha2_256)
 	if err != nil {
 		return nil, err
 	}

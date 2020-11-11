@@ -9,7 +9,6 @@ package httpserver
 import (
 	"bytes"
 	"context"
-	"crypto"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -18,6 +17,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
@@ -49,7 +49,6 @@ const (
 var p = protocol.Protocol{
 	GenesisTime:          0,
 	MultihashAlgorithm:   sha2_256,
-	HashAlgorithm:        5,
 	MaxOperationCount:    2,
 	MaxOperationSize:     1024,
 	CompressionAlgorithm: "GZIP",
@@ -324,15 +323,6 @@ func (h *sampleResolveHandler) Handler() common.HTTPRequestHandler {
 	return h.Resolve
 }
 
-func getID(code uint, content []byte) (string, error) {
-	mh, err := docutil.ComputeMultihash(code, content)
-	if err != nil {
-		return "", err
-	}
-
-	return docutil.EncodeToString(mh), nil
-}
-
 func getCreateRequest() ([]byte, error) {
 	testKey := &jws.JWK{
 		Crv: "crv",
@@ -340,7 +330,7 @@ func getCreateRequest() ([]byte, error) {
 		X:   "x",
 	}
 
-	c, err := commitment.Calculate(testKey, sha2_256, crypto.SHA256)
+	c, err := commitment.Calculate(testKey, sha2_256)
 	if err != nil {
 		return nil, err
 	}
@@ -359,8 +349,8 @@ const validDoc = `{
 	"publicKey": [{
       	"id": "dual-key",
       	"type": "JwsVerificationKey2020",
-      	"purpose": ["auth", "general"],
-      	"jwk": {
+      	"purposes": ["authentication"],
+      	"publicKeyJwk": {
         	"kty": "EC",
         	"crv": "P-256K",
         	"x": "PUymIqdtF_qxaAqPABSw-C-owT1KYYQbsMKFM-L9fJA",

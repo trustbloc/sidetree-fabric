@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package bddtests
 
 import (
-	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/elliptic"
@@ -27,10 +26,12 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
+	"github.com/trustbloc/sidetree-core-go/pkg/encoder"
+	"github.com/trustbloc/sidetree-core-go/pkg/hashing"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
 )
 
@@ -165,7 +166,7 @@ func (d *DIDSideSteps) getInitialState() (string, error) {
 		return "", err
 	}
 
-	return docutil.EncodeToString(bytes), nil
+	return encoder.EncodeToString(bytes), nil
 }
 
 func (d *DIDSideSteps) checkSuccessRespContains(msg string) error {
@@ -308,7 +309,7 @@ func (d *DIDSideSteps) getDID() (string, error) {
 }
 
 func (d *DIDSideSteps) getUniqueSuffix() (string, error) {
-	return docutil.CalculateModelMultihash(d.createRequest.SuffixData, sha2_256)
+	return hashing.CalculateModelMultihash(d.createRequest.SuffixData, sha2_256)
 }
 
 func (d *DIDSideSteps) updateDIDDocumentWithJSONPatch(url, path, value string) error {
@@ -442,7 +443,7 @@ func getCommitment(key *ecdsa.PublicKey) (string, error) {
 		return "", err
 	}
 
-	return commitment.Calculate(pubKey, sha2_256, crypto.SHA256)
+	return commitment.Calculate(pubKey, sha2_256)
 }
 
 func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byte, error) {

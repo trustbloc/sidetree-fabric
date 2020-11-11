@@ -7,22 +7,15 @@ SPDX-License-Identifier: Apache-2.0
 package validator
 
 import (
-	"crypto"
-
 	"github.com/pkg/errors"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
-	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/hashing"
 )
 
 // Validate validates the parameters on the given protococol
 func Validate(p *protocol.Protocol) error {
-	if _, err := docutil.GetHash(p.MultihashAlgorithm); err != nil {
-		return errors.WithMessagef(err, "error in Sidetree protocol")
-	}
-
-	if _, err := hashing.GetHash(crypto.Hash(p.HashAlgorithm), []byte("")); err != nil {
+	if _, err := hashing.GetHashFromMultihash(p.MultihashAlgorithm); err != nil {
 		return errors.WithMessagef(err, "error in Sidetree protocol")
 	}
 
