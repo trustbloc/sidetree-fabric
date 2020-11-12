@@ -22,6 +22,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
+	ctxmocks "github.com/trustbloc/sidetree-fabric/pkg/context/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
@@ -113,12 +114,15 @@ func TestProvider(t *testing.T) {
 	}
 	ledgerProvider.GetLedgerReturns(l)
 
+	cacheProvider := &ctxmocks.CachingOpProcessorProvider{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			Providers: &sidetreectx.Providers{
-				OperationQueueProvider: opQueueProvider,
-				DCASProvider:           dcasProvider,
-				LedgerProvider:         ledgerProvider,
+				OperationQueueProvider:     opQueueProvider,
+				DCASProvider:               dcasProvider,
+				LedgerProvider:             ledgerProvider,
+				OperationProcessorProvider: cacheProvider,
 			},
 			VersionFactory: vf,
 		},

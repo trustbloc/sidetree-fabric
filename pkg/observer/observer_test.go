@@ -20,13 +20,9 @@ import (
 	"github.com/stretchr/testify/require"
 	peerextmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/fabric-peer-ext/pkg/roles"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
-	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
-	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	coremocks "github.com/trustbloc/sidetree-core-go/pkg/mocks"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
@@ -38,6 +34,9 @@ import (
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
+
+//go:generate counterfeiter -o ./mocks/doccacheinvalidatorprovider.gen.go --fake-name DocCacheInvalidatorProvider . cacheInvalidatorProvider
+//go:generate counterfeiter -o ./mocks/doccacheinvalidator.gen.go --fake-name DocCacheInvalidator ../context/doccache Invalidator
 
 const (
 	channel1 = "channel1"
@@ -76,6 +75,9 @@ func TestObserver(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Triggered by block event", func(t *testing.T) {
+		restore := setRoles(true, false)
+		defer restore()
+
 		clients := newMockClients(t)
 
 		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
@@ -108,6 +110,9 @@ func TestObserver(t *testing.T) {
 	})
 
 	t.Run("Triggered by schedule", func(t *testing.T) {
+		restore := setRoles(true, false)
+		defer restore()
+
 		clients := newMockClients(t)
 
 		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
@@ -171,7 +176,7 @@ func TestObserver(t *testing.T) {
 	t.Run("Clustered - not lease owner", func(t *testing.T) {
 		clients := newMockClients(t)
 
-		roles.SetRoles(map[roles.Role]struct{}{roles.CommitterRole: {}, role.Observer: {}})
+		roles.SetRoles(map[roles.Role]struct{}{roles.CommitterRole: {}, role.Observer: {}, role.Resolver: {}})
 		defer roles.SetRoles(nil)
 
 		require.True(t, roles.IsClustered())
@@ -202,9 +207,42 @@ func TestObserver(t *testing.T) {
 		require.Equal(t, uint64(1000), meta.LastBlockProcessed)
 		require.Equal(t, peer3, meta.LeaseOwner)
 	})
+
+	t.Run("DocumentCache invalidator", func(t *testing.T) {
+		restore := setRoles(false, true)
+		defer restore()
+
+		clients := newMockClients(t)
+
+		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
+
+		cfg := config.Observer{
+			Period:                10 * time.Second,
+			MetaDataChaincodeName: metaDataCCName,
+		}
+
+		txnChan := make(chan gossipapi.TxMetadata, 1)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1002, TxNum: 0, ChannelID: channel1, TxID: txID1}
+
+		time.Sleep(sleepTime)
+		m.Stop()
+
+		meta, _, err := m.getCacheMetadata()
+		require.NoError(t, err)
+
+		require.Equal(t, uint64(1002), meta.LastBlockProcessed)
+	})
 }
 
 func TestObserver_Error(t *testing.T) {
+	restore := setRoles(true, true)
+	defer restore()
+
 	cfg := config.Observer{
 		Period:                monitorPeriod,
 		MetaDataChaincodeName: metaDataCCName,
@@ -235,6 +273,10 @@ func TestObserver_Error(t *testing.T) {
 	opStoreProvider.ForNamespaceReturns(&stmocks.OperationStore{}, nil)
 
 	txnChan := make(chan gossipapi.TxMetadata)
+
+	meta := newMetadata(peer1, 1001)
+	metaBytes, err := json.Marshal(meta)
+	require.NoError(t, err)
 
 	t.Run("Blockchain.ForChannel error", func(t *testing.T) {
 		clients := newMockClients(t)
@@ -408,6 +450,72 @@ func TestObserver_Error(t *testing.T) {
 		time.Sleep(sleepTime)
 		m.Stop()
 	})
+
+	t.Run("Document cache error", func(t *testing.T) {
+		restore := setRoles(false, true)
+		defer restore()
+
+		clients := newMockClients(t)
+		clients.cacheProvider = &obmocks.DocCacheInvalidatorProvider{}
+
+		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
+
+		errExpected := fmt.Errorf("injected document cache error")
+		clients.cacheProvider.GetDocumentInvalidatorReturns(nil, errExpected)
+
+		cfg := config.Observer{
+			Period:                10 * time.Second,
+			MetaDataChaincodeName: metaDataCCName,
+		}
+
+		txnChan := make(chan gossipapi.TxMetadata, 1)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1002, TxNum: 0, ChannelID: channel1, TxID: txID1}
+
+		time.Sleep(sleepTime)
+		m.Stop()
+
+		cacheMeta, _, err := m.getCacheMetadata()
+		require.NoError(t, err)
+		require.Equal(t, uint64(1002), cacheMeta.LastBlockProcessed)
+	})
+
+	t.Run("Get operations error", func(t *testing.T) {
+		restore := setRoles(false, true)
+		defer restore()
+
+		clients := newMockClients(t)
+
+		require.NoError(t, clients.offLedger.Put(metaDataCCName, MetaDataColName, peer1, metaBytes))
+
+		opp := &stmocks.OperationProvider{}
+		opp.GetTxnOperationsReturns(nil, fmt.Errorf("injected operation provider error"))
+		clients.pv.OperationProviderReturns(opp)
+
+		cfg := config.Observer{
+			Period:                10 * time.Second,
+			MetaDataChaincodeName: metaDataCCName,
+		}
+
+		txnChan := make(chan gossipapi.TxMetadata, 1)
+		m := newObserverWithMocks(t, channel1, cfg, clients, txnChan)
+
+		require.NoError(t, m.Start())
+		time.Sleep(sleepTime)
+
+		txnChan <- gossipapi.TxMetadata{BlockNum: 1002, TxNum: 0, ChannelID: channel1, TxID: txID1}
+
+		time.Sleep(sleepTime)
+		m.Stop()
+
+		meta, _, err := m.getCacheMetadata()
+		require.NoError(t, err)
+		require.Equal(t, uint64(1002), meta.LastBlockProcessed)
+	})
 }
 
 type mockClients struct {
@@ -416,7 +524,9 @@ type mockClients struct {
 	blockchain         *obmocks.BlockchainClient
 	offLedger          *obmocks.MockOffLedgerClient
 	pcp                ctxcommon.ProtocolClientProvider
+	pv                 *coremocks.ProtocolVersion
 	txnProcessor       *coremocks.TxnProcessor
+	cacheProvider      *obmocks.DocCacheInvalidatorProvider
 }
 
 func newMockClients(t *testing.T) *mockClients {
@@ -466,10 +576,18 @@ func newMockClients(t *testing.T) *mockClients {
 	pcp := &stmocks.ProtocolClientProvider{}
 	pcp.ForNamespaceReturns(pc, nil)
 	clients.pcp = pcp
+	clients.pv = pv
 	clients.txnProcessor = txnp
 
 	clients.blockchain.GetBlockchainInfoReturns(bcInfo, nil)
 	clients.blockchain.GetBlockByNumberReturns(b.Build(), nil)
+
+	cacheProvider := &obmocks.DocCacheInvalidatorProvider{}
+
+	cache := &obmocks.DocCacheInvalidator{}
+	cacheProvider.GetDocumentInvalidatorReturns(cache, nil)
+
+	clients.cacheProvider = cacheProvider
 
 	return clients
 }
@@ -488,9 +606,10 @@ func newObserverWithMocks(t *testing.T, channelID string, cfg config.Observer, c
 	m := New(
 		channelID, peerCfg, cfg,
 		&ClientProviders{
-			OffLedger:  clients.offLedgerProvider,
-			Blockchain: clients.blockchainProvider,
-			Gossip:     gossipProvider,
+			OffLedger:                clients.offLedgerProvider,
+			Blockchain:               clients.blockchainProvider,
+			Gossip:                   gossipProvider,
+			CacheInvalidatorProvider: clients.cacheProvider,
 		},
 		txnChan, clients.pcp,
 	)
@@ -524,51 +643,27 @@ func newMockProtocolVersion() (*coremocks.ProtocolVersion, *coremocks.TxnProcess
 	pv.ProtocolReturns(p)
 
 	opp := &stmocks.OperationProvider{}
+
+	ops := []*operation.AnchoredOperation{
+		{UniqueSuffix: "doc1"},
+		{UniqueSuffix: "doc2"},
+	}
+
+	opp.GetTxnOperationsReturns(ops, nil)
 	pv.OperationProviderReturns(opp)
 
 	return pv, tp
 }
 
-func getTestOperations(createOpsNum int) ([]*model.Operation, error) {
-	var ops []*model.Operation
-	for j := 1; j <= createOpsNum; j++ {
-		op, err := generateCreateOperations(j)
-		if err != nil {
-			return nil, err
-		}
+func setRoles(observer, resolver bool) func() {
+	restoreObserver := isObserver
+	restoreResolver := isResolver
 
-		ops = append(ops, op)
+	isObserver = func() bool { return observer }
+	isResolver = func() bool { return resolver }
+
+	return func() {
+		isObserver = restoreObserver
+		isResolver = restoreResolver
 	}
-
-	return ops, nil
-}
-
-func generateCreateOperations(num int) (*model.Operation, error) {
-	testKey := &jws.JWK{
-		Crv: "crv",
-		Kty: "kty",
-		X:   "x",
-	}
-
-	c, err := commitment.Calculate(testKey, sha2_256)
-	if err != nil {
-		return nil, err
-	}
-
-	doc := fmt.Sprintf(`{"test":%d}`, num)
-	info := &client.CreateRequestInfo{OpaqueDocument: doc,
-		RecoveryCommitment: c,
-		UpdateCommitment:   c,
-		MultihashCode:      sha2_256}
-
-	request, err := client.NewCreateRequest(info)
-	if err != nil {
-		return nil, err
-	}
-
-	parser := operationparser.New(protocol.Protocol{
-		MultihashAlgorithm: sha2_256,
-		Patches:            []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
-	})
-	return parser.ParseOperation(namespace, request)
 }

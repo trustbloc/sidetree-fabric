@@ -21,6 +21,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/file"
 	"github.com/trustbloc/sidetree-fabric/cmd/chaincode/txn"
 	"github.com/trustbloc/sidetree-fabric/pkg/client"
+	"github.com/trustbloc/sidetree-fabric/pkg/context/doccache"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/operationqueue"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/discovery"
@@ -42,6 +43,7 @@ func Initialize() {
 	resource.Register(operationqueue.NewProvider)
 	resource.Register(discovery.New)
 	resource.Register(factoryregistry.New)
+	resource.Register(doccache.New)
 
 	// Register chaincode
 	ucc.Register(func() ccapi.UserCC { return doc.New("document") })

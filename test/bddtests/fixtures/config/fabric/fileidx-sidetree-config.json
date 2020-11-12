@@ -5,5 +5,6 @@
   "Authorization":{
     "ReadTokens": ["content_r","content_w"],
     "WriteTokens": ["content_w"]
-  }
+  },
+  "DocumentCacheSize": 10000
 }

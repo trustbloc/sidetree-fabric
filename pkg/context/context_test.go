@@ -15,6 +15,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/opqueue"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
+	ctxmocks "github.com/trustbloc/sidetree-fabric/pkg/context/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
 
@@ -22,6 +23,7 @@ import (
 //go:generate counterfeiter -o ./../mocks/txnservice.gen.go --fake-name TxnService github.com/trustbloc/fabric-peer-ext/pkg/txn/api.Service
 //go:generate counterfeiter -o ./../mocks/opqueueprovider.gen.go --fake-name OperationQueueProvider . operationQueueProvider
 //go:generate counterfeiter -o ./../mocks/casclient.gen.go --fake-name CasClient github.com/trustbloc/sidetree-core-go/pkg/api/cas.Client
+//go:generate counterfeiter -o ./mocks/cachingopprocessorprovider.gen.go --fake-name CachingOpProcessorProvider . cachingOpProcessorProvider
 
 const (
 	channelID = "channel1"
@@ -35,6 +37,7 @@ func TestNew(t *testing.T) {
 	dcasProvider := &mocks.DCASClientProvider{}
 	opQueueProvider := &mocks.OperationQueueProvider{}
 	ledgerProvider := &extmocks.LedgerProvider{}
+	cacheUpdater := &ctxmocks.CachingOpProcessorProvider{}
 
 	errExpected := errors.New("injected op queue error")
 	opQueueProvider.CreateReturns(nil, errExpected)
@@ -45,10 +48,11 @@ func TestNew(t *testing.T) {
 	}
 
 	p := &Providers{
-		TxnProvider:            txnProvider,
-		DCASProvider:           dcasProvider,
-		OperationQueueProvider: opQueueProvider,
-		LedgerProvider:         ledgerProvider,
+		TxnProvider:                txnProvider,
+		DCASProvider:               dcasProvider,
+		OperationQueueProvider:     opQueueProvider,
+		LedgerProvider:             ledgerProvider,
+		OperationProcessorProvider: cacheUpdater,
 	}
 
 	casClient := &mocks.CasClient{}

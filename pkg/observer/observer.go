@@ -7,27 +7,29 @@ SPDX-License-Identifier: Apache-2.0
 package observer
 
 import (
-	"encoding/json"
-	"strings"
-	"sync/atomic"
+	"sync"
 	"time"
 
-	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
 	gossipapi "github.com/hyperledger/fabric/extensions/gossip/api"
 	"github.com/pkg/errors"
-	"github.com/trustbloc/fabric-peer-ext/pkg/common/blockvisitor"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/txn"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/client"
 	"github.com/trustbloc/sidetree-fabric/pkg/common/transienterr"
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/context/doccache"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/lease"
+	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
 var logger = flogging.MustGetLogger("sidetree_observer")
+
+type cacheInvalidatorProvider interface {
+	GetDocumentInvalidator(channelID, namespace string) (doccache.Invalidator, error)
+}
 
 const (
 	defaultMonitorPeriod = 10 * time.Second
@@ -53,9 +55,10 @@ func newMetadata(leaseOwner string, lastBlockProcessed uint64) *Metadata {
 
 // ClientProviders contains the providers for off-ledger, DCAS, and blockchain clients
 type ClientProviders struct {
-	OffLedger  common.OffLedgerClientProvider
-	Blockchain common.BlockchainClientProvider
-	Gossip     common.GossipProvider
+	OffLedger                common.OffLedgerClientProvider
+	Blockchain               common.BlockchainClientProvider
+	Gossip                   common.GossipProvider
+	CacheInvalidatorProvider cacheInvalidatorProvider
 }
 
 type metadataStore interface {
@@ -63,19 +66,23 @@ type metadataStore interface {
 	Put(*Metadata) error
 }
 
+type blockchainProcessor interface {
+	ProcessBlockchain()
+}
+
 // Observer reads blocks from the ledger looking for Sidetree anchor writes and persists the document operations to the document store.
 type Observer struct {
-	leaseProvider  *lease.Provider
-	channelID      string
-	period         time.Duration
-	maxAttempts    int
-	done           chan struct{}
-	blockchain     common.BlockchainClientProvider
-	metadataStore  metadataStore
-	processStarted uint32
-	txnChan        <-chan gossipapi.TxMetadata
-	processChan    chan struct{}
-	pcp            ctxcommon.ProtocolClientProvider
+	leaseProvider            *lease.Provider
+	channelID                string
+	period                   time.Duration
+	done                     chan struct{}
+	metadataStore            metadataStore
+	txnChan                  <-chan gossipapi.TxMetadata
+	processChan              chan struct{}
+	cacheInvalidatorProvider cacheInvalidatorProvider
+	cacheMetadata            Metadata
+	mutex                    sync.RWMutex
+	process                  func()
 }
 
 type peerConfig interface {
@@ -90,23 +97,18 @@ func New(channelID string, peerCfg peerConfig, observerCfg config.Observer, clie
 		period = defaultMonitorPeriod
 	}
 
-	maxAttempts := observerCfg.MaxAttempts
-	if maxAttempts == 0 {
-		maxAttempts = defaultMaxAttempts
+	m := &Observer{
+		channelID:                channelID,
+		period:                   period,
+		metadataStore:            NewMetaDataStore(channelID, peerCfg, observerCfg.MetaDataChaincodeName, clientProviders.OffLedger),
+		leaseProvider:            lease.NewProvider(channelID, clientProviders.Gossip.GetGossipService()),
+		txnChan:                  txnChan,
+		done:                     make(chan struct{}, 1),
+		processChan:              make(chan struct{}),
+		cacheInvalidatorProvider: clientProviders.CacheInvalidatorProvider,
 	}
 
-	m := &Observer{
-		channelID:     channelID,
-		period:        period,
-		maxAttempts:   maxAttempts,
-		blockchain:    clientProviders.Blockchain,
-		metadataStore: NewMetaDataStore(channelID, peerCfg, observerCfg.MetaDataChaincodeName, clientProviders.OffLedger),
-		leaseProvider: lease.NewProvider(channelID, clientProviders.Gossip.GetGossipService()),
-		txnChan:       txnChan,
-		done:          make(chan struct{}, 1),
-		processChan:   make(chan struct{}),
-		pcp:           pcp,
-	}
+	m.process = m.createProcessor(observerCfg, pcp, clientProviders.Blockchain)
 
 	return m
 }
@@ -128,6 +130,49 @@ func (m *Observer) Stop() {
 	m.done <- struct{}{}
 }
 
+func (m *Observer) createProcessor(observerCfg config.Observer, pcp ctxcommon.ProtocolClientProvider, bcp common.BlockchainClientProvider) func() {
+	maxAttempts := observerCfg.MaxAttempts
+	if maxAttempts == 0 {
+		maxAttempts = defaultMaxAttempts
+	}
+
+	var processors []blockchainProcessor
+
+	if isObserver() {
+		processors = append(processors, newProcessor("processor", m.channelID, m.processorBehavior(), maxAttempts, pcp, bcp))
+	}
+
+	if isResolver() {
+		processors = append(processors, newProcessor("cache-invalidator", m.channelID, m.cacheInvalidatorBehavior(), maxAttempts, pcp, bcp))
+	}
+
+	return func() {
+		for _, p := range processors {
+			p.ProcessBlockchain()
+		}
+	}
+}
+
+// processorBehavior persists operations to the store
+func (m *Observer) processorBehavior() *behavior {
+	return &behavior{
+		processTxn:       m.processTxn,
+		getMetadata:      m.getMetadata,
+		putMetadata:      m.putMetadata,
+		changeLeaseOwner: m.changeLeaseOwner,
+	}
+}
+
+// cacheInvalidatorBehavior invalidates the document cache for any updated documents
+func (m *Observer) cacheInvalidatorBehavior() *behavior {
+	return &behavior{
+		processTxn:       m.processTxnForCache,
+		getMetadata:      m.getCacheMetadata,
+		putMetadata:      m.putCacheMetadata,
+		changeLeaseOwner: func(*Metadata, uint64) {}, // no-op
+	}
+}
+
 func (m *Observer) listen() {
 	logger.Infof("[%s] Starting Observer with a period of %s", m.channelID, m.period)
 
@@ -139,8 +184,8 @@ func (m *Observer) listen() {
 		case <-ticker.C:
 			logger.Debugf("[%s] Triggering scheduled processing of Sidetree transactions", m.channelID)
 			m.trigger()
-		case txn := <-m.txnChan:
-			logger.Debugf("[%s] Got notification about a Sidetree transaction in block %d and txnNum %d - triggering processing", m.channelID, txn.BlockNum, txn.TxNum)
+		case txMetadata := <-m.txnChan:
+			logger.Debugf("[%s] Got notification about a Sidetree transaction in block %d and txnNum %d - triggering processing", m.channelID, txMetadata.BlockNum, txMetadata.TxNum)
 			m.trigger()
 		case <-m.done:
 			logger.Infof("[%s] Exiting Observer", m.channelID)
@@ -151,11 +196,6 @@ func (m *Observer) listen() {
 }
 
 func (m *Observer) trigger() {
-	if m.started() {
-		logger.Debugf("[%s] No need to trigger the processor to start since it's already running", m.channelID)
-		return
-	}
-
 	select {
 	case m.processChan <- struct{}{}:
 		logger.Debugf("[%s] Triggered processor for Sidetree transactions", m.channelID)
@@ -173,62 +213,6 @@ func (m *Observer) run() {
 	}
 
 	logger.Infof("[%s] ... stopped listening for triggers", m.channelID)
-}
-
-func (m *Observer) process() {
-	if !m.processorStarting() {
-		logger.Debugf("[%s] Processor already running", m.channelID)
-		return
-	}
-
-	defer m.processorStopped()
-
-	bcInfo, err := m.getBlockchainInfo()
-	if err != nil {
-		logger.Warnf("[%s] Error getting blockchain info: %s", m.channelID, err)
-		return
-	}
-
-	metadata, err := m.getMetadata()
-	if err != nil {
-		logger.Warnf("[%s] Error getting metadata: %s", m.channelID, err)
-		return
-	}
-
-	if ok := m.checkLeaseOwner(metadata); !ok {
-		return
-	}
-
-	toBlockNum := bcInfo.Height - 1
-
-	var fromBlockNum uint64
-	if metadata.LastErrorCode != "" {
-		// Got an error processing this block - need to retry the same block
-		logger.Infof("[%s] Last processing of block:txNum [%d:%d] failed with error code [%s]. Will reprocess block [%d] starting at txNum [%d] - Attempt #%d", m.channelID, metadata.LastBlockProcessed, metadata.LastTxNumProcessed, metadata.LastErrorCode, metadata.LastBlockProcessed, metadata.LastTxNumProcessed, metadata.FailedAttempts+1)
-		fromBlockNum = metadata.LastBlockProcessed
-	} else {
-		// The last block was successfully processed - start at the next block
-		fromBlockNum = metadata.LastBlockProcessed + 1
-		metadata.LastTxNumProcessed = -1
-	}
-
-	if fromBlockNum <= toBlockNum {
-		logger.Debugf("[%s] Processing from block:txNum [%d:%d] to block [%d]", m.channelID, fromBlockNum, metadata.LastTxNumProcessed, toBlockNum)
-	} else {
-		logger.Debugf("[%s] No blocks to process. Last block processed: [%d]", m.channelID, metadata.LastBlockProcessed)
-	}
-
-	for bNum := fromBlockNum; bNum <= toBlockNum; bNum++ {
-		err := m.processBlock(bNum, bNum == toBlockNum, metadata)
-
-		m.putMetadata(metadata)
-
-		if err != nil {
-			logger.Errorf("[%s] Error processing block [%d]: %s", m.channelID, bNum, err)
-
-			return
-		}
-	}
 }
 
 // checkLeaseOwner checks if the existing lease is still valid and returns true if this
@@ -265,173 +249,89 @@ func (m *Observer) checkLeaseOwner(metadata *Metadata) bool {
 	return false
 }
 
-func (m *Observer) processBlock(bNum uint64, changeLeaseOwner bool, metadata *Metadata) error {
-	block, err := m.getBlockByNumber(bNum)
-	if err != nil {
-		return transienterr.New(errors.WithMessagef(err, "error getting block %d", bNum), transienterr.CodeDB)
+func (m *Observer) changeLeaseOwner(metadata *Metadata, blockNum uint64) {
+	metadata.LeaseOwner = m.leaseProvider.CreateLease(blockNum).Owner()
+
+	logger.Debugf("[%s] Done processing blocks. Lease owner for the next block [%d] is [%s]", m.channelID, blockNum, metadata.LeaseOwner)
+}
+
+func (m *Observer) processTxn(sidetreeTxn *txn.SidetreeTxn, pv protocol.Version) error {
+	if err := pv.TransactionProcessor().Process(*sidetreeTxn); err != nil {
+		return errors.WithMessagef(err, "error processing Txn for anchor [%s] in block [%d] and TxNum [%d]", sidetreeTxn.AnchorString, sidetreeTxn.TransactionTime, sidetreeTxn.TransactionNumber)
 	}
-
-	logger.Debugf("[%s] Processing block [%d]", m.channelID, bNum)
-
-	err = blockvisitor.New(m.channelID,
-		blockvisitor.WithWriteHandler(m.writeHandler(metadata)),
-		blockvisitor.WithErrorHandler(m.errorHandler(metadata))).Visit(block, nil)
-	if err != nil {
-		return err
-	}
-
-	if changeLeaseOwner {
-		metadata.LeaseOwner = m.leaseProvider.CreateLease(bNum + 1).Owner()
-
-		logger.Debugf("[%s] Done processing blocks. Lease owner for the next block [%d] is [%s]", m.channelID, bNum+1, metadata.LeaseOwner)
-	}
-
-	metadata.LastBlockProcessed = bNum
-	metadata.LastTxNumProcessed = -1
-	metadata.LastErrorCode = ""
-	metadata.FailedAttempts = 0
 
 	return nil
 }
 
-func (m *Observer) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
-	return func(w *blockvisitor.Write) error {
-		if int64(w.TxNum) < metadata.LastTxNumProcessed {
-			logger.Debugf("[%s] Ignoring write to key [%s] since block:txNum [%d:%d] has already been processed", m.channelID, w.Write.Key, w.BlockNum, w.TxNum)
-			return nil
-		}
+func (m *Observer) processTxnForCache(sidetreeTxn *txn.SidetreeTxn, pv protocol.Version) error {
+	docCache, err := m.cacheInvalidatorProvider.GetDocumentInvalidator(m.channelID, sidetreeTxn.Namespace)
+	if err != nil {
+		logger.Errorf("[%s:%s] Error retrieving document cache invalidator: %s", m.channelID, sidetreeTxn.Namespace, err)
 
-		metadata.LastBlockProcessed = w.BlockNum
-		metadata.LastTxNumProcessed = int64(w.TxNum)
-
-		if !strings.HasPrefix(w.Write.Key, common.AnchorPrefix) {
-			logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", m.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorPrefix)
-
-			return nil
-		}
-
-		var txnInfo common.TxnInfo
-		if err := json.Unmarshal(w.Write.Value, &txnInfo); err != nil {
-			return errors.WithMessagef(err, "unmarshal transaction info error for anchor [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
-		}
-
-		logger.Debugf("[%s] Handling write to anchor [%s] in block [%d] and TxNum [%d] on attempt #%d", m.channelID, w.Write.Value, w.BlockNum, w.TxNum, metadata.FailedAttempts+1)
-
-		sidetreeTxn := txn.SidetreeTxn{
-			TransactionTime:     w.BlockNum,
-			TransactionNumber:   w.TxNum,
-			AnchorString:        txnInfo.AnchorString,
-			Namespace:           txnInfo.Namespace,
-			ProtocolGenesisTime: txnInfo.ProtocolGenesisTime,
-		}
-
-		pv, err := m.pcp.ForNamespace(txnInfo.Namespace)
-		if err != nil {
-			return err
-		}
-
-		pc, err := pv.Get(w.BlockNum)
-		if err != nil {
-			return err
-		}
-
-		if err := pc.TransactionProcessor().Process(sidetreeTxn); err != nil {
-			return errors.WithMessagef(err, "error processing Txn for anchor [%s] in block [%d] and TxNum [%d]", w.Write.Key, w.BlockNum, w.TxNum)
-		}
-
+		// Don't return an error since invalidating the cache is not fatal
 		return nil
 	}
-}
 
-func (m *Observer) errorHandler(metadata *Metadata) blockvisitor.ErrorHandler {
-	return func(err error, ctx *blockvisitor.Context) error {
-		if ctx.Category == blockvisitor.UnmarshalErr {
-			logger.Errorf("[%s] Ignoring persistent error in block:txNum [%d:%d]: %s. Context: %s", m.channelID, ctx.BlockNum, ctx.TxNum, err, ctx)
-
-			metadata.FailedAttempts = 0
-			metadata.LastErrorCode = ""
-
-			return nil
-		}
-
-		if !transienterr.Is(err) {
-			logger.Errorf("[%s] Ignoring persistent error in block:txNum [%d:%d]: %s. Context: %s", m.channelID, ctx.BlockNum, ctx.TxNum, err, ctx)
-
-			metadata.FailedAttempts = 0
-			metadata.LastErrorCode = ""
-
-			return nil
-		}
-
-		code := transienterr.GetCode(err)
-
-		logger.Debugf("[%s] Got error processing block:txNum [%d:%d] after attempt #%d: %s - Code: %s. Context: %s", m.channelID, ctx.BlockNum, ctx.TxNum, metadata.FailedAttempts+1, err, code, ctx)
-
-		if metadata.LastErrorCode == code && metadata.LastTxNumProcessed == int64(ctx.TxNum) {
-			metadata.FailedAttempts++
-
-			if metadata.FailedAttempts > m.maxAttempts {
-				logger.Errorf("[%s] Giving up processing block:txNum [%d:%d] after %d failed attempts on error: %s. Context: %s", m.channelID, ctx.BlockNum, ctx.TxNum, metadata.FailedAttempts+1, err, ctx)
-
-				metadata.FailedAttempts = 0
-				metadata.LastErrorCode = ""
-
-				return nil
-			}
-
-			logger.Warnf("[%s] Got same error as before processing block:txNum [%d:%d]: %s - Code: %s. Increasing failed attempts to %d", m.channelID, ctx.BlockNum, ctx.TxNum, err, code, metadata.FailedAttempts)
-		} else {
-			// Reset FailedAttempts since the error/txNum is different this time
-			metadata.FailedAttempts = 1
-
-			logger.Warnf("[%s] Got new error processing block:txNum [%d:%d]: %s - Code: %s", m.channelID, ctx.BlockNum, ctx.TxNum, err, code)
-		}
-
-		metadata.LastErrorCode = code
-
-		return err
-	}
-}
-
-func (m *Observer) getBlockchainInfo() (*cb.BlockchainInfo, error) {
-	bcClient, err := m.blockchainClient()
+	ops, err := pv.OperationProvider().GetTxnOperations(sidetreeTxn)
 	if err != nil {
-		return nil, err
+		logger.Errorf("[%s:%s] Got error retrieving operations for anchor [%s] for the purpose of updating the document cache: %s", m.channelID, sidetreeTxn.Namespace, sidetreeTxn.AnchorString, sidetreeTxn.TransactionTime, sidetreeTxn.TransactionNumber, err)
+
+		// Don't return an error since invalidating the cache is not fatal
+		return nil
 	}
-	block, err := bcClient.GetBlockchainInfo()
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to get blockchain info")
+
+	for _, op := range ops {
+		logger.Debugf("[%s:%s] Invalidating cached document [%s]", m.channelID, sidetreeTxn.Namespace, op.UniqueSuffix)
+
+		docCache.Invalidate(op.UniqueSuffix)
 	}
-	return block, nil
+
+	return nil
 }
 
-func (m *Observer) getBlockByNumber(bNum uint64) (*cb.Block, error) {
-	bcClient, err := m.blockchainClient()
-	if err != nil {
-		return nil, err
-	}
-	block, err := bcClient.GetBlockByNumber(bNum)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to get block number [%d]", bNum)
-	}
-	return block, nil
-}
-
-func (m *Observer) blockchainClient() (client.Blockchain, error) {
-	return m.blockchain.ForChannel(m.channelID)
-}
-
-func (m *Observer) getMetadata() (*Metadata, error) {
+func (m *Observer) getMetadata() (Metadata, bool, error) {
 	metadata, err := m.metadataStore.Get()
 	if err != nil {
 		if err == errMetaDataNotFound {
-			return newMetadata(m.leaseProvider.CreateLease(1).Owner(), 0), nil
+			metadata = newMetadata(m.leaseProvider.CreateLease(1).Owner(), 0)
+		} else {
+			return Metadata{}, false, err
 		}
-
-		return nil, err
 	}
 
-	return metadata, nil
+	return *metadata, m.checkLeaseOwner(metadata), nil
+}
+
+func (m *Observer) getCacheMetadata() (Metadata, bool, error) {
+	var cacheMetadata Metadata
+
+	m.mutex.RLock()
+	cacheMetadata = m.cacheMetadata
+	m.mutex.RUnlock()
+
+	if cacheMetadata.LastBlockProcessed == 0 {
+		logger.Debugf("[%s] Document cache metadata not found. Loading from database", m.channelID)
+
+		metadata, err := m.metadataStore.Get()
+		if err != nil {
+			if err == errMetaDataNotFound {
+				logger.Debugf("[%s] Metadata not found in database. Creating new cache metadata", m.channelID)
+
+				metadata = newMetadata(m.leaseProvider.CreateLease(1).Owner(), 0)
+			} else {
+				logger.Errorf("[%s] Error retrieving metadata: %s", m.channelID, err)
+
+				// Don't return an error since invalidating the cache is not fatal
+				return cacheMetadata, false, nil
+			}
+		}
+
+		m.putCacheMetadata(metadata)
+
+		cacheMetadata = *metadata
+	}
+
+	return cacheMetadata, true, nil
 }
 
 func (m *Observer) putMetadata(metadata *Metadata) {
@@ -442,14 +342,13 @@ func (m *Observer) putMetadata(metadata *Metadata) {
 	}
 }
 
-func (m *Observer) started() bool {
-	return atomic.LoadUint32(&m.processStarted) == 1
+func (m *Observer) putCacheMetadata(metadata *Metadata) {
+	logger.Debugf("[%s] Updating document cache metadata %+v", m.channelID, metadata)
+
+	m.mutex.Lock()
+	m.cacheMetadata = *metadata
+	m.mutex.Unlock()
 }
 
-func (m *Observer) processorStarting() bool {
-	return atomic.CompareAndSwapUint32(&m.processStarted, 0, 1)
-}
-
-func (m *Observer) processorStopped() {
-	atomic.CompareAndSwapUint32(&m.processStarted, 1, 0)
-}
+var isObserver = func() bool { return role.IsObserver() }
+var isResolver = func() bool { return role.IsResolver() }

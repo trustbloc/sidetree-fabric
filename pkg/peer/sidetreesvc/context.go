@@ -70,7 +70,9 @@ type ContextProviders struct {
 	VersionFactory     protocolVersionFactory
 }
 
-func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg config.DCAS, cfg config.SidetreeService, providers *ContextProviders, opStoreProvider ctxcommon.OperationStoreProvider, tokenProvider tokenProvider) (*context, error) {
+func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg config.DCAS, cfg config.SidetreeService,
+	providers *ContextProviders, opStoreProvider ctxcommon.OperationStoreProvider, tokenProvider tokenProvider,
+	opp cachingOpProcessorProvider) (*context, error) {
 	logger.Debugf("[%s] Creating Sidetree context for [%s]", channelID, handlerCfg.Namespace)
 
 	dcasClient, err := providers.DCASProvider.GetDCASClient(channelID, dcasCfg.ChaincodeName, dcasCfg.Collection)
@@ -97,7 +99,7 @@ func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg con
 		return nil, err
 	}
 
-	restHandlers, err := newRESTHandlers(channelID, handlerCfg, bw, ctx.Protocol(), store, tokenProvider, cfg)
+	restHandlers, err := newRESTHandlers(channelID, handlerCfg, bw, ctx.Protocol(), store, tokenProvider, cfg, opp)
 	if err != nil {
 		return nil, err
 	}

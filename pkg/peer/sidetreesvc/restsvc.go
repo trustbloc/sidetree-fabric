@@ -82,6 +82,10 @@ type tokenProvider interface {
 	SidetreeAPIToken(name string) string
 }
 
+type cachingOpProcessorProvider interface {
+	CreateCachingOperationProcessor(channelID string, cfg sidetreehandler.Config, resolver dochandler.OperationProcessor) dochandler.OperationProcessor
+}
+
 func newRESTHandlers(
 	channelID string,
 	cfg sidetreehandler.Config,
@@ -89,7 +93,8 @@ func newRESTHandlers(
 	pc protocol.Client,
 	opStore processor.OperationStoreClient,
 	tokenProvider tokenProvider,
-	configService config.SidetreeService) (*restHandlers, error) {
+	configService config.SidetreeService,
+	opp cachingOpProcessorProvider) (*restHandlers, error) {
 
 	if !role.IsResolver() && !role.IsBatchWriter() {
 		return &restHandlers{
@@ -116,7 +121,7 @@ func newRESTHandlers(
 		pc,
 		getTransformer(sidetreeCfg),
 		batchWriter,
-		processor.New(channelID+"_"+cfg.Namespace, opStore, pc),
+		opp.CreateCachingOperationProcessor(channelID, cfg, processor.New(channelID+"_"+cfg.Namespace, opStore, pc)),
 	)
 
 	service := newService(cfg.Namespace, apiVersion, cfg.BasePath)

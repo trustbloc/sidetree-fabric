@@ -22,7 +22,7 @@ type observerController struct {
 
 func newObserverController(channelID string, peerConfig peerConfig, observerCfg config.Observer, providers *observer.ClientProviders, txnChan <-chan gossipapi.TxMetadata, pcp protocol.ClientProvider) *observerController {
 	var o *observer.Observer
-	if role.IsObserver() {
+	if role.IsObserver() || role.IsResolver() {
 		o = observer.New(channelID, peerConfig, observerCfg, providers, txnChan, pcp)
 	}
 

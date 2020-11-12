@@ -15,10 +15,12 @@ import (
 	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch"
 	"github.com/trustbloc/sidetree-core-go/pkg/batch/cutter"
+	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/blockchain"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/protocol"
+	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
 // SidetreeContext implements 'Fabric' version of Sidetree node context
@@ -51,13 +53,18 @@ type ledgerProvider interface {
 	GetLedger(cid string) ledger.PeerLedger
 }
 
+type cachingOpProcessorProvider interface {
+	CreateCachingOperationProcessor(channelID string, cfg sidetreehandler.Config, resolver dochandler.OperationProcessor) dochandler.OperationProcessor
+}
+
 // Providers contains the providers required by the SidetreeContext
 type Providers struct {
-	TxnProvider            txnServiceProvider
-	DCASProvider           dcasClientProvider
-	OffLedgerProvider      offLedgerClientProvider
-	OperationQueueProvider operationQueueProvider
-	LedgerProvider         ledgerProvider
+	TxnProvider                txnServiceProvider
+	DCASProvider               dcasClientProvider
+	OffLedgerProvider          offLedgerClientProvider
+	OperationQueueProvider     operationQueueProvider
+	LedgerProvider             ledgerProvider
+	OperationProcessorProvider cachingOpProcessorProvider
 }
 
 // New creates new Sidetree context
