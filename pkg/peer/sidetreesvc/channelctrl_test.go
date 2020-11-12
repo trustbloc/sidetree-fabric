@@ -26,6 +26,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	cfgmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	sidetreectx "github.com/trustbloc/sidetree-fabric/pkg/context"
+	ctxmocks "github.com/trustbloc/sidetree-fabric/pkg/context/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"
 	obmocks "github.com/trustbloc/sidetree-fabric/pkg/observer/mocks"
@@ -172,13 +173,16 @@ func TestChannelController_Update(t *testing.T) {
 	vf := &peermocks.ProtocolVersionFactory{}
 	vf.CreateProtocolVersionReturns(v, nil)
 
+	cacheProvider := &ctxmocks.CachingOpProcessorProvider{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			Providers: &sidetreectx.Providers{
-				DCASProvider:           dcasProvider,
-				OffLedgerProvider:      olProvider,
-				OperationQueueProvider: opQueueProvider,
-				LedgerProvider:         ledgerProvider,
+				DCASProvider:               dcasProvider,
+				OffLedgerProvider:          olProvider,
+				OperationQueueProvider:     opQueueProvider,
+				LedgerProvider:             ledgerProvider,
+				OperationProcessorProvider: cacheProvider,
 			},
 			VersionFactory: vf,
 		},
@@ -385,13 +389,16 @@ func TestChannelController_LoadDCASHandlers(t *testing.T) {
 	}
 	ledgerProvider.GetLedgerReturns(l)
 
+	cacheProvider := &ctxmocks.CachingOpProcessorProvider{}
+
 	providers := &providers{
 		ContextProviders: &ContextProviders{
 			Providers: &sidetreectx.Providers{
-				DCASProvider:           dcasProvider,
-				OffLedgerProvider:      olProvider,
-				OperationQueueProvider: opQueueProvider,
-				LedgerProvider:         ledgerProvider,
+				DCASProvider:               dcasProvider,
+				OffLedgerProvider:          olProvider,
+				OperationQueueProvider:     opQueueProvider,
+				LedgerProvider:             ledgerProvider,
+				OperationProcessorProvider: cacheProvider,
 			},
 		},
 		PeerConfig:        peerConfig,

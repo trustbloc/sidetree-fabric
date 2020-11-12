@@ -25,4 +25,6 @@ type Config struct {
 	Aliases []string
 	// BasePath is the base context path of the REST endpoint
 	BasePath string
+	// DocumentCacheSize is the maximum number of documents to hold in the cache. If 0 then the default cache size is used.
+	DocumentCacheSize uint
 }

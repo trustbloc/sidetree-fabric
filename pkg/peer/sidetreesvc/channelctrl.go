@@ -216,7 +216,9 @@ func (c *channelController) loadNewContexts(handlers []sidetreehandler.Config, d
 	var contexts []*context
 
 	for _, handlerCfg := range handlers {
-		ctx, err := newContext(c.channelID, handlerCfg, dcasCfg, c.sidetreeCfgService, c.ContextProviders, storeProvider, c.RESTConfig)
+		ctx, err := newContext(
+			c.channelID, handlerCfg, dcasCfg, c.sidetreeCfgService, c.ContextProviders,
+			storeProvider, c.RESTConfig, c.OperationProcessorProvider)
 		if err != nil {
 			return nil, err
 		}
