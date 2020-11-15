@@ -49,12 +49,12 @@ func Validate(p *protocol.Protocol) error {
 func verifyBatchSizesV0(p *protocol.Protocol) error {
 	const errMsg = "field '%s' must contain a value greater than 0"
 
-	if p.MaxAnchorFileSize == 0 {
-		return errors.Errorf(errMsg, "MaxAnchorFileSize")
+	if p.MaxCoreIndexFileSize == 0 {
+		return errors.Errorf(errMsg, "MaxCoreIndexFileSize")
 	}
 
-	if p.MaxMapFileSize == 0 {
-		return errors.Errorf(errMsg, "MaxMapFileSize")
+	if p.MaxProvisionalIndexFileSize == 0 {
+		return errors.Errorf(errMsg, "MaxProvisionalIndexFileSize")
 	}
 
 	if p.MaxChunkFileSize == 0 {

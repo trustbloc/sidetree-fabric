@@ -210,9 +210,9 @@ Feature:
     And the JSON path "multihashAlgorithm" of the numeric response equals "18"
     And the JSON path "maxOperationCount" of the numeric response equals "30"
     And the JSON path "maxOperationSize" of the numeric response equals "200000"
-    And the JSON path "maxAnchorFileSize" of the numeric response equals "1000000"
+    And the JSON path "maxCoreIndexFileSize" of the numeric response equals "1000000"
     And the JSON path "maxProofFileSize" of the numeric response equals "1000000"
-    And the JSON path "maxMapFileSize" of the numeric response equals "1000000"
+    And the JSON path "maxProvisionalIndexFileSize" of the numeric response equals "1000000"
     And the JSON path "maxChunkFileSize" of the numeric response equals "10000000"
     And the JSON path "compressionAlgorithm" of the response equals "GZIP"
     And the JSON path "patches" of the array response is not empty
@@ -226,9 +226,9 @@ Feature:
     And the JSON path "multihashAlgorithm" of the numeric response equals "18"
     And the JSON path "maxOperationCount" of the numeric response equals "50"
     And the JSON path "maxOperationSize" of the numeric response equals "300000"
-    And the JSON path "maxAnchorFileSize" of the numeric response equals "2000000"
+    And the JSON path "maxCoreIndexFileSize" of the numeric response equals "2000000"
     And the JSON path "maxProofFileSize" of the numeric response equals "2000000"
-    And the JSON path "maxMapFileSize" of the numeric response equals "2000000"
+    And the JSON path "maxProvisionalIndexFileSize" of the numeric response equals "2000000"
     And the JSON path "maxChunkFileSize" of the numeric response equals "20000000"
     And the JSON path "compressionAlgorithm" of the response equals "GZIP"
     And the JSON path "patches" of the array response is not empty

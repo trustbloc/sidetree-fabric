@@ -16,103 +16,103 @@ import (
 
 var (
 	p = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxProofFileSize:     1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:              []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProofFileSize:            1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                     []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
 	}
 
 	protocolInvalidPatches = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxProofFileSize:     1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProofFileSize:            1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
 	}
 
 	protocolInvalidMulithashAlgo = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   2777,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxProofFileSize:     1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:              []string{"ietf-json-patch"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          2777,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProofFileSize:            1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                     []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxOperationCount = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationSize:     2000,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxProofFileSize:     1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:              []string{"ietf-json-patch"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProofFileSize:            1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                     []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxOperationSize = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxProofFileSize:     1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:              []string{"ietf-json-patch"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProofFileSize:            1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                     []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxAnchorSize = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxProofFileSize:     1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:              []string{"ietf-json-patch"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxProofFileSize:            1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                     []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxProofSize = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:              []string{"ietf-json-patch"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                     []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidMaxMapSize = &protocol.Protocol{
@@ -121,7 +121,7 @@ var (
 		MaxOperationSize:     2000,
 		MaxOperationCount:    10,
 		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
+		MaxCoreIndexFileSize: 1000000,
 		MaxProofFileSize:     1000000,
 		MaxChunkFileSize:     10000000,
 		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
@@ -130,53 +130,53 @@ var (
 	}
 
 	protocolInvalidMaxChunkSize = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxProofFileSize:     1000000,
-		MaxMapFileSize:       1000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:              []string{"ietf-json-patch"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProofFileSize:            1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                     []string{"ietf-json-patch"},
 	}
 
 	protocolInvalidCompressionAlgo = &protocol.Protocol{
-		GenesisTime:         500000,
-		MultihashAlgorithm:  18,
-		MaxOperationSize:    2000,
-		MaxOperationCount:   10,
-		MaxAnchorFileSize:   1000000,
-		MaxMapFileSize:      1000000,
-		MaxChunkFileSize:    10000000,
-		SignatureAlgorithms: []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:       []string{"Ed25519", "P-256", "secp256k1"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		MaxCoreIndexFileSize:        1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
 	}
 
 	protocolInvalidSignatureAlgorithms = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		KeyAlgorithms:        []string{"Ed25519", "P-256", "secp256k1"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
 	}
 
 	protocolInvalidKeyAlgorithms = &protocol.Protocol{
-		GenesisTime:          500000,
-		MultihashAlgorithm:   18,
-		MaxOperationSize:     2000,
-		MaxOperationCount:    10,
-		CompressionAlgorithm: "GZIP",
-		MaxAnchorFileSize:    1000000,
-		MaxMapFileSize:       1000000,
-		MaxChunkFileSize:     10000000,
-		SignatureAlgorithms:  []string{"EdDSA", "ES256", "ES256K"},
+		GenesisTime:                 500000,
+		MultihashAlgorithm:          18,
+		MaxOperationSize:            2000,
+		MaxOperationCount:           10,
+		CompressionAlgorithm:        "GZIP",
+		MaxCoreIndexFileSize:        1000000,
+		MaxProvisionalIndexFileSize: 1000000,
+		MaxChunkFileSize:            10000000,
+		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
 	}
 )
 
@@ -203,10 +203,10 @@ func TestValidator_Validate(t *testing.T) {
 		require.Contains(t, err.Error(), "field 'MaxOperationSize' must contain a value greater than 0")
 	})
 
-	t.Run("Invalid MaxAnchorFileSize -> error", func(t *testing.T) {
+	t.Run("Invalid MaxCoreIndexFileSize -> error", func(t *testing.T) {
 		err := Validate(protocolInvalidMaxAnchorSize)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "field 'MaxAnchorFileSize' must contain a value greater than 0")
+		require.Contains(t, err.Error(), "field 'MaxCoreIndexFileSize' must contain a value greater than 0")
 	})
 
 	t.Run("Invalid MaxProofFileSize -> error", func(t *testing.T) {
@@ -215,10 +215,10 @@ func TestValidator_Validate(t *testing.T) {
 		require.Contains(t, err.Error(), "field 'MaxProofFileSize' must contain a value greater than 0")
 	})
 
-	t.Run("Invalid MaxMapFileSize -> error", func(t *testing.T) {
+	t.Run("Invalid MaxProvisionalIndexFileSize -> error", func(t *testing.T) {
 		err := Validate(protocolInvalidMaxMapSize)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "field 'MaxMapFileSize' must contain a value greater than 0")
+		require.Contains(t, err.Error(), "field 'MaxProvisionalIndexFileSize' must contain a value greater than 0")
 	})
 
 	t.Run("Invalid MaxChunkFileSize -> error", func(t *testing.T) {
