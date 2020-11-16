@@ -161,9 +161,9 @@ Feature:
     And the JSON path "multihashAlgorithm" of the numeric response equals "18"
     And the JSON path "maxOperationCount" of the numeric response equals "30"
     And the JSON path "maxOperationSize" of the numeric response equals "200000"
-    And the JSON path "maxAnchorFileSize" of the numeric response equals "1000000"
+    And the JSON path "maxCoreIndexFileSize" of the numeric response equals "1000000"
     And the JSON path "maxProofFileSize" of the numeric response equals "1000000"
-    And the JSON path "maxMapFileSize" of the numeric response equals "1000000"
+    And the JSON path "maxProvisionalIndexFileSize" of the numeric response equals "1000000"
     And the JSON path "maxChunkFileSize" of the numeric response equals "10000000"
     And the JSON path "compressionAlgorithm" of the response equals "GZIP"
     And the JSON path "patches" of the array response is not empty
