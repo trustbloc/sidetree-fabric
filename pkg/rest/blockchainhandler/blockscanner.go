@@ -84,7 +84,7 @@ func (h *txnBlockScanner) scan() ([]Transaction, bool, error) {
 
 func (h *txnBlockScanner) handleWrite(w *blockvisitor.Write) error {
 	if !strings.HasPrefix(w.Write.Key, common.AnchorPrefix) {
-		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", h.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorPrefix)
+		logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor string prefix [%s]", h.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorPrefix)
 
 		return nil
 	}

@@ -105,7 +105,7 @@ Feature:
     And the JSON path "transactions.9.transactionTimeHash" of the response is saved to variable "timeHash_9"
     And the JSON path "transactions.9.transactionNumber" of the numeric response is saved to variable "txnNum_9"
     And the JSON path "transactions.9.anchorString" of the response is saved to variable "anchor_string_9"
-    And anchor address is parsed from anchor string "anchor_string_9" and saved to variable "anchor_address_9"
+    And core index file URI is parsed from anchor string "anchor_string_9" and saved to variable "core_index_uri_9"
 
     # Get more transactions from where we left off
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/transactions?since=${txnNum_9}&transaction-time-hash=${timeHash_9}"
@@ -116,7 +116,7 @@ Feature:
     And the JSON path "transactions" of the raw response is saved to variable "transactions"
 
     # Ensure that the anchor hash resolves to a valid value stored in DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${anchor_address_9}?max-size=1000000"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${core_index_uri_9}?max-size=1000000"
     And response is decompressed using "GZIP"
     And the JSON path "provisionalIndexFileUri" of the response is saved to variable "mapFileURI"
 
@@ -147,7 +147,7 @@ Feature:
     Given variable "invalidTransactions" is assigned the JSON value '[{"transactionNumber":3,"transactionTime":10,"transactionTimeHash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
     When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/first-valid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
 
-    # Retrieve the anchor file from the transaction time in transaction 0 above
+    # Retrieve the core index file from the transaction time in transaction 0 above
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks?from-time=${time_0}&max-blocks=2"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the response equals "${time_0}"
@@ -155,9 +155,9 @@ Feature:
     And the JSON path "1.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.1.rwset.writes.0.value" of the response is saved to variable "txn-info"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${txn-info}" is decoded and saved to variable "url-encoded-txn-info"
-    And anchor address is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-anchor-address"
-    # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
+    And core index file URI is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-core-index-uri"
+    # Retrieve the core index file file from DCAS
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-core-index-uri}?max-size=1000000"
     And response is decompressed using "GZIP"
     Then the JSON path "provisionalIndexFileUri" of the response is not empty
 
@@ -167,26 +167,26 @@ Feature:
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${url-encoded-previous-hash}"
     And the JSON path "0.header.number" of the response equals "${time_0}"
 
-    # Retrieve the anchor file from the current block hash
+    # Retrieve the core index file from the current block hash
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${latest-hash}"
     Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.1.rwset.writes.0.value" of the response is saved to variable "txn-info"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${txn-info}" is decoded and saved to variable "url-encoded-txn-info"
-    And anchor address is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-anchor-address"
+    And core index file URI is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-core-index-uri"
 
-    # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
+    # Retrieve the core index file from DCAS
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-core-index-uri}?max-size=1000000"
     And response is decompressed using "GZIP"
     Then the JSON path "provisionalIndexFileUri" of the response is not empty
 
-    # Retrieve the anchor file from the previous block hash
+    # Retrieve the core index file from the previous block hash
     When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/blockchain/blocks/${latest-previous-hash}"
     Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.1.rwset.writes.0.value" of the response is saved to variable "txn-info"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${txn-info}" is decoded and saved to variable "url-encoded-txn-info"
-    And anchor address is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-anchor-address"
-    # Retrieve the anchor file from DCAS
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-anchor-address}?max-size=1000000"
+    And core index file URI is parsed from transaction info "url-encoded-txn-info" and saved to variable "url-encoded-core-index-uri"
+    # Retrieve the core index file from DCAS
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${url-encoded-core-index-uri}?max-size=1000000"
     And response is decompressed using "GZIP"
     Then the JSON path "provisionalIndexFileUri" of the response is not empty
 

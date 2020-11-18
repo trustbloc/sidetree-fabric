@@ -126,7 +126,7 @@ func (d *FileHandlerSteps) uploadFile(url, path, contentType string) error {
 }
 
 func (d *httpSteps) httpGetWithRetryOnNotFound(url string) error {
-	return d.httpGetWithRetry(url, 20, http.StatusNotFound)
+	return d.httpGetWithRetry(url, 30, http.StatusNotFound)
 }
 
 func (d *FileHandlerSteps) getCreateRequest(doc []byte) ([]byte, error) {

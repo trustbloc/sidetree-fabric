@@ -163,7 +163,7 @@ func (p *processor) writeHandler(metadata *Metadata) blockvisitor.WriteHandler {
 		metadata.LastTxNumProcessed = int64(w.TxNum)
 
 		if !strings.HasPrefix(w.Write.Key, common.AnchorPrefix) {
-			logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor address prefix [%s]", p.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorPrefix)
+			logger.Debugf("[%s] Ignoring write to namespace [%s] in block [%d] and TxNum [%d] since the key doesn't have the anchor string prefix [%s]", p.channelID, w.Namespace, w.BlockNum, w.TxNum, common.AnchorPrefix)
 
 			return nil
 		}

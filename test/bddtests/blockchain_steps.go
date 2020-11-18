@@ -94,7 +94,7 @@ func (d *BlockchainSteps) hashOfBase64URLEncodedValueEquals(base64URLEncodedValu
 	return nil
 }
 
-func (d *BlockchainSteps) getAnchorAddressFromTxnInfo(txInfoVar, anchorAddressVar string) error {
+func (d *BlockchainSteps) getCoreIndexURIFromTxnInfo(txInfoVar, coreIndexURIVar string) error {
 	jsonTxn, ok := bddtests.GetVar(txInfoVar)
 	if !ok {
 		return fmt.Errorf("var[%s] not set", txInfoVar)
@@ -110,14 +110,14 @@ func (d *BlockchainSteps) getAnchorAddressFromTxnInfo(txInfoVar, anchorAddressVa
 		return err
 	}
 
-	logger.Infof("Saving anchor address [%s] to variable [%s]", ad.AnchorAddress, anchorAddressVar)
+	logger.Infof("Saving core index file URI [%s] to variable [%s]", ad.CoreIndexFileURI, coreIndexURIVar)
 
-	bddtests.SetVar(anchorAddressVar, ad.AnchorAddress)
+	bddtests.SetVar(coreIndexURIVar, ad.CoreIndexFileURI)
 
 	return nil
 }
 
-func (d *BlockchainSteps) getAnchorAddress(anchorStringVar, anchorAddressVar string) error {
+func (d *BlockchainSteps) getCoreIndexURI(anchorStringVar, coreIndexURIVar string) error {
 	anchorString, ok := bddtests.GetVar(anchorStringVar)
 	if !ok {
 		return fmt.Errorf("var[%s] not set", anchorStringVar)
@@ -128,9 +128,9 @@ func (d *BlockchainSteps) getAnchorAddress(anchorStringVar, anchorAddressVar str
 		return err
 	}
 
-	logger.Infof("Saving anchor address [%s] to variable [%s]", ad.AnchorAddress, anchorAddressVar)
+	logger.Infof("Saving core index file URI [%s] to variable [%s]", ad.CoreIndexFileURI, coreIndexURIVar)
 
-	bddtests.SetVar(anchorAddressVar, ad.AnchorAddress)
+	bddtests.SetVar(coreIndexURIVar, ad.CoreIndexFileURI)
 
 	return nil
 }
@@ -151,8 +151,8 @@ func (d *BlockchainSteps) decompressResponse(alg string) error {
 // RegisterSteps registers did sidetree steps
 func (d *BlockchainSteps) RegisterSteps(s *godog.Suite) {
 	s.Step(`^response is decompressed using "([^"]*)"$`, d.decompressResponse)
-	s.Step(`^anchor address is parsed from transaction info "([^"]*)" and saved to variable "([^"]*)"$`, d.getAnchorAddressFromTxnInfo)
-	s.Step(`^anchor address is parsed from anchor string "([^"]*)" and saved to variable "([^"]*)"$`, d.getAnchorAddress)
+	s.Step(`^core index file URI is parsed from transaction info "([^"]*)" and saved to variable "([^"]*)"$`, d.getCoreIndexURIFromTxnInfo)
+	s.Step(`^core index file URI is parsed from anchor string "([^"]*)" and saved to variable "([^"]*)"$`, d.getCoreIndexURI)
 	s.Step(`^the hash of the base64-encoded value "([^"]*)" equals "([^"]*)"$`, d.hashOfBase64EncodedValueEquals)
 	s.Step(`^the hash of the base64URL-encoded value "([^"]*)" equals "([^"]*)"$`, d.hashOfBase64URLEncodedValueEquals)
 }

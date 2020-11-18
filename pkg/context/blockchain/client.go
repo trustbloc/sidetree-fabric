@@ -66,7 +66,7 @@ func (c *Client) WriteAnchor(anchor string, protocolGenesisTime uint64) error {
 		Args:        [][]byte{[]byte(writeAnchorFcn), []byte(anchor), txnInfoBytes},
 	})
 	if err != nil {
-		return transienterr.New(errors.Wrap(err, "failed to store anchor file address"), transienterr.CodeBlockchain)
+		return transienterr.New(errors.Wrap(err, "failed to store anchor string"), transienterr.CodeBlockchain)
 	}
 
 	return nil
