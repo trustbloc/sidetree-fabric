@@ -47,7 +47,7 @@ const (
 	peer3 = "peer3.org1.com"
 
 	txID1          = "tx1"
-	anchor1        = "anchor1"
+	coreIndexURI   = "coreIndexURI"
 	namespace      = "did:sidetree"
 	monitorPeriod  = 50 * time.Millisecond
 	sleepTime      = 200 * time.Millisecond
@@ -249,7 +249,7 @@ func TestObserver_Error(t *testing.T) {
 	}
 
 	ad := txnprovider.AnchorData{
-		AnchorAddress:      anchor1,
+		CoreIndexFileURI:   coreIndexURI,
 		NumberOfOperations: 1,
 	}
 
@@ -547,7 +547,7 @@ func newMockClients(t *testing.T) *mockClients {
 
 	const numOfOps = 2
 	ad := &txnprovider.AnchorData{
-		AnchorAddress:      anchor1,
+		CoreIndexFileURI:   coreIndexURI,
 		NumberOfOperations: numOfOps,
 	}
 

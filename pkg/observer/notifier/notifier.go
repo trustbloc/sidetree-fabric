@@ -28,7 +28,7 @@ type blockPublisherProvider interface {
 	ForChannel(channelID string) gossipapi.BlockPublisher
 }
 
-// Notifier receives anchor file 'write' events and sends them to a Go channel.
+// Notifier receives anchor string 'write' events and sends them to a Go channel.
 type Notifier struct {
 	channelID string
 	publisher blockPublisher
@@ -55,7 +55,7 @@ func (n *Notifier) handleWrite(txMetadata gossipapi.TxMetadata, namespace string
 		return nil
 	}
 
-	logger.Debugf("[%s] Found anchor address key[%s], value [%s] in transaction - Block %d, TxnNum %d", n.channelID, kvWrite.Key, string(kvWrite.Value), txMetadata.BlockNum, txMetadata.TxNum)
+	logger.Debugf("[%s] Found anchor string key[%s], value [%s] in transaction - Block %d, TxnNum %d", n.channelID, kvWrite.Key, string(kvWrite.Value), txMetadata.BlockNum, txMetadata.TxNum)
 
 	// If the channel buffer gets full, reject the event since blocking the BlockPublisher can have serious consequences.
 	// No worries, since the block will be processed at a later time.

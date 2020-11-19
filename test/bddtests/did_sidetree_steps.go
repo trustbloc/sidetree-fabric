@@ -245,7 +245,7 @@ func (d *DIDSideSteps) resolveDIDDocument(url string) error {
 
 	logger.Infof("Resolving DID document %s from %s", documentHash, url)
 
-	return d.httpGetWithRetry(url+"/"+documentHash, 20, http.StatusNotFound)
+	return d.httpGetWithRetry(url+"/"+documentHash, 30, http.StatusNotFound)
 }
 
 func (d *DIDSideSteps) resolveDIDDocumentWithAlias(url, alias string) error {
@@ -258,7 +258,7 @@ func (d *DIDSideSteps) resolveDIDDocumentWithAlias(url, alias string) error {
 
 	logger.Infof("Resolving DID document %s from %s", did, url)
 
-	return d.httpGetWithRetry(url+"/"+did, 20, http.StatusNotFound)
+	return d.httpGetWithRetry(url+"/"+did, 30, http.StatusNotFound)
 }
 
 func (d *DIDSideSteps) deactivateDIDDocument(url string) error {
@@ -663,7 +663,7 @@ func (d *DIDSideSteps) verifyDIDDocuments(strURLs string) error {
 func (d *DIDSideSteps) verifyDID(url, did string) error {
 	logger.Infof("Verifying DID %s from %s", did, url)
 
-	err := d.httpGetWithRetry(url+"/"+did, 20, http.StatusNotFound)
+	err := d.httpGetWithRetry(url+"/"+did, 30, http.StatusNotFound)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to resolve DID [%s]", did)
 	}
