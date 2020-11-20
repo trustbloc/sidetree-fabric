@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package sidetreehandler
 
 import (
+	"time"
+
 	"github.com/trustbloc/sidetree-fabric/pkg/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/authhandler"
 )
@@ -27,4 +29,6 @@ type Config struct {
 	BasePath string
 	// DocumentCacheSize is the maximum number of documents to hold in the cache. If 0 then the default cache size is used.
 	DocumentCacheSize uint
+	// DocumentExpiry returns the expiration time of a cached document. If zero then the document never expires.
+	DocumentExpiry time.Duration
 }

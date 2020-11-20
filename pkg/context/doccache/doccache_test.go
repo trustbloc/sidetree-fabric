@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
@@ -19,6 +20,7 @@ import (
 )
 
 //go:generate counterfeiter -o ./mocks/operationprocessor.gen.go --fake-name OperationProcessor github.com/trustbloc/sidetree-core-go/pkg/dochandler.OperationProcessor
+//go:generate counterfeiter -o ./mocks/cache.gen.go --fake-name Cache . gCache
 
 const (
 	channel1 = "channel1"
@@ -63,7 +65,71 @@ func TestDocumentCache(t *testing.T) {
 
 	resolver.ResolveReturnsOnCall(0, result1, nil)
 	resolver.ResolveReturnsOnCall(1, nil, errNotFound)
+	resolver.ResolveReturnsOnCall(2, result1, nil)
+	resolver.ResolveReturnsOnCall(3, result2, nil)
+
+	c := newCache(channel1, cfg, resolver)
+	require.NotNil(t, c)
+
+	r, err := c.Resolve(docID1)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	require.Equal(t, "key1", r.Document["key"])
+
+	// Resolve with the same key again
+	r, err = c.Resolve(docID1)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	require.Equal(t, "key1", r.Document["key"])
+
+	r, err = c.Resolve(docID2)
+	require.EqualError(t, err, errNotFound.Error())
+	require.Nil(t, r)
+
+	c.Invalidate(docID1)
+	c.Invalidate(docID2)
+
+	// Resolve should return the stale result since it hasn't yet been updated in the store
+	r, err = c.Resolve(docID1)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	require.Equal(t, "key1", r.Document["key"])
+
+	// Resolve should return the new result
+	r, err = c.Resolve(docID1)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	require.Equal(t, "key2", r.Document["key"])
+
+	time.Sleep(300 * time.Millisecond)
+
+	r, err = c.Resolve(docID1)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	require.Equal(t, "key2", r.Document["key"])
+
+	require.Equal(t, 4, resolver.ResolveCallCount())
+}
+
+func TestDocumentCacheWithExpiry(t *testing.T) {
+	cfg := sidetreehandler.Config{Namespace: ns1, DocumentExpiry: 200 * time.Millisecond}
+	resolver := &mocks.OperationProcessor{}
+
+	doc1 := make(document.Document)
+	doc1["key"] = "key1"
+
+	doc2 := make(document.Document)
+	doc2["key"] = "key2"
+
+	errNotFound := fmt.Errorf("not found")
+
+	result1 := &document.ResolutionResult{Document: doc1}
+	result2 := &document.ResolutionResult{Document: doc2}
+
+	resolver.ResolveReturnsOnCall(0, result1, nil)
+	resolver.ResolveReturnsOnCall(1, nil, errNotFound)
 	resolver.ResolveReturnsOnCall(2, result2, nil)
+	resolver.ResolveReturnsOnCall(3, result2, nil)
 
 	c := newCache(channel1, cfg, resolver)
 	require.NotNil(t, c)
@@ -90,6 +156,15 @@ func TestDocumentCache(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	require.Equal(t, "key2", r.Document["key"])
+
+	time.Sleep(300 * time.Millisecond)
+
+	r, err = c.Resolve(docID1)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	require.Equal(t, "key2", r.Document["key"])
+
+	require.Equal(t, 4, resolver.ResolveCallCount())
 }
 
 func TestDocumentCacheError(t *testing.T) {
@@ -118,6 +193,68 @@ func TestDocumentCacheError(t *testing.T) {
 		errExpected := fmt.Errorf("unmarshal error")
 		c.unmarshal = func([]byte, interface{}) error { return errExpected }
 		defer func() { c.unmarshal = json.Unmarshal }()
+
+		r, err := c.Resolve(docID1)
+		require.EqualError(t, err, errExpected.Error())
+		require.Nil(t, r)
+	})
+
+	t.Run("Cache Set error", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected Set error")
+		cache := &mocks.Cache{}
+		cache.GetReturns(&cacheValue{stale: true}, nil)
+		cache.SetReturns(errExpected)
+
+		restoreCache := c.cache
+		c.cache = cache
+		defer func() { c.cache = restoreCache }()
+
+		r, err := c.Resolve(docID1)
+		require.EqualError(t, err, errExpected.Error())
+		require.Nil(t, r)
+	})
+
+	t.Run("Cache Set error on Invalidate", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected Set error")
+		cache := &mocks.Cache{}
+		cache.HasReturns(true)
+		cache.GetReturns(&cacheValue{stale: true}, nil)
+		cache.SetReturns(errExpected)
+
+		restoreCache := c.cache
+		c.cache = cache
+		defer func() { c.cache = restoreCache }()
+
+		require.NotPanics(t, func() { c.Invalidate(docID1) })
+	})
+
+	t.Run("Cache Get error on Invalidate", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected Get error")
+		cache := &mocks.Cache{}
+		cache.HasReturns(true)
+		cache.GetReturns(&cacheValue{stale: true}, errExpected)
+
+		restoreCache := c.cache
+		c.cache = cache
+		defer func() { c.cache = restoreCache }()
+
+		require.NotPanics(t, func() { c.Invalidate(docID1) })
+	})
+
+	t.Run("Cache Get error on loadAndUpdate", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected Get error")
+
+		resolver.ResolveReturns(nil, errExpected)
+		defer resolver.ResolveReturns(&document.ResolutionResult{Document: doc}, nil)
+
+		cache := &mocks.Cache{}
+		cache.HasReturns(true)
+		cache.GetReturnsOnCall(0, &cacheValue{stale: true}, nil)
+		cache.GetReturnsOnCall(1, nil, errExpected)
+
+		restoreCache := c.cache
+		c.cache = cache
+		defer func() { c.cache = restoreCache }()
 
 		r, err := c.Resolve(docID1)
 		require.EqualError(t, err, errExpected.Error())

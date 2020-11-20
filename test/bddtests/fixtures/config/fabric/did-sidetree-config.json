@@ -6,5 +6,6 @@
     "ReadTokens": ["did_r","did_w"],
     "WriteTokens": ["did_w"]
   },
-  "DocumentCacheSize": 10000
+  "DocumentCacheSize": 10000,
+  "DocumentExpiry": "5m"
 }
