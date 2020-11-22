@@ -60,7 +60,7 @@ type blockchainClientProvider interface {
 }
 
 type protocolVersionFactory interface {
-	CreateProtocolVersion(version string, p protocolApi.Protocol, casClient casApi.Client, opStore ctxcommon.OperationStore, docType common.DocumentType) (protocolApi.Version, error)
+	CreateProtocolVersion(version string, p protocolApi.Protocol, casClient casApi.Client, opStore ctxcommon.OperationStore, docType common.DocumentType, sidetreeCfg config.Sidetree) (protocolApi.Version, error)
 }
 
 // ContextProviders defines the providers required by the context
@@ -127,9 +127,14 @@ func newSidetreeContext(channelID, namespace string, cfg config.SidetreeService,
 		return nil, err
 	}
 
+	sidetreeCfg, err := cfg.LoadSidetree(namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	var protocolVersions []protocolApi.Version
 	for version, p := range protocols {
-		pv, err := providers.VersionFactory.CreateProtocolVersion(version, p, casClient, opStore, docType)
+		pv, err := providers.VersionFactory.CreateProtocolVersion(version, p, casClient, opStore, docType, sidetreeCfg)
 		if err != nil {
 			// This may be a case where support for a protocol version has been removed but the protocol is still in the ledger config.
 			// Log an error but continue processing other protocol versions.

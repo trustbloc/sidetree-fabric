@@ -22,6 +22,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	vcommon "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/common"
 	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/validator"
@@ -37,7 +38,7 @@ func New() *Factory {
 }
 
 // Create creates a new protocol version
-func (v *Factory) Create(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType) (protocol.Version, error) {
+func (v *Factory) Create(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType, sidetreeCfg config.Sidetree) (protocol.Version, error) {
 	parser := operationparser.New(p)
 	cp := compression.New(compression.WithDefaultAlgorithms())
 	opp := txnprovider.NewOperationProvider(p, parser, casClient, cp)
@@ -52,7 +53,7 @@ func (v *Factory) Create(version string, p protocol.Protocol, casClient cas.Clie
 		},
 	)
 
-	dv, dt, err := createDocumentProviders(docType, opStore)
+	dv, dt, err := createDocumentProviders(docType, opStore, sidetreeCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -71,14 +72,12 @@ func (v *Factory) Create(version string, p protocol.Protocol, casClient cas.Clie
 	}, nil
 }
 
-func createDocumentProviders(docType common.DocumentType, opStore ctxcommon.OperationStore) (protocol.DocumentValidator, protocol.DocumentTransformer, error) {
+func createDocumentProviders(docType common.DocumentType, opStore ctxcommon.OperationStore, sidetreeCfg config.Sidetree) (protocol.DocumentValidator, protocol.DocumentTransformer, error) {
 	switch docType {
 	case common.FileIndexType:
 		return validator.NewFileIdxValidator(opStore), doctransformer.New(), nil
 	case common.DIDDocType:
-		// TODO: Enable context configuration (currently not used - issue-480)
-		// didtransformer.New(didtransformer.WithMethodContext(cfg.MethodContext))
-		return didvalidator.New(opStore), didtransformer.New(), nil
+		return didvalidator.New(opStore), didtransformer.New(didtransformer.WithMethodContext(sidetreeCfg.MethodContext), didtransformer.WithBase(sidetreeCfg.EnableBase)), nil
 	default:
 		return nil, nil, fmt.Errorf("unsupported document type: [%s]", docType)
 	}
