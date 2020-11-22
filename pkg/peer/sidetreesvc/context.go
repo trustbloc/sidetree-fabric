@@ -99,7 +99,7 @@ func newContext(channelID string, handlerCfg sidetreehandler.Config, dcasCfg con
 		return nil, err
 	}
 
-	restHandlers, err := newRESTHandlers(channelID, handlerCfg, bw, ctx.Protocol(), store, tokenProvider, cfg, opp)
+	restHandlers, err := newRESTHandlers(channelID, handlerCfg, bw, ctx.Protocol(), store, tokenProvider, opp)
 	if err != nil {
 		return nil, err
 	}

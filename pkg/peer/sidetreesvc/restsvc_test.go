@@ -15,8 +15,6 @@ import (
 
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 
-	"github.com/trustbloc/sidetree-fabric/pkg/config"
-	configmocks "github.com/trustbloc/sidetree-fabric/pkg/config/mocks"
 	ctxmocks "github.com/trustbloc/sidetree-fabric/pkg/context/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
@@ -74,7 +72,6 @@ func TestRESTHandlers(t *testing.T) {
 	pc := &mocks.ProtocolClient{}
 	os := &mocks.OperationStore{}
 	restCfg := &peermocks.RestConfig{}
-	sidetreeCfg := &configmocks.SidetreeConfigService{}
 	cacheProvider := &ctxmocks.CachingOpProcessorProvider{}
 
 	t.Run("Resolver and batch-writer role -> not empty", func(t *testing.T) {
@@ -86,7 +83,7 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pc, os, restCfg, sidetreeCfg, cacheProvider)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pc, os, restCfg, cacheProvider)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.NotNil(t, rh.service)
@@ -101,28 +98,9 @@ func TestRESTHandlers(t *testing.T) {
 			extroles.SetRoles(nil)
 		}()
 
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pc, os, restCfg, sidetreeCfg, cacheProvider)
+		rh, err := newRESTHandlers(channel1, nsCfg, bw, pc, os, restCfg, cacheProvider)
 		require.NoError(t, err)
 		require.NotNil(t, rh)
 		require.Nil(t, rh.service)
-	})
-
-	t.Run("error - sidetree config service error", func(t *testing.T) {
-		rolesValue := make(map[extroles.Role]struct{})
-		rolesValue[role.Resolver] = struct{}{}
-		rolesValue[role.BatchWriter] = struct{}{}
-		extroles.SetRoles(rolesValue)
-		defer func() {
-			extroles.SetRoles(nil)
-		}()
-
-		errExpected := errors.New("injected config service error")
-		cfgService := &configmocks.SidetreeConfigService{}
-		cfgService.LoadSidetreeReturns(config.Sidetree{}, errExpected)
-
-		rh, err := newRESTHandlers(channel1, nsCfg, bw, pc, os, restCfg, cfgService, cacheProvider)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), errExpected.Error())
-		require.Nil(t, rh)
 	})
 }

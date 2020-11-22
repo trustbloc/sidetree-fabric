@@ -12,15 +12,16 @@ import (
 
 // ProtocolVersion implements the protocol.Version interface
 type ProtocolVersion struct {
-	VersionStr   string
-	P            protocol.Protocol
-	TxnProcessor protocol.TxnProcessor
-	OpParser     protocol.OperationParser
-	OpApplier    protocol.OperationApplier
-	DocComposer  protocol.DocumentComposer
-	OpHandler    protocol.OperationHandler
-	OpProvider   protocol.OperationProvider
-	DocValidator protocol.DocumentValidator
+	VersionStr     string
+	P              protocol.Protocol
+	TxnProcessor   protocol.TxnProcessor
+	OpParser       protocol.OperationParser
+	OpApplier      protocol.OperationApplier
+	DocComposer    protocol.DocumentComposer
+	OpHandler      protocol.OperationHandler
+	OpProvider     protocol.OperationProvider
+	DocValidator   protocol.DocumentValidator
+	DocTransformer protocol.DocumentTransformer
 }
 
 // Version returns the protocol parameters
@@ -66,4 +67,9 @@ func (h *ProtocolVersion) OperationProvider() protocol.OperationProvider {
 // DocumentValidator returns the document validator
 func (h *ProtocolVersion) DocumentValidator() protocol.DocumentValidator {
 	return h.DocValidator
+}
+
+// DocumentTransformer returns the document transformer
+func (h *ProtocolVersion) DocumentTransformer() protocol.DocumentTransformer {
+	return h.DocTransformer
 }

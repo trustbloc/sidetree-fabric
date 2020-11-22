@@ -7,10 +7,10 @@ import (
 )
 
 type Cache struct {
-	GetStub        func(key interface{}) (interface{}, error)
+	GetStub        func(interface{}) (interface{}, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
-		key interface{}
+		arg1 interface{}
 	}
 	getReturns struct {
 		result1 interface{}
@@ -20,10 +20,10 @@ type Cache struct {
 		result1 interface{}
 		result2 error
 	}
-	HasStub        func(key interface{}) bool
+	HasStub        func(interface{}) bool
 	hasMutex       sync.RWMutex
 	hasArgsForCall []struct {
-		key interface{}
+		arg1 interface{}
 	}
 	hasReturns struct {
 		result1 bool
@@ -31,11 +31,11 @@ type Cache struct {
 	hasReturnsOnCall map[int]struct {
 		result1 bool
 	}
-	SetStub        func(key, value interface{}) error
+	SetStub        func(interface{}, interface{}) error
 	setMutex       sync.RWMutex
 	setArgsForCall []struct {
-		key   interface{}
-		value interface{}
+		arg1 interface{}
+		arg2 interface{}
 	}
 	setReturns struct {
 		result1 error
@@ -60,21 +60,22 @@ type Cache struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *Cache) Get(key interface{}) (interface{}, error) {
+func (fake *Cache) Get(arg1 interface{}) (interface{}, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
-		key interface{}
-	}{key})
-	fake.recordInvocation("Get", []interface{}{key})
+		arg1 interface{}
+	}{arg1})
+	fake.recordInvocation("Get", []interface{}{arg1})
 	fake.getMutex.Unlock()
 	if fake.GetStub != nil {
-		return fake.GetStub(key)
+		return fake.GetStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.getReturns.result1, fake.getReturns.result2
+	fakeReturns := fake.getReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *Cache) GetCallCount() int {
@@ -83,13 +84,22 @@ func (fake *Cache) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
+func (fake *Cache) GetCalls(stub func(interface{}) (interface{}, error)) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = stub
+}
+
 func (fake *Cache) GetArgsForCall(i int) interface{} {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
-	return fake.getArgsForCall[i].key
+	argsForCall := fake.getArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *Cache) GetReturns(result1 interface{}, result2 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	fake.getReturns = struct {
 		result1 interface{}
@@ -98,6 +108,8 @@ func (fake *Cache) GetReturns(result1 interface{}, result2 error) {
 }
 
 func (fake *Cache) GetReturnsOnCall(i int, result1 interface{}, result2 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
@@ -111,21 +123,22 @@ func (fake *Cache) GetReturnsOnCall(i int, result1 interface{}, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *Cache) Has(key interface{}) bool {
+func (fake *Cache) Has(arg1 interface{}) bool {
 	fake.hasMutex.Lock()
 	ret, specificReturn := fake.hasReturnsOnCall[len(fake.hasArgsForCall)]
 	fake.hasArgsForCall = append(fake.hasArgsForCall, struct {
-		key interface{}
-	}{key})
-	fake.recordInvocation("Has", []interface{}{key})
+		arg1 interface{}
+	}{arg1})
+	fake.recordInvocation("Has", []interface{}{arg1})
 	fake.hasMutex.Unlock()
 	if fake.HasStub != nil {
-		return fake.HasStub(key)
+		return fake.HasStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.hasReturns.result1
+	fakeReturns := fake.hasReturns
+	return fakeReturns.result1
 }
 
 func (fake *Cache) HasCallCount() int {
@@ -134,13 +147,22 @@ func (fake *Cache) HasCallCount() int {
 	return len(fake.hasArgsForCall)
 }
 
+func (fake *Cache) HasCalls(stub func(interface{}) bool) {
+	fake.hasMutex.Lock()
+	defer fake.hasMutex.Unlock()
+	fake.HasStub = stub
+}
+
 func (fake *Cache) HasArgsForCall(i int) interface{} {
 	fake.hasMutex.RLock()
 	defer fake.hasMutex.RUnlock()
-	return fake.hasArgsForCall[i].key
+	argsForCall := fake.hasArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *Cache) HasReturns(result1 bool) {
+	fake.hasMutex.Lock()
+	defer fake.hasMutex.Unlock()
 	fake.HasStub = nil
 	fake.hasReturns = struct {
 		result1 bool
@@ -148,6 +170,8 @@ func (fake *Cache) HasReturns(result1 bool) {
 }
 
 func (fake *Cache) HasReturnsOnCall(i int, result1 bool) {
+	fake.hasMutex.Lock()
+	defer fake.hasMutex.Unlock()
 	fake.HasStub = nil
 	if fake.hasReturnsOnCall == nil {
 		fake.hasReturnsOnCall = make(map[int]struct {
@@ -159,22 +183,23 @@ func (fake *Cache) HasReturnsOnCall(i int, result1 bool) {
 	}{result1}
 }
 
-func (fake *Cache) Set(key interface{}, value interface{}) error {
+func (fake *Cache) Set(arg1 interface{}, arg2 interface{}) error {
 	fake.setMutex.Lock()
 	ret, specificReturn := fake.setReturnsOnCall[len(fake.setArgsForCall)]
 	fake.setArgsForCall = append(fake.setArgsForCall, struct {
-		key   interface{}
-		value interface{}
-	}{key, value})
-	fake.recordInvocation("Set", []interface{}{key, value})
+		arg1 interface{}
+		arg2 interface{}
+	}{arg1, arg2})
+	fake.recordInvocation("Set", []interface{}{arg1, arg2})
 	fake.setMutex.Unlock()
 	if fake.SetStub != nil {
-		return fake.SetStub(key, value)
+		return fake.SetStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.setReturns.result1
+	fakeReturns := fake.setReturns
+	return fakeReturns.result1
 }
 
 func (fake *Cache) SetCallCount() int {
@@ -183,13 +208,22 @@ func (fake *Cache) SetCallCount() int {
 	return len(fake.setArgsForCall)
 }
 
+func (fake *Cache) SetCalls(stub func(interface{}, interface{}) error) {
+	fake.setMutex.Lock()
+	defer fake.setMutex.Unlock()
+	fake.SetStub = stub
+}
+
 func (fake *Cache) SetArgsForCall(i int) (interface{}, interface{}) {
 	fake.setMutex.RLock()
 	defer fake.setMutex.RUnlock()
-	return fake.setArgsForCall[i].key, fake.setArgsForCall[i].value
+	argsForCall := fake.setArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *Cache) SetReturns(result1 error) {
+	fake.setMutex.Lock()
+	defer fake.setMutex.Unlock()
 	fake.SetStub = nil
 	fake.setReturns = struct {
 		result1 error
@@ -197,6 +231,8 @@ func (fake *Cache) SetReturns(result1 error) {
 }
 
 func (fake *Cache) SetReturnsOnCall(i int, result1 error) {
+	fake.setMutex.Lock()
+	defer fake.setMutex.Unlock()
 	fake.SetStub = nil
 	if fake.setReturnsOnCall == nil {
 		fake.setReturnsOnCall = make(map[int]struct {
@@ -224,7 +260,8 @@ func (fake *Cache) SetWithExpire(arg1 interface{}, arg2 interface{}, arg3 time.D
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.setWithExpireReturns.result1
+	fakeReturns := fake.setWithExpireReturns
+	return fakeReturns.result1
 }
 
 func (fake *Cache) SetWithExpireCallCount() int {
@@ -233,13 +270,22 @@ func (fake *Cache) SetWithExpireCallCount() int {
 	return len(fake.setWithExpireArgsForCall)
 }
 
+func (fake *Cache) SetWithExpireCalls(stub func(interface{}, interface{}, time.Duration) error) {
+	fake.setWithExpireMutex.Lock()
+	defer fake.setWithExpireMutex.Unlock()
+	fake.SetWithExpireStub = stub
+}
+
 func (fake *Cache) SetWithExpireArgsForCall(i int) (interface{}, interface{}, time.Duration) {
 	fake.setWithExpireMutex.RLock()
 	defer fake.setWithExpireMutex.RUnlock()
-	return fake.setWithExpireArgsForCall[i].arg1, fake.setWithExpireArgsForCall[i].arg2, fake.setWithExpireArgsForCall[i].arg3
+	argsForCall := fake.setWithExpireArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *Cache) SetWithExpireReturns(result1 error) {
+	fake.setWithExpireMutex.Lock()
+	defer fake.setWithExpireMutex.Unlock()
 	fake.SetWithExpireStub = nil
 	fake.setWithExpireReturns = struct {
 		result1 error
@@ -247,6 +293,8 @@ func (fake *Cache) SetWithExpireReturns(result1 error) {
 }
 
 func (fake *Cache) SetWithExpireReturnsOnCall(i int, result1 error) {
+	fake.setWithExpireMutex.Lock()
+	defer fake.setWithExpireMutex.Unlock()
 	fake.SetWithExpireStub = nil
 	if fake.setWithExpireReturnsOnCall == nil {
 		fake.setWithExpireReturnsOnCall = make(map[int]struct {

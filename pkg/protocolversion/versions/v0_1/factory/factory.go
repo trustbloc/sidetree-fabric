@@ -13,6 +13,8 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/compression"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/doccomposer"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/doctransformer/didtransformer"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/doctransformer/doctransformer"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/docvalidator/didvalidator"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationapplier"
 	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
@@ -50,31 +52,34 @@ func (v *Factory) Create(version string, p protocol.Protocol, casClient cas.Clie
 		},
 	)
 
-	dv, err := createDocumentValidator(docType, opStore)
+	dv, dt, err := createDocumentProviders(docType, opStore)
 	if err != nil {
 		return nil, err
 	}
 
 	return &vcommon.ProtocolVersion{
-		VersionStr:   version,
-		P:            p,
-		TxnProcessor: txnProcessor,
-		OpParser:     parser,
-		OpApplier:    oa,
-		DocComposer:  dc,
-		OpHandler:    oh,
-		OpProvider:   opp,
-		DocValidator: dv,
+		VersionStr:     version,
+		P:              p,
+		TxnProcessor:   txnProcessor,
+		OpParser:       parser,
+		OpApplier:      oa,
+		DocComposer:    dc,
+		OpHandler:      oh,
+		OpProvider:     opp,
+		DocValidator:   dv,
+		DocTransformer: dt,
 	}, nil
 }
 
-func createDocumentValidator(docType common.DocumentType, opStore ctxcommon.OperationStore) (protocol.DocumentValidator, error) {
+func createDocumentProviders(docType common.DocumentType, opStore ctxcommon.OperationStore) (protocol.DocumentValidator, protocol.DocumentTransformer, error) {
 	switch docType {
 	case common.FileIndexType:
-		return validator.NewFileIdxValidator(opStore), nil
+		return validator.NewFileIdxValidator(opStore), doctransformer.New(), nil
 	case common.DIDDocType:
-		return didvalidator.New(opStore), nil
+		// TODO: Enable context configuration (currently not used - issue-480)
+		// didtransformer.New(didtransformer.WithMethodContext(cfg.MethodContext))
+		return didvalidator.New(opStore), didtransformer.New(), nil
 	default:
-		return nil, fmt.Errorf("unsupported document type: [%s]", docType)
+		return nil, nil, fmt.Errorf("unsupported document type: [%s]", docType)
 	}
 }

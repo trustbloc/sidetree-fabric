@@ -4,42 +4,44 @@ package mocks
 import (
 	"sync"
 
-	"github.com/trustbloc/sidetree-core-go/pkg/document"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
 )
 
 type OperationProcessor struct {
-	ResolveStub        func(uniqueSuffix string) (*document.ResolutionResult, error)
+	ResolveStub        func(string) (*protocol.ResolutionModel, error)
 	resolveMutex       sync.RWMutex
 	resolveArgsForCall []struct {
-		uniqueSuffix string
+		arg1 string
 	}
 	resolveReturns struct {
-		result1 *document.ResolutionResult
+		result1 *protocol.ResolutionModel
 		result2 error
 	}
 	resolveReturnsOnCall map[int]struct {
-		result1 *document.ResolutionResult
+		result1 *protocol.ResolutionModel
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OperationProcessor) Resolve(uniqueSuffix string) (*document.ResolutionResult, error) {
+func (fake *OperationProcessor) Resolve(arg1 string) (*protocol.ResolutionModel, error) {
 	fake.resolveMutex.Lock()
 	ret, specificReturn := fake.resolveReturnsOnCall[len(fake.resolveArgsForCall)]
 	fake.resolveArgsForCall = append(fake.resolveArgsForCall, struct {
-		uniqueSuffix string
-	}{uniqueSuffix})
-	fake.recordInvocation("Resolve", []interface{}{uniqueSuffix})
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("Resolve", []interface{}{arg1})
 	fake.resolveMutex.Unlock()
 	if fake.ResolveStub != nil {
-		return fake.ResolveStub(uniqueSuffix)
+		return fake.ResolveStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.resolveReturns.result1, fake.resolveReturns.result2
+	fakeReturns := fake.resolveReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *OperationProcessor) ResolveCallCount() int {
@@ -48,30 +50,41 @@ func (fake *OperationProcessor) ResolveCallCount() int {
 	return len(fake.resolveArgsForCall)
 }
 
+func (fake *OperationProcessor) ResolveCalls(stub func(string) (*protocol.ResolutionModel, error)) {
+	fake.resolveMutex.Lock()
+	defer fake.resolveMutex.Unlock()
+	fake.ResolveStub = stub
+}
+
 func (fake *OperationProcessor) ResolveArgsForCall(i int) string {
 	fake.resolveMutex.RLock()
 	defer fake.resolveMutex.RUnlock()
-	return fake.resolveArgsForCall[i].uniqueSuffix
+	argsForCall := fake.resolveArgsForCall[i]
+	return argsForCall.arg1
 }
 
-func (fake *OperationProcessor) ResolveReturns(result1 *document.ResolutionResult, result2 error) {
+func (fake *OperationProcessor) ResolveReturns(result1 *protocol.ResolutionModel, result2 error) {
+	fake.resolveMutex.Lock()
+	defer fake.resolveMutex.Unlock()
 	fake.ResolveStub = nil
 	fake.resolveReturns = struct {
-		result1 *document.ResolutionResult
+		result1 *protocol.ResolutionModel
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *OperationProcessor) ResolveReturnsOnCall(i int, result1 *document.ResolutionResult, result2 error) {
+func (fake *OperationProcessor) ResolveReturnsOnCall(i int, result1 *protocol.ResolutionModel, result2 error) {
+	fake.resolveMutex.Lock()
+	defer fake.resolveMutex.Unlock()
 	fake.ResolveStub = nil
 	if fake.resolveReturnsOnCall == nil {
 		fake.resolveReturnsOnCall = make(map[int]struct {
-			result1 *document.ResolutionResult
+			result1 *protocol.ResolutionModel
 			result2 error
 		})
 	}
 	fake.resolveReturnsOnCall[i] = struct {
-		result1 *document.ResolutionResult
+		result1 *protocol.ResolutionModel
 		result2 error
 	}{result1, result2}
 }
@@ -99,3 +112,5 @@ func (fake *OperationProcessor) recordInvocation(key string, args []interface{})
 	}
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
+
+var _ dochandler.OperationProcessor = new(OperationProcessor)
