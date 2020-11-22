@@ -47,6 +47,7 @@ type Sidetree struct {
 	Collection         string
 	BatchWriterTimeout time.Duration
 	MethodContext      []string
+	EnableBase         bool
 }
 
 // SidetreeService is a service that loads Sidetree configuration

@@ -101,6 +101,27 @@ func TestContext(t *testing.T) {
 		require.Nil(t, ctx)
 	})
 
+	t.Run("Sidetree config service error", func(t *testing.T) {
+		errExpected := errors.New("injected sidetree config service error")
+
+		protocolVersions := map[string]protocolApi.Protocol{
+			"0.5": {
+				GenesisTime:        100,
+				MultihashAlgorithm: 18,
+				MaxOperationCount:  100,
+				MaxOperationSize:   1000,
+			},
+		}
+
+		stConfigService := &cfgmocks.SidetreeConfigService{}
+		stConfigService.LoadProtocolsReturns(protocolVersions, nil)
+		stConfigService.LoadSidetreeReturns(config.Sidetree{}, errExpected)
+
+		ctx, err := newContext(channel1, nsCfg, dcasCfg, stConfigService, ctxProviders, &mocks.OperationStoreProvider{}, restCfg, cacheProvider)
+		require.EqualError(t, err, errExpected.Error())
+		require.Nil(t, ctx)
+	})
+
 	t.Run("No protocols -> error", func(t *testing.T) {
 		stConfigService := &cfgmocks.SidetreeConfigService{}
 

@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package factoryregistry
 
 import (
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -37,11 +38,11 @@ func TestRegistry(t *testing.T) {
 	opStore := &mocks.OperationStore{}
 	docType := common.DIDDocType
 
-	pv, err := r.CreateProtocolVersion(version, p, casClient, opStore, docType)
+	pv, err := r.CreateProtocolVersion(version, p, casClient, opStore, docType, config.Sidetree{})
 	require.NoError(t, err)
 	require.NotNil(t, pv)
 
-	pv, err = r.CreateProtocolVersion("99", p, casClient, opStore, docType)
+	pv, err = r.CreateProtocolVersion("99", p, casClient, opStore, docType, config.Sidetree{})
 	require.EqualError(t, err, "protocol version factory for version [99] not found")
 	require.Nil(t, pv)
 }

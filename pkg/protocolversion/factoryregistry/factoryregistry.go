@@ -15,6 +15,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/common"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	ctxcommon "github.com/trustbloc/sidetree-fabric/pkg/context/common"
 	versioncommon "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/common"
 )
@@ -22,7 +23,7 @@ import (
 var logger = flogging.MustGetLogger("sidetree_peer")
 
 type factory interface {
-	Create(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType) (protocol.Version, error)
+	Create(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType, sidetreeCfg config.Sidetree) (protocol.Version, error)
 }
 
 var mutex sync.RWMutex
@@ -40,7 +41,7 @@ func New() *Registry {
 }
 
 // CreateProtocolVersion creates a new protocol version using the given version, protocol and providers
-func (m *Registry) CreateProtocolVersion(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType) (protocol.Version, error) {
+func (m *Registry) CreateProtocolVersion(version string, p protocol.Protocol, casClient cas.Client, opStore ctxcommon.OperationStore, docType common.DocumentType, sidetreeCfg config.Sidetree) (protocol.Version, error) {
 	v, err := m.resolveFactory(version)
 	if err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func (m *Registry) CreateProtocolVersion(version string, p protocol.Protocol, ca
 
 	logger.Infof("Creating protocol version [%s]", version)
 
-	return v.Create(version, p, casClient, opStore, docType)
+	return v.Create(version, p, casClient, opStore, docType, sidetreeCfg)
 }
 
 // Register registers a protocol factory for a given version

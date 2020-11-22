@@ -43,6 +43,7 @@ const (
 	didSidetreeNamespace             = "did:sidetree"
 	didSidetreeCfgJSON               = `{"batchWriterTimeout":"5s"}`
 	didSidetreeCfgJSONWithMethodCtx  = `{"batchWriterTimeout":"5s","methodContext":["ctx1","ctx2"]}`
+	didSidetreeCfgJSONWithBase       = `{"batchWriterTimeout":"5s","enableBase":true}`
 	didSidetreeProtocol_V0_4_CfgJSON = `{"genesisTime":200000,"multihashAlgorithm":18,"maxOperationSize":2000,"maxOperationCount":10}`
 	didSidetreeProtocol_V0_5_CfgJSON = `{"genesisTime":500000,"multihashAlgorithm":18,"maxOperationSize":10000,"maxOperationCount":100}`
 	sidetreePeerCfgJson              = `{"Observer":{"Period":"5s"}}`
@@ -139,6 +140,7 @@ func TestNewSidetreeProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 5*time.Second, cfg.BatchWriterTimeout)
 		require.Equal(t, 0, len(cfg.MethodContext))
+		require.Equal(t, false, cfg.EnableBase)
 
 		cfgValue = &ledgercfg.Value{
 			TxID:   "tx1",
@@ -153,6 +155,19 @@ func TestNewSidetreeProvider(t *testing.T) {
 		require.Equal(t, 2, len(cfg.MethodContext))
 		require.Equal(t, "ctx1", cfg.MethodContext[0])
 		require.Equal(t, "ctx2", cfg.MethodContext[1])
+
+		cfgValue = &ledgercfg.Value{
+			TxID:   "tx1",
+			Format: "json",
+			Config: didSidetreeCfgJSONWithBase,
+		}
+		configService.GetReturns(cfgValue, nil)
+
+		cfg, err = s.LoadSidetree(didSidetreeNamespace)
+		require.NoError(t, err)
+		require.Equal(t, 5*time.Second, cfg.BatchWriterTimeout)
+		require.Equal(t, 0, len(cfg.MethodContext))
+		require.Equal(t, true, cfg.EnableBase)
 	})
 
 	t.Run("LoadSidetreePeer", func(t *testing.T) {

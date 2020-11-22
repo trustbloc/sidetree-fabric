@@ -4,53 +4,56 @@ package mocks
 import (
 	"sync"
 
-	casApi "github.com/trustbloc/sidetree-core-go/pkg/api/cas"
-	protocolApi "github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
-	common2 "github.com/trustbloc/sidetree-fabric/pkg/common"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/cas"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
+	"github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/context/common"
 )
 
 type ProtocolVersionFactory struct {
-	CreateProtocolVersionStub        func(version string, p protocolApi.Protocol, casClient casApi.Client, opStore common.OperationStore, docType common2.DocumentType) (protocolApi.Version, error)
+	CreateProtocolVersionStub        func(string, protocol.Protocol, cas.Client, common.OperationStore, string, config.Sidetree) (protocol.Version, error)
 	createProtocolVersionMutex       sync.RWMutex
 	createProtocolVersionArgsForCall []struct {
-		version   string
-		p         protocolApi.Protocol
-		casClient casApi.Client
-		opStore   common.OperationStore
-		docType   common2.DocumentType
+		arg1 string
+		arg2 protocol.Protocol
+		arg3 cas.Client
+		arg4 common.OperationStore
+		arg5 string
+		arg6 config.Sidetree
 	}
 	createProtocolVersionReturns struct {
-		result1 protocolApi.Version
+		result1 protocol.Version
 		result2 error
 	}
 	createProtocolVersionReturnsOnCall map[int]struct {
-		result1 protocolApi.Version
+		result1 protocol.Version
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *ProtocolVersionFactory) CreateProtocolVersion(version string, p protocolApi.Protocol, casClient casApi.Client, opStore common.OperationStore, docType common2.DocumentType) (protocolApi.Version, error) {
+func (fake *ProtocolVersionFactory) CreateProtocolVersion(arg1 string, arg2 protocol.Protocol, arg3 cas.Client, arg4 common.OperationStore, arg5 string, arg6 config.Sidetree) (protocol.Version, error) {
 	fake.createProtocolVersionMutex.Lock()
 	ret, specificReturn := fake.createProtocolVersionReturnsOnCall[len(fake.createProtocolVersionArgsForCall)]
 	fake.createProtocolVersionArgsForCall = append(fake.createProtocolVersionArgsForCall, struct {
-		version   string
-		p         protocolApi.Protocol
-		casClient casApi.Client
-		opStore   common.OperationStore
-		docType   common2.DocumentType
-	}{version, p, casClient, opStore, docType})
-	fake.recordInvocation("CreateProtocolVersion", []interface{}{version, p, casClient, opStore, docType})
+		arg1 string
+		arg2 protocol.Protocol
+		arg3 cas.Client
+		arg4 common.OperationStore
+		arg5 string
+		arg6 config.Sidetree
+	}{arg1, arg2, arg3, arg4, arg5, arg6})
+	fake.recordInvocation("CreateProtocolVersion", []interface{}{arg1, arg2, arg3, arg4, arg5, arg6})
 	fake.createProtocolVersionMutex.Unlock()
 	if fake.CreateProtocolVersionStub != nil {
-		return fake.CreateProtocolVersionStub(version, p, casClient, opStore, docType)
+		return fake.CreateProtocolVersionStub(arg1, arg2, arg3, arg4, arg5, arg6)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.createProtocolVersionReturns.result1, fake.createProtocolVersionReturns.result2
+	fakeReturns := fake.createProtocolVersionReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *ProtocolVersionFactory) CreateProtocolVersionCallCount() int {
@@ -59,30 +62,41 @@ func (fake *ProtocolVersionFactory) CreateProtocolVersionCallCount() int {
 	return len(fake.createProtocolVersionArgsForCall)
 }
 
-func (fake *ProtocolVersionFactory) CreateProtocolVersionArgsForCall(i int) (string, protocolApi.Protocol, casApi.Client, common.OperationStore, common2.DocumentType) {
-	fake.createProtocolVersionMutex.RLock()
-	defer fake.createProtocolVersionMutex.RUnlock()
-	return fake.createProtocolVersionArgsForCall[i].version, fake.createProtocolVersionArgsForCall[i].p, fake.createProtocolVersionArgsForCall[i].casClient, fake.createProtocolVersionArgsForCall[i].opStore, fake.createProtocolVersionArgsForCall[i].docType
+func (fake *ProtocolVersionFactory) CreateProtocolVersionCalls(stub func(string, protocol.Protocol, cas.Client, common.OperationStore, string, config.Sidetree) (protocol.Version, error)) {
+	fake.createProtocolVersionMutex.Lock()
+	defer fake.createProtocolVersionMutex.Unlock()
+	fake.CreateProtocolVersionStub = stub
 }
 
-func (fake *ProtocolVersionFactory) CreateProtocolVersionReturns(result1 protocolApi.Version, result2 error) {
+func (fake *ProtocolVersionFactory) CreateProtocolVersionArgsForCall(i int) (string, protocol.Protocol, cas.Client, common.OperationStore, string, config.Sidetree) {
+	fake.createProtocolVersionMutex.RLock()
+	defer fake.createProtocolVersionMutex.RUnlock()
+	argsForCall := fake.createProtocolVersionArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5, argsForCall.arg6
+}
+
+func (fake *ProtocolVersionFactory) CreateProtocolVersionReturns(result1 protocol.Version, result2 error) {
+	fake.createProtocolVersionMutex.Lock()
+	defer fake.createProtocolVersionMutex.Unlock()
 	fake.CreateProtocolVersionStub = nil
 	fake.createProtocolVersionReturns = struct {
-		result1 protocolApi.Version
+		result1 protocol.Version
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *ProtocolVersionFactory) CreateProtocolVersionReturnsOnCall(i int, result1 protocolApi.Version, result2 error) {
+func (fake *ProtocolVersionFactory) CreateProtocolVersionReturnsOnCall(i int, result1 protocol.Version, result2 error) {
+	fake.createProtocolVersionMutex.Lock()
+	defer fake.createProtocolVersionMutex.Unlock()
 	fake.CreateProtocolVersionStub = nil
 	if fake.createProtocolVersionReturnsOnCall == nil {
 		fake.createProtocolVersionReturnsOnCall = make(map[int]struct {
-			result1 protocolApi.Version
+			result1 protocol.Version
 			result2 error
 		})
 	}
 	fake.createProtocolVersionReturnsOnCall[i] = struct {
-		result1 protocolApi.Version
+		result1 protocol.Version
 		result2 error
 	}{result1, result2}
 }
