@@ -14,9 +14,8 @@ import (
 
 	"github.com/bluele/gcache"
 	"github.com/hyperledger/fabric/common/flogging"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/dochandler"
-	"github.com/trustbloc/sidetree-core-go/pkg/document"
-
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/sidetreehandler"
 )
 
@@ -128,7 +127,7 @@ func newCache(channelID string, cfg sidetreehandler.Config, target dochandler.Op
 }
 
 // Resolve resolves the document for the given unique suffix
-func (c *cache) Resolve(uniqueSuffix string) (*document.ResolutionResult, error) {
+func (c *cache) Resolve(uniqueSuffix string) (*protocol.ResolutionModel, error) {
 	v, err := c.cache.Get(uniqueSuffix)
 	if err != nil {
 		return nil, err
@@ -150,7 +149,7 @@ func (c *cache) Resolve(uniqueSuffix string) (*document.ResolutionResult, error)
 		resultBytes = cv.resultBytes
 	}
 
-	r := &document.ResolutionResult{}
+	r := &protocol.ResolutionModel{}
 	err = c.unmarshal(resultBytes, r)
 	if err != nil {
 		return nil, err

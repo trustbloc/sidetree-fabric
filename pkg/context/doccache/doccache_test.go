@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/context/doccache/mocks"
@@ -60,8 +61,8 @@ func TestDocumentCache(t *testing.T) {
 
 	errNotFound := fmt.Errorf("not found")
 
-	result1 := &document.ResolutionResult{Document: doc1}
-	result2 := &document.ResolutionResult{Document: doc2}
+	result1 := &protocol.ResolutionModel{Doc: doc1}
+	result2 := &protocol.ResolutionModel{Doc: doc2}
 
 	resolver.ResolveReturnsOnCall(0, result1, nil)
 	resolver.ResolveReturnsOnCall(1, nil, errNotFound)
@@ -74,13 +75,13 @@ func TestDocumentCache(t *testing.T) {
 	r, err := c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key1", r.Document["key"])
+	require.Equal(t, "key1", r.Doc["key"])
 
 	// Resolve with the same key again
 	r, err = c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key1", r.Document["key"])
+	require.Equal(t, "key1", r.Doc["key"])
 
 	r, err = c.Resolve(docID2)
 	require.EqualError(t, err, errNotFound.Error())
@@ -93,20 +94,20 @@ func TestDocumentCache(t *testing.T) {
 	r, err = c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key1", r.Document["key"])
+	require.Equal(t, "key1", r.Doc["key"])
 
 	// Resolve should return the new result
 	r, err = c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key2", r.Document["key"])
+	require.Equal(t, "key2", r.Doc["key"])
 
 	time.Sleep(300 * time.Millisecond)
 
 	r, err = c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key2", r.Document["key"])
+	require.Equal(t, "key2", r.Doc["key"])
 
 	require.Equal(t, 4, resolver.ResolveCallCount())
 }
@@ -123,8 +124,8 @@ func TestDocumentCacheWithExpiry(t *testing.T) {
 
 	errNotFound := fmt.Errorf("not found")
 
-	result1 := &document.ResolutionResult{Document: doc1}
-	result2 := &document.ResolutionResult{Document: doc2}
+	result1 := &protocol.ResolutionModel{Doc: doc1}
+	result2 := &protocol.ResolutionModel{Doc: doc2}
 
 	resolver.ResolveReturnsOnCall(0, result1, nil)
 	resolver.ResolveReturnsOnCall(1, nil, errNotFound)
@@ -137,13 +138,13 @@ func TestDocumentCacheWithExpiry(t *testing.T) {
 	r, err := c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key1", r.Document["key"])
+	require.Equal(t, "key1", r.Doc["key"])
 
 	// Resolve with the same key again
 	r, err = c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key1", r.Document["key"])
+	require.Equal(t, "key1", r.Doc["key"])
 
 	r, err = c.Resolve(docID2)
 	require.EqualError(t, err, errNotFound.Error())
@@ -155,14 +156,14 @@ func TestDocumentCacheWithExpiry(t *testing.T) {
 	r, err = c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key2", r.Document["key"])
+	require.Equal(t, "key2", r.Doc["key"])
 
 	time.Sleep(300 * time.Millisecond)
 
 	r, err = c.Resolve(docID1)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "key2", r.Document["key"])
+	require.Equal(t, "key2", r.Doc["key"])
 
 	require.Equal(t, 4, resolver.ResolveCallCount())
 }
@@ -174,7 +175,7 @@ func TestDocumentCacheError(t *testing.T) {
 	doc := make(document.Document)
 	doc["key"] = "key1"
 
-	resolver.ResolveReturns(&document.ResolutionResult{Document: doc}, nil)
+	resolver.ResolveReturns(&protocol.ResolutionModel{Doc: doc}, nil)
 
 	c := newCache(channel1, cfg, resolver)
 	require.NotNil(t, c)
@@ -245,7 +246,7 @@ func TestDocumentCacheError(t *testing.T) {
 		errExpected := fmt.Errorf("injected Get error")
 
 		resolver.ResolveReturns(nil, errExpected)
-		defer resolver.ResolveReturns(&document.ResolutionResult{Document: doc}, nil)
+		defer resolver.ResolveReturns(&protocol.ResolutionModel{Doc: doc}, nil)
 
 		cache := &mocks.Cache{}
 		cache.HasReturns(true)
