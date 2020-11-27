@@ -1,7 +1,7 @@
 {
   "genesisTime": 500000,
   "multihashAlgorithm": 777,
-  "maxOperationSize": 200000,
+  "maxOperationSize": 2000,
   "maxOperationCount": 10,
   "compressionAlgorithm": "GZIP",
   "maxCoreIndexFileSize": 1000000,
