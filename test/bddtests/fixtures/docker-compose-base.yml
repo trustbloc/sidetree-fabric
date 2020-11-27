@@ -10,7 +10,7 @@ services:
     image: ${FABRIC_PEER_FIXTURE_IMAGE}:latest
     environment:
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - FABRIC_LOGGING_SPEC=comm.grpc.server=error:cauthdsl=warn:gossip=warn:grpc=warn:ledger=info:msp=warn:policies=warn:peer.gossip=warn:endorser=warn:sidetree_peer=info:sidetree_context=debug:sidetree_observer=info:sidetree-core-processor=info:sidetree_opqueue=info:ext_offledger=info:ext_dispatcher=info:chaincode=info:cceventmgmt=info:ext_gossip_state=info:privacyenabledstate=info:info
+      - FABRIC_LOGGING_SPEC=comm.grpc.server=error:cauthdsl=warn:gossip=warn:grpc=warn:ledger=info:msp=warn:policies=warn:peer.gossip=warn:endorser=warn:sidetree_peer=info:sidetree_context=info:sidetree_observer=info:sidetree-core-processor=info:sidetree_opqueue=info:ext_offledger=info:ext_dispatcher=info:chaincode=info:cceventmgmt=info:ext_gossip_state=info:privacyenabledstate=info:info
       ## the following setting redirects chaincode container logs to the peer container logs
       - CORE_VM_DOCKER_ATTACHSTDOUT=true
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
@@ -22,6 +22,7 @@ services:
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
       - CORE_PEER_TLS_CLIENTAUTHREQUIRED=true
       - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/etc/hyperledger/fabric/tls/ca.crt /etc/hyperledger/mutual_tls/peer/ca.crt
+      - CORE_PEER_SKIPCHECKFORDUPTXNID=true
       # override chaincode images
       - CORE_CHAINCODE_BUILDER=${FABRIC_NS}/${FABRIC_BUILDER_FIXTURE_IMAGE}:${ARCH}-${FABRIC_BUILDER_FIXTURE_TAG}
       - CORE_CHAINCODE_GOLANG_RUNTIME=${FABRIC_NS}/${FABRIC_BASEOS_FIXTURE_IMAGE}:${FABRIC_BASEOS_FIXTURE_TAG}
@@ -39,7 +40,11 @@ services:
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=cdbadmin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=secret
       - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=shared.couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_CACHESIZE=64
       - CORE_LEDGER_STATE_DBCONFIG_PARTITIONTYPE=MSP
+      - CORE_LEDGER_STATE_DBCONFIG_CACHE_PREPOPULATE=true
+      - CORE_LEDGER_STATE_DBCONFIG_CACHE_GOSSIPTIMEOUT=500ms
+      - CORE_LEDGER_STATE_DBCONFIG_CACHE_RETENTIONSIZE=20
       - CORE_SIDETREE_PORT=48326
       - CORE_SIDETREE_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_SIDETREE_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key

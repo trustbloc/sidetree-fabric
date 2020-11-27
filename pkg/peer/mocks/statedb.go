@@ -186,6 +186,11 @@ func (m *StateDB) BytesKeySupported() bool {
 	return m.bytesKeySupported
 }
 
+// UpdateCache updates the state cache with the given updates. The format of the updates depends on the database implementation.
+func (m *StateDB) UpdateCache(uint64, []byte) error {
+	return nil
+}
+
 func privateNamespace(namespace, collection string) string {
 	return namespace + "$" + collection
 }
