@@ -63,7 +63,7 @@ type discoveryConfig interface {
 }
 
 type retriever interface {
-	Retrieve(ctxt context.Context, request *appdata.Request, responseHandler appdata.ResponseHandler, allSet appdata.AllSet) (extcommon.Values, error)
+	Retrieve(ctxt context.Context, request *appdata.Request, responseHandler appdata.ResponseHandler, allSet appdata.AllSet, opts ...appdata.Option) (extcommon.Values, error)
 }
 
 type servicesByPeer = map[string][]Service
