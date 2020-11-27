@@ -248,7 +248,7 @@ func (d *FileHandlerSteps) getOpaqueDocument(content string) ([]byte, error) {
 		}
 
 		// this signer will be used in subsequent update requests
-		d.updateKeySigner = ecsigner.New(privateKey, "ES256", updateKeyID)
+		d.updateKeySigner = ecsigner.New(privateKey, "ES256", "")
 	}
 
 	doc, err := document.FromBytes([]byte(content))
@@ -282,7 +282,7 @@ func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch strin
 		UpdateKey:        updatePubKey,
 		Patches:          []patch.Patch{updatePatch},
 		MultihashCode:    sha2_256,
-		Signer:           ecsigner.New(d.updateKey, "ES256", "update-kid"),
+		Signer:           ecsigner.New(d.updateKey, "ES256", ""),
 	})
 
 	if err != nil {

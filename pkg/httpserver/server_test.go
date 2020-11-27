@@ -324,21 +324,33 @@ func (h *sampleResolveHandler) Handler() common.HTTPRequestHandler {
 }
 
 func getCreateRequest() ([]byte, error) {
-	testKey := &jws.JWK{
+	recoveryKey := &jws.JWK{
+		Crv: "crv",
+		Kty: "kty",
+		X:   "x",
+		Y: "y",
+	}
+
+	updateKey := &jws.JWK{
 		Crv: "crv",
 		Kty: "kty",
 		X:   "x",
 	}
 
-	c, err := commitment.Calculate(testKey, sha2_256)
+	recoveryCommitment, err := commitment.Calculate(recoveryKey, sha2_256)
+	if err != nil {
+		return nil, err
+	}
+
+	updateCommitment, err := commitment.Calculate(updateKey, sha2_256)
 	if err != nil {
 		return nil, err
 	}
 
 	info := &client.CreateRequestInfo{
 		OpaqueDocument:     validDoc,
-		RecoveryCommitment: c,
-		UpdateCommitment:   c,
+		RecoveryCommitment: recoveryCommitment,
+		UpdateCommitment:   updateCommitment,
 		MultihashCode:      sha2_256,
 	}
 
