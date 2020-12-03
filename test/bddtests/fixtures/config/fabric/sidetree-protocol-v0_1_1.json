@@ -1,8 +1,12 @@
 {
   "genesisTime": 20,
   "multihashAlgorithm": 18,
-  "maxOperationSize": 2000,
   "maxOperationCount": 30,
+  "maxOperationSize": 2400,
+  "maxDeltaSize": 1700,
+  "maxProofSize": 600,
+  "maxCasUriLength": 100,
+  "maxOperationHashLength": 100,
   "compressionAlgorithm": "GZIP",
   "maxCoreIndexFileSize": 1000000,
   "maxProofFileSize": 1000000,

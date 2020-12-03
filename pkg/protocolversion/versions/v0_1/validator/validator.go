@@ -65,5 +65,21 @@ func verifyBatchSizesV0(p *protocol.Protocol) error {
 		return errors.Errorf(errMsg, "MaxProofFileSize")
 	}
 
+	if p.MaxDeltaSize == 0 {
+		return errors.Errorf(errMsg, "MaxDeltaSize")
+	}
+
+	if p.MaxProofSize == 0 {
+		return errors.Errorf(errMsg, "MaxProofSize")
+	}
+
+	if p.MaxCasURILength == 0 {
+		return errors.Errorf(errMsg, "MaxCasURILength")
+	}
+
+	if p.MaxOperationHashLength == 0 {
+		return errors.Errorf(errMsg, "MaxOperationHashLength")
+	}
+
 	return nil
 }

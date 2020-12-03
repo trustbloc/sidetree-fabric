@@ -328,7 +328,7 @@ func getCreateRequest() ([]byte, error) {
 		Crv: "crv",
 		Kty: "kty",
 		X:   "x",
-		Y: "y",
+		Y:   "y",
 	}
 
 	updateKey := &jws.JWK{
