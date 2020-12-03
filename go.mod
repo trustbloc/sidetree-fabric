@@ -29,7 +29,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20190625010220-02440ea7a285
 	github.com/trustbloc/edge-core v0.1.4
 	github.com/trustbloc/fabric-peer-ext v0.0.0
-	github.com/trustbloc/sidetree-core-go v0.1.5-0.20201126220537-656a5c8a3bdf
+	github.com/trustbloc/sidetree-core-go v0.1.5-0.20201203160228-bad37e299892
 	go.uber.org/zap v1.14.1
 )
 
