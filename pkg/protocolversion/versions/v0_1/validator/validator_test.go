@@ -20,13 +20,22 @@ func TestValidator_Validate(t *testing.T) {
 		require.NoError(t, Validate(p))
 	})
 
-	t.Run("Invalid multihash algorithm -> error", func(t *testing.T) {
+	t.Run("Missing multihash algorithms -> error", func(t *testing.T) {
 		protocolInvalidMulithashAlg := getProtocol()
-		protocolInvalidMulithashAlg.MultihashAlgorithm = 2777
+		protocolInvalidMulithashAlg.MultihashAlgorithms = nil
 
 		err := Validate(protocolInvalidMulithashAlg)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "algorithm not supported")
+		require.Contains(t, err.Error(), "field 'MultihashAlgorithms' cannot be empty")
+	})
+
+	t.Run("Invalid multihash algorithm -> error", func(t *testing.T) {
+		protocolInvalidMulithashAlg := getProtocol()
+		protocolInvalidMulithashAlg.MultihashAlgorithms = []uint{2777}
+
+		err := Validate(protocolInvalidMulithashAlg)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "error in Sidetree protocol for multihash algorithm(2777): algorithm not supported")
 	})
 
 	t.Run("Invalid MaxOperationCount -> error", func(t *testing.T) {
@@ -45,15 +54,6 @@ func TestValidator_Validate(t *testing.T) {
 		err := Validate(protocolInvalidMaxOperationSize)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "field 'MaxOperationSize' must contain a value greater than 0")
-	})
-
-	t.Run("Invalid MaxProofSize -> error", func(t *testing.T) {
-		protocolInvalidMaxProofSize := getProtocol()
-		protocolInvalidMaxProofSize.MaxProofSize = 0
-
-		err := Validate(protocolInvalidMaxProofSize)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "field 'MaxProofSize' must contain a value greater than 0")
 	})
 
 	t.Run("Invalid MaxDeltaSize -> error", func(t *testing.T) {
@@ -159,11 +159,10 @@ func TestValidator_Validate(t *testing.T) {
 func getProtocol() *protocol.Protocol {
 	return &protocol.Protocol{
 		GenesisTime:                 500000,
-		MultihashAlgorithm:          18,
+		MultihashAlgorithms:         []uint{18},
 		MaxOperationSize:            2000,
 		MaxOperationHashLength:      100,
 		MaxDeltaSize:                1000,
-		MaxProofSize:                500,
 		MaxCasURILength:             100,
 		MaxOperationCount:           10,
 		CompressionAlgorithm:        "GZIP",

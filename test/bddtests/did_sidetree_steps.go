@@ -443,7 +443,7 @@ func getCommitment(key *ecdsa.PublicKey) (string, error) {
 		return "", err
 	}
 
-	return commitment.Calculate(pubKey, sha2_256)
+	return commitment.GetCommitment(pubKey, sha2_256)
 }
 
 func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byte, error) {
@@ -463,8 +463,13 @@ func (d *DIDSideSteps) getRecoverRequest(doc []byte, uniqueSuffix string) ([]byt
 		return nil, err
 	}
 
+	revealValue, err := commitment.GetRevealValue(recoveryPubKey, sha2_256)
+	if err != nil {
+		return nil, err
+	}
 	recoverRequest, err := client.NewRecoverRequest(&client.RecoverRequestInfo{
 		DidSuffix:          uniqueSuffix,
+		RevealValue:        revealValue,
 		OpaqueDocument:     string(doc),
 		RecoveryKey:        recoveryPubKey,
 		RecoveryCommitment: recoveryCommitment,
@@ -491,8 +496,14 @@ func (d *DIDSideSteps) getDeactivateRequest(did string) ([]byte, error) {
 		return nil, err
 	}
 
+	revealValue, err := commitment.GetRevealValue(recoveryPubKey, sha2_256)
+	if err != nil {
+		return nil, err
+	}
+
 	return client.NewDeactivateRequest(&client.DeactivateRequestInfo{
 		DidSuffix:   did,
+		RevealValue: revealValue,
 		RecoveryKey: recoveryPubKey,
 		Signer:      ecsigner.New(d.recoveryKey, "ES256", ""),
 	})
@@ -510,8 +521,14 @@ func (d *DIDSideSteps) getUpdateRequest(did string, updatePatch patch.Patch) ([]
 		return nil, err
 	}
 
+	revealValue, err := commitment.GetRevealValue(updatePubKey, sha2_256)
+	if err != nil {
+		return nil, err
+	}
+
 	req, err := client.NewUpdateRequest(&client.UpdateRequestInfo{
 		DidSuffix:        did,
+		RevealValue:      revealValue,
 		UpdateCommitment: updateCommitment,
 		UpdateKey:        updatePubKey,
 		Patches:          []patch.Patch{updatePatch},

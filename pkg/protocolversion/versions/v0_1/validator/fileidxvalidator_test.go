@@ -12,11 +12,11 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
-
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
+	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
@@ -212,9 +212,15 @@ func getUpdateRequest(patches string) ([]byte, error) {
 		return nil, err
 	}
 
+	revealValue, err := commitment.GetRevealValue(updatePubKey, sha2_256)
+	if err != nil {
+		return nil, err
+	}
+
 	return client.NewUpdateRequest(
 		&client.UpdateRequestInfo{
 			DidSuffix:     "1234",
+			RevealValue:   revealValue,
 			Patches:       []patch.Patch{updatePatch},
 			MultihashCode: sha2_256,
 			UpdateKey:     updatePubKey,

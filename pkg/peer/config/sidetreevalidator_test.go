@@ -16,12 +16,11 @@ import (
 const (
 	protocolCfg = `{
 		"genesisTime": 500000,
-		"multihashAlgorithm": 18,
+		"multihashAlgorithms": [18],
 		"maxOperationSize": 2000,
 		"maxOperationCount": 10,
 		"maxOperationHashLength":100,
 		"maxDeltaSize": 1000,
-		"maxProofSize": 500,
 		"maxCasUriLength": 100,
 		"compressionAlgorithm": "GZIP",
 		"maxCoreIndexFileSize": 1000000,
@@ -35,12 +34,11 @@ const (
 
 	protocolInvalidMulithashAlgoCfg = `{
 		"genesisTime": 500000,
-		"multihashAlgorithm": 2777,
+		"multihashAlgorithms": [2777],
 		"maxOperationSize": 2000,
 		"maxOperationCount": 10,
 		"maxOperationHashLength": 100,
 		"maxDeltaSize": 1000,
-		"maxProofSize": 500,
 		"maxCasUriLength": 100,
 		"compressionAlgorithm": "GZIP",
 		"maxCoreIndexFileSize": 1000000,

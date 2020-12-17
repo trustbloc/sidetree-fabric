@@ -55,10 +55,10 @@ func TestContext(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		protocolVersions := map[string]protocolApi.Protocol{
 			"0.5": {
-				GenesisTime:        100,
-				MultihashAlgorithm: 18,
-				MaxOperationCount:  100,
-				MaxOperationSize:   1000,
+				GenesisTime:         100,
+				MultihashAlgorithms: []uint{18},
+				MaxOperationCount:   100,
+				MaxOperationSize:    1000,
 			},
 		}
 
@@ -83,10 +83,10 @@ func TestContext(t *testing.T) {
 
 		protocolVersions := map[string]protocolApi.Protocol{
 			"0.5": {
-				GenesisTime:        100,
-				MultihashAlgorithm: 18,
-				MaxOperationCount:  100,
-				MaxOperationSize:   1000,
+				GenesisTime:         100,
+				MultihashAlgorithms: []uint{18},
+				MaxOperationCount:   100,
+				MaxOperationSize:    1000,
 			},
 		}
 
@@ -106,10 +106,10 @@ func TestContext(t *testing.T) {
 
 		protocolVersions := map[string]protocolApi.Protocol{
 			"0.5": {
-				GenesisTime:        100,
-				MultihashAlgorithm: 18,
-				MaxOperationCount:  100,
-				MaxOperationSize:   1000,
+				GenesisTime:         100,
+				MultihashAlgorithms: []uint{18},
+				MaxOperationCount:   100,
+				MaxOperationSize:    1000,
 			},
 		}
 

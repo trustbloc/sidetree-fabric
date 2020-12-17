@@ -20,13 +20,14 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
+	"github.com/trustbloc/sidetree-core-go/pkg/commitment"
 	"github.com/trustbloc/sidetree-core-go/pkg/document"
 	"github.com/trustbloc/sidetree-core-go/pkg/docutil"
 	"github.com/trustbloc/sidetree-core-go/pkg/jws"
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
 )
 
 // FileHandlerSteps
@@ -276,8 +277,14 @@ func (d *FileHandlerSteps) getUpdateRequest(uniqueSuffix string, jsonPatch strin
 		return nil, err
 	}
 
+	revealValue, err := commitment.GetRevealValue(updatePubKey, sha2_256)
+	if err != nil {
+		return nil, err
+	}
+
 	req, err := client.NewUpdateRequest(&client.UpdateRequestInfo{
 		DidSuffix:        uniqueSuffix,
+		RevealValue:      revealValue,
 		UpdateCommitment: updateCommitment,
 		UpdateKey:        updatePubKey,
 		Patches:          []patch.Patch{updatePatch},

@@ -67,10 +67,10 @@ func TestProvider(t *testing.T) {
 	}
 
 	pr := protocolApi.Protocol{
-		GenesisTime:        100,
-		MultihashAlgorithm: 18,
-		MaxOperationCount:  100,
-		MaxOperationSize:   1000,
+		GenesisTime:         100,
+		MultihashAlgorithms: []uint{18},
+		MaxOperationCount:   100,
+		MaxOperationSize:    1000,
 	}
 
 	protocolVersions := map[string]protocolApi.Protocol{"0.5": pr}
