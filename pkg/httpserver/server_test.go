@@ -48,7 +48,7 @@ const (
 
 var p = protocol.Protocol{
 	GenesisTime:                 0,
-	MultihashAlgorithm:          sha2_256,
+	MultihashAlgorithms:         []uint{sha2_256},
 	MaxOperationCount:           2,
 	MaxOperationSize:            1024,
 	CompressionAlgorithm:        "GZIP",
@@ -337,12 +337,12 @@ func getCreateRequest() ([]byte, error) {
 		X:   "x",
 	}
 
-	recoveryCommitment, err := commitment.Calculate(recoveryKey, sha2_256)
+	recoveryCommitment, err := commitment.GetCommitment(recoveryKey, sha2_256)
 	if err != nil {
 		return nil, err
 	}
 
-	updateCommitment, err := commitment.Calculate(updateKey, sha2_256)
+	updateCommitment, err := commitment.GetCommitment(updateKey, sha2_256)
 	if err != nil {
 		return nil, err
 	}

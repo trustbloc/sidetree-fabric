@@ -25,18 +25,18 @@ func TestNew(t *testing.T) {
 func TestClient_Current(t *testing.T) {
 	v1_0 := &coremocks.ProtocolVersion{}
 	v1_0.ProtocolReturns(protocol.Protocol{
-		GenesisTime:        500000,
-		MultihashAlgorithm: 18,
-		MaxOperationSize:   2000,
-		MaxOperationCount:  10000,
+		GenesisTime:         500000,
+		MultihashAlgorithms: []uint{18},
+		MaxOperationSize:    2000,
+		MaxOperationCount:   10000,
 	})
 
 	v0_1 := &coremocks.ProtocolVersion{}
 	v0_1.ProtocolReturns(protocol.Protocol{
-		GenesisTime:        0,
-		MultihashAlgorithm: 18,
-		MaxOperationSize:   500,
-		MaxOperationCount:  100,
+		GenesisTime:         0,
+		MultihashAlgorithms: []uint{18},
+		MaxOperationSize:    500,
+		MaxOperationCount:   100,
 	})
 
 	versions := []protocol.Version{v1_0, v0_1}
@@ -67,19 +67,19 @@ func TestClient_Get(t *testing.T) {
 	v1_0 := &coremocks.ProtocolVersion{}
 	v1_0.VersionReturns("1.0")
 	v1_0.ProtocolReturns(protocol.Protocol{
-		GenesisTime:        500000,
-		MultihashAlgorithm: 18,
-		MaxOperationSize:   2000,
-		MaxOperationCount:  10000,
+		GenesisTime:         500000,
+		MultihashAlgorithms: []uint{18},
+		MaxOperationSize:    2000,
+		MaxOperationCount:   10000,
 	})
 
 	v0_1 := &coremocks.ProtocolVersion{}
 	v0_1.VersionReturns("0.1")
 	v0_1.ProtocolReturns(protocol.Protocol{
-		GenesisTime:        10,
-		MultihashAlgorithm: 18,
-		MaxOperationSize:   500,
-		MaxOperationCount:  100,
+		GenesisTime:         10,
+		MultihashAlgorithms: []uint{18},
+		MaxOperationSize:    500,
+		MaxOperationCount:   100,
 	})
 
 	versions := []protocol.Version{v1_0, v0_1}

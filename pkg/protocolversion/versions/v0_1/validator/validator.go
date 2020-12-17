@@ -15,8 +15,14 @@ import (
 
 // Validate validates the parameters on the given protococol
 func Validate(p *protocol.Protocol) error {
-	if _, err := hashing.GetHashFromMultihash(p.MultihashAlgorithm); err != nil {
-		return errors.WithMessagef(err, "error in Sidetree protocol")
+	if len(p.MultihashAlgorithms) == 0 {
+		return errors.Errorf("field 'MultihashAlgorithms' cannot be empty")
+	}
+
+	for _, alg := range p.MultihashAlgorithms {
+		if _, err := hashing.GetHashFromMultihash(alg); err != nil {
+			return errors.WithMessagef(err, "error in Sidetree protocol for multihash algorithm(%d)", alg)
+		}
 	}
 
 	if p.MaxOperationCount == 0 {
@@ -67,10 +73,6 @@ func verifyBatchSizesV0(p *protocol.Protocol) error {
 
 	if p.MaxDeltaSize == 0 {
 		return errors.Errorf(errMsg, "MaxDeltaSize")
-	}
-
-	if p.MaxProofSize == 0 {
-		return errors.Errorf(errMsg, "MaxProofSize")
 	}
 
 	if p.MaxCasURILength == 0 {
