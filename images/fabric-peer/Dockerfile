@@ -32,6 +32,7 @@ ARG GO_LDFLAGS
 RUN make GO_TAGS="${GO_TAGS}" GO_LDFLAGS="${GO_LDFLAGS}" fabric-peer
 
 FROM peer-base
+LABEL org.opencontainers.image.source https://github.com/trustbloc/sidetree-fabric
 ENV FABRIC_CFG_PATH /etc/hyperledger/fabric
 VOLUME /etc/hyperledger/fabric
 VOLUME /var/hyperledger
