@@ -55,8 +55,8 @@ FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
 export FABRIC_CLI_EXT_VERSION ?= v0.1.5
 
 # Namespace for the Sidetree Fabric peer image
-DOCKER_OUTPUT_NS           ?= docker.pkg.github.com/trustbloc/sidetree-fabric
-SIDETREE_FABRIC_IMAGE_NAME ?= peer
+DOCKER_OUTPUT_NS           ?= ghcr.io/trustbloc
+SIDETREE_FABRIC_IMAGE_NAME ?= sidetree-fabric
 SIDETREE_FABRIC_IMAGE_TAG  ?= latest
 
 checks: license lint

@@ -11,11 +11,9 @@ IS_RELEASE=false
 
 # Project Parameters
 SOURCE_REPO=sidetree-fabric
-BASE_PKG_NAME=peer
-RELEASE_REPO=docker.pkg.github.com/trustbloc/${SOURCE_REPO}
-SNAPSHOT_REPO=docker.pkg.github.com/trustbloc-cicd/snapshot
-
-ARCH=$(go env GOARCH)
+BASE_PKG_NAME=sidetree-fabric
+RELEASE_REPO=ghcr.io/trustbloc
+SNAPSHOT_REPO=ghcr.io/trustbloc-cicd
 
 if [ ${IS_RELEASE} = false ]
 then
@@ -27,5 +25,5 @@ else
   PROJECT_PKG_REPO=${RELEASE_REPO}
 fi
 
-export SIDETREE_FABRIC_TAG=$ARCH-$PROJECT_VERSION
+export SIDETREE_FABRIC_TAG=$PROJECT_VERSION
 export SIDETREE_FABRIC_PKG=${PROJECT_PKG_REPO}/${BASE_PKG_NAME}
