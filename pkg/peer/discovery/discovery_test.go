@@ -9,6 +9,7 @@ package discovery
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/gossip"
 	"github.com/stretchr/testify/require"
+
 	"github.com/trustbloc/fabric-peer-ext/pkg/common/requestmgr"
 	extmocks "github.com/trustbloc/fabric-peer-ext/pkg/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/discovery/mocks"
@@ -197,9 +199,30 @@ func TestDiscovery_HandleDataRequest(t *testing.T) {
 			Request:  reqBytes,
 		}
 
-		resp, err := d.handleDiscoveryRequest(channel1, req)
+		responder := &mockResponder{}
+
+		d.handleDiscoveryRequest(channel1, req, responder)
+		require.NotEmpty(t, responder.data)
+	})
+
+	t.Run("Marshal error", func(t *testing.T) {
+		errExpected := fmt.Errorf("injected marshal error")
+
+		d.marshal = func(interface{}) ([]byte, error) { return nil, errExpected }
+
+		reqBytes, err := json.Marshal([]string{peer1_1, peer1_2, peer2_1})
 		require.NoError(t, err)
-		require.NotEmpty(t, resp)
+
+		req := &gossip.AppDataRequest{
+			Nonce:    10000,
+			DataType: handlerDataType,
+			Request:  reqBytes,
+		}
+
+		responder := &mockResponder{}
+
+		d.handleDiscoveryRequest(channel1, req, responder)
+		require.Empty(t, responder.data)
 	})
 
 	t.Run("Unmarshal error", func(t *testing.T) {
@@ -209,10 +232,10 @@ func TestDiscovery_HandleDataRequest(t *testing.T) {
 			Request:  []byte("{"),
 		}
 
-		resp, err := d.handleDiscoveryRequest(channel1, req)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "error unmarshalling peer endpoints in request")
-		require.Empty(t, resp)
+		responder := &mockResponder{}
+
+		d.handleDiscoveryRequest(channel1, req, responder)
+		require.Empty(t, responder.data)
 	})
 }
 
@@ -241,4 +264,12 @@ func containsAll(services []Service, svcs ...Service) bool {
 	}
 
 	return true
+}
+
+type mockResponder struct {
+	data []byte
+}
+
+func (m *mockResponder) Respond(data []byte) {
+	m.data = data
 }
