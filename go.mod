@@ -33,11 +33,11 @@ require (
 	go.uber.org/zap v1.14.1
 )
 
-replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.5
+replace github.com/hyperledger/fabric => github.com/trustbloc/fabric-mod v0.1.6-0.20210106200132-8b87450ce0f4
 
-replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20201201191333-ef814cdd19db
+replace github.com/hyperledger/fabric/extensions => github.com/trustbloc/fabric-peer-ext/mod/peer v0.0.0-20210111061602-fa5ac7fb354c
 
-replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.5
+replace github.com/trustbloc/fabric-peer-ext => github.com/trustbloc/fabric-peer-ext v0.1.6-0.20210111061602-fa5ac7fb354c
 
 replace github.com/hyperledger/fabric-protos-go => github.com/trustbloc/fabric-protos-go-ext v0.1.5
 

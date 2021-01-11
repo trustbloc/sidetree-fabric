@@ -19,7 +19,7 @@ import (
 	"github.com/hyperledger/fabric/gossip/comm"
 	gcommon "github.com/hyperledger/fabric/gossip/common"
 	"github.com/hyperledger/fabric/gossip/discovery"
-	"github.com/pkg/errors"
+
 	extcommon "github.com/trustbloc/fabric-peer-ext/pkg/common"
 	extdiscovery "github.com/trustbloc/fabric-peer-ext/pkg/common/discovery"
 	"github.com/trustbloc/fabric-peer-ext/pkg/gossip/appdata"
@@ -80,6 +80,8 @@ type Discovery struct {
 	config
 	peerConfig
 	discoveryCache gcache.Cache
+	marshal        func(interface{}) ([]byte, error)
+	unmarshal      func([]byte, interface{}) error
 }
 
 // New returns a discovery service
@@ -91,6 +93,8 @@ func New(handlerRegistry appDataHandlerRegistry, gossipProvider gossipProvider, 
 	d := &Discovery{
 		config:     cfg,
 		peerConfig: peerCfg,
+		marshal:    json.Marshal,
+		unmarshal:  json.Unmarshal,
 		discoveryCache: gcache.New(0).LoaderFunc(func(chID interface{}) (interface{}, error) {
 			return newChannelDiscovery(chID.(string), cfg, peerCfg, gossipProvider.GetGossipService()), nil
 		}).Build(),
@@ -124,13 +128,18 @@ func (d *Discovery) forChannel(channelID string) *channelDiscovery {
 }
 
 // handleDiscoveryRequest is a server-side handler that responds to a remote peer with the requested service endpoints
-func (d *Discovery) handleDiscoveryRequest(channelID string, req *gproto.AppDataRequest) ([]byte, error) {
+func (d *Discovery) handleDiscoveryRequest(channelID string, req *gproto.AppDataRequest, responder appdata.Responder) {
 	logger.Debugf("[%s] Handling discovery request", channelID)
 
 	var peerEndpoints []string
-	err := json.Unmarshal(req.Request, &peerEndpoints)
+	err := d.unmarshal(req.Request, &peerEndpoints)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "error unmarshalling peer endpoints in request")
+		logger.Errorf("Error unmarshalling peer endpoints in request: %s")
+
+		// Respond with nil so that the requesting peer doesn't have to wait for a timeout
+		responder.Respond(nil)
+
+		return
 	}
 
 	logger.Debugf("[%s] Got discovery request for endpoints: %s", channelID, peerEndpoints)
@@ -141,12 +150,14 @@ func (d *Discovery) handleDiscoveryRequest(channelID string, req *gproto.AppData
 		response[peerEndpoint] = d.forChannel(channelID).servicesForPeer(peerEndpoint)
 	}
 
-	respBytes, err := json.Marshal(response)
+	respBytes, err := d.marshal(response)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "error marshalling response")
+		logger.Errorf("Error marshalling response: %s")
+
+		// Will respond with nil so that the requesting peer doesn't have to wait for a timeout
 	}
 
-	return respBytes, nil
+	responder.Respond(respBytes)
 }
 
 // handleDiscoveryResponse is a client-side handler of a response from a remote peer. It ensures that
