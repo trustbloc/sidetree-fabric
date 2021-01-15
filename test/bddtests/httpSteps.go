@@ -9,6 +9,7 @@ package bddtests
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -121,8 +122,8 @@ func (d *httpSteps) checkErrorResponse(msg string) error {
 	}
 
 	respMsg := d.getErrorResponse()
-	if respMsg != msg {
-		return errors.Errorf("expecting error message [%s] but got [%s]", msg, respMsg)
+	if !strings.Contains(respMsg, msg) {
+		return errors.Errorf("expecting error message contains [%s] but got [%s]", msg, respMsg)
 	}
 
 	return nil

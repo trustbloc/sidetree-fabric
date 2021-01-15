@@ -67,7 +67,10 @@ func TestFileRetrieveHandler(t *testing.T) {
 	})
 
 	t.Run("File index was deleted", func(t *testing.T) {
-		docResolver.ResolveDocumentReturns(nil, errors.New("was deleted"))
+		docMetadata := make(document.Metadata)
+		docMetadata[document.DeactivatedProperty] = true
+
+		docResolver.ResolveDocumentReturns(&document.ResolutionResult{DocumentMetadata: docMetadata, Document: make(document.Document)}, nil)
 
 		getResourceName = func(req *http.Request) string { return schema1 }
 		rw := httptest.NewRecorder()

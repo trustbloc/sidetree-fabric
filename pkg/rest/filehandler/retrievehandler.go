@@ -131,11 +131,11 @@ func (h *Retrieve) retrieveIndexDoc() (*FileIndex, error) {
 			return nil, common.NewHTTPError(http.StatusNotFound, errors.New("file index document not found"))
 		}
 
-		if strings.Contains(err.Error(), "was deleted") {
-			return nil, common.NewHTTPError(http.StatusGone, errors.New("document is no longer available"))
-		}
-
 		return nil, common.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if isDeactivated(result) {
+		return nil, common.NewHTTPError(http.StatusGone, errors.New("document is no longer available"))
 	}
 
 	docBytes, err := json.Marshal(result.Document)
@@ -198,6 +198,15 @@ func (h *Retrieve) retrieveFile(cID string) ([]byte, string, error) {
 	}
 
 	return f.Content, f.ContentType, nil
+}
+
+func isDeactivated(resolutionResult *document.ResolutionResult) bool {
+	deactivated, ok := resolutionResult.DocumentMetadata[document.DeactivatedProperty]
+	if !ok {
+		return false
+	}
+
+	return deactivated.(bool)
 }
 
 var getResourceName = func(req *http.Request) string {
