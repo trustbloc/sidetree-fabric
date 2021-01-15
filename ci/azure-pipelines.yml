@@ -4,9 +4,9 @@
 
 name: $(SourceBranchName)-$(Date:yyyyMMdd).$(Rev:r)
 trigger:
-  - master
+  - main
 pr:
-  - master
+  - main
 
 variables:
   GO_VERSION: 1.14.4
@@ -15,7 +15,7 @@ variables:
 jobs:
   - job: UnitTest
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
     timeoutInMinutes: 30
     steps:
     - template: azp-dependencies.yml
@@ -29,7 +29,7 @@ jobs:
 
   - job: BDDTest
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
     strategy:
       parallel: 4
     timeoutInMinutes: 30
@@ -45,7 +45,7 @@ jobs:
       - BDDTest
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
     timeoutInMinutes: 30
     steps:
       - template: azp-dependencies.yml
