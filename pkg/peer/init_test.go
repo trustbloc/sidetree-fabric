@@ -33,6 +33,7 @@ import (
 	"github.com/trustbloc/fabric-peer-ext/pkg/resource"
 	extroles "github.com/trustbloc/fabric-peer-ext/pkg/roles"
 	"github.com/trustbloc/fabric-peer-ext/pkg/statedb"
+	statedbmocks "github.com/trustbloc/fabric-peer-ext/pkg/statedb/mocks"
 	txnmocks "github.com/trustbloc/fabric-peer-ext/pkg/txn/mocks"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
@@ -159,7 +160,7 @@ func TestInitialize(t *testing.T) {
 
 	req := &Require{require.New(t)}
 
-	statedb.GetProvider().Register(channelID, db)
+	statedb.GetProvider().Register(channelID, db, &statedbmocks.QueryExecutorProvider{})
 
 	req.NotPanics(Initialize)
 
