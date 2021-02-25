@@ -118,7 +118,7 @@ Feature:
     And we wait 10 seconds
 
     When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
-    Then check error response contains "deactivated"
+    Then check success response contains "deactivated"
 
   @create_recover_did_doc
   Scenario: create and recover did doc

@@ -69,7 +69,7 @@ func TestNew(t *testing.T) {
 
 	require.NotNil(t, sctx.Protocol())
 	require.NotNil(t, sctx.CAS())
-	require.NotNil(t, sctx.Blockchain())
+	require.NotNil(t, sctx.Anchor())
 	require.NotEmpty(t, sctx.Namespace())
 	require.NotNil(t, sctx.OperationQueue())
 }
