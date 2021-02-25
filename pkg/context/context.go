@@ -25,12 +25,12 @@ import (
 
 // SidetreeContext implements 'Fabric' version of Sidetree node context
 type SidetreeContext struct {
-	channelID        string
-	namespace        string
-	protocolClient   protocolApi.Client
-	casClient        casApi.Client
-	blockchainClient batch.BlockchainClient
-	opQueue          cutter.OperationQueue
+	channelID      string
+	namespace      string
+	protocolClient protocolApi.Client
+	casClient      casApi.Client
+	anchorWriter   batch.AnchorWriter
+	opQueue        cutter.OperationQueue
 }
 
 type txnServiceProvider interface {
@@ -80,12 +80,12 @@ func New(
 	}
 
 	return &SidetreeContext{
-		channelID:        channelID,
-		namespace:        namespace,
-		protocolClient:   protocol.New(protocolVersions, providers.LedgerProvider.GetLedger(channelID)),
-		casClient:        casClient,
-		blockchainClient: blockchain.New(channelID, dcasCfg.ChaincodeName, namespace, providers.TxnProvider),
-		opQueue:          opQueue,
+		channelID:      channelID,
+		namespace:      namespace,
+		protocolClient: protocol.New(protocolVersions, providers.LedgerProvider.GetLedger(channelID)),
+		casClient:      casClient,
+		anchorWriter:   blockchain.New(channelID, dcasCfg.ChaincodeName, namespace, providers.TxnProvider),
+		opQueue:        opQueue,
 	}, nil
 }
 
@@ -99,9 +99,9 @@ func (m *SidetreeContext) Protocol() protocolApi.Client {
 	return m.protocolClient
 }
 
-// Blockchain returns blockchain client
-func (m *SidetreeContext) Blockchain() batch.BlockchainClient {
-	return m.blockchainClient
+// Anchor returns anchor writer
+func (m *SidetreeContext) Anchor() batch.AnchorWriter {
+	return m.anchorWriter
 }
 
 // CAS returns content addressable storage client

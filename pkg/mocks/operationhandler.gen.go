@@ -9,24 +9,26 @@ import (
 )
 
 type OperationHandler struct {
-	PrepareTxnFilesStub        func([]*operation.QueuedOperation) (string, error)
+	PrepareTxnFilesStub        func([]*operation.QueuedOperation) (string, []*operation.Reference, error)
 	prepareTxnFilesMutex       sync.RWMutex
 	prepareTxnFilesArgsForCall []struct {
 		arg1 []*operation.QueuedOperation
 	}
 	prepareTxnFilesReturns struct {
 		result1 string
-		result2 error
+		result2 []*operation.Reference
+		result3 error
 	}
 	prepareTxnFilesReturnsOnCall map[int]struct {
 		result1 string
-		result2 error
+		result2 []*operation.Reference
+		result3 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OperationHandler) PrepareTxnFiles(arg1 []*operation.QueuedOperation) (string, error) {
+func (fake *OperationHandler) PrepareTxnFiles(arg1 []*operation.QueuedOperation) (string, []*operation.Reference, error) {
 	var arg1Copy []*operation.QueuedOperation
 	if arg1 != nil {
 		arg1Copy = make([]*operation.QueuedOperation, len(arg1))
@@ -43,10 +45,10 @@ func (fake *OperationHandler) PrepareTxnFiles(arg1 []*operation.QueuedOperation)
 		return fake.PrepareTxnFilesStub(arg1)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1, ret.result2, ret.result3
 	}
 	fakeReturns := fake.prepareTxnFilesReturns
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
 func (fake *OperationHandler) PrepareTxnFilesCallCount() int {
@@ -55,7 +57,7 @@ func (fake *OperationHandler) PrepareTxnFilesCallCount() int {
 	return len(fake.prepareTxnFilesArgsForCall)
 }
 
-func (fake *OperationHandler) PrepareTxnFilesCalls(stub func([]*operation.QueuedOperation) (string, error)) {
+func (fake *OperationHandler) PrepareTxnFilesCalls(stub func([]*operation.QueuedOperation) (string, []*operation.Reference, error)) {
 	fake.prepareTxnFilesMutex.Lock()
 	defer fake.prepareTxnFilesMutex.Unlock()
 	fake.PrepareTxnFilesStub = stub
@@ -68,30 +70,33 @@ func (fake *OperationHandler) PrepareTxnFilesArgsForCall(i int) []*operation.Que
 	return argsForCall.arg1
 }
 
-func (fake *OperationHandler) PrepareTxnFilesReturns(result1 string, result2 error) {
+func (fake *OperationHandler) PrepareTxnFilesReturns(result1 string, result2 []*operation.Reference, result3 error) {
 	fake.prepareTxnFilesMutex.Lock()
 	defer fake.prepareTxnFilesMutex.Unlock()
 	fake.PrepareTxnFilesStub = nil
 	fake.prepareTxnFilesReturns = struct {
 		result1 string
-		result2 error
-	}{result1, result2}
+		result2 []*operation.Reference
+		result3 error
+	}{result1, result2, result3}
 }
 
-func (fake *OperationHandler) PrepareTxnFilesReturnsOnCall(i int, result1 string, result2 error) {
+func (fake *OperationHandler) PrepareTxnFilesReturnsOnCall(i int, result1 string, result2 []*operation.Reference, result3 error) {
 	fake.prepareTxnFilesMutex.Lock()
 	defer fake.prepareTxnFilesMutex.Unlock()
 	fake.PrepareTxnFilesStub = nil
 	if fake.prepareTxnFilesReturnsOnCall == nil {
 		fake.prepareTxnFilesReturnsOnCall = make(map[int]struct {
 			result1 string
-			result2 error
+			result2 []*operation.Reference
+			result3 error
 		})
 	}
 	fake.prepareTxnFilesReturnsOnCall[i] = struct {
 		result1 string
-		result2 error
-	}{result1, result2}
+		result2 []*operation.Reference
+		result3 error
+	}{result1, result2, result3}
 }
 
 func (fake *OperationHandler) Invocations() map[string][][]interface{} {

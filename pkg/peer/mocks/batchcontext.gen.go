@@ -19,14 +19,14 @@ type BatchContext struct {
 	protocolReturnsOnCall map[int]struct {
 		result1 protocol.Client
 	}
-	BlockchainStub        func() batch.BlockchainClient
+	BlockchainStub        func() batch.AnchorWriter
 	blockchainMutex       sync.RWMutex
 	blockchainArgsForCall []struct{}
 	blockchainReturns     struct {
-		result1 batch.BlockchainClient
+		result1 batch.AnchorWriter
 	}
 	blockchainReturnsOnCall map[int]struct {
-		result1 batch.BlockchainClient
+		result1 batch.AnchorWriter
 	}
 	OperationQueueStub        func() cutter.OperationQueue
 	operationQueueMutex       sync.RWMutex
@@ -81,11 +81,11 @@ func (fake *BatchContext) ProtocolReturnsOnCall(i int, result1 protocol.Client) 
 	}{result1}
 }
 
-func (fake *BatchContext) Blockchain() batch.BlockchainClient {
+func (fake *BatchContext) Anchor() batch.AnchorWriter {
 	fake.blockchainMutex.Lock()
 	ret, specificReturn := fake.blockchainReturnsOnCall[len(fake.blockchainArgsForCall)]
 	fake.blockchainArgsForCall = append(fake.blockchainArgsForCall, struct{}{})
-	fake.recordInvocation("Blockchain", []interface{}{})
+	fake.recordInvocation("Anchor", []interface{}{})
 	fake.blockchainMutex.Unlock()
 	if fake.BlockchainStub != nil {
 		return fake.BlockchainStub()
@@ -96,28 +96,28 @@ func (fake *BatchContext) Blockchain() batch.BlockchainClient {
 	return fake.blockchainReturns.result1
 }
 
-func (fake *BatchContext) BlockchainCallCount() int {
+func (fake *BatchContext) AnchorCallCount() int {
 	fake.blockchainMutex.RLock()
 	defer fake.blockchainMutex.RUnlock()
 	return len(fake.blockchainArgsForCall)
 }
 
-func (fake *BatchContext) BlockchainReturns(result1 batch.BlockchainClient) {
+func (fake *BatchContext) AnchorReturns(result1 batch.AnchorWriter) {
 	fake.BlockchainStub = nil
 	fake.blockchainReturns = struct {
-		result1 batch.BlockchainClient
+		result1 batch.AnchorWriter
 	}{result1}
 }
 
-func (fake *BatchContext) BlockchainReturnsOnCall(i int, result1 batch.BlockchainClient) {
+func (fake *BatchContext) AnchorReturnsOnCall(i int, result1 batch.AnchorWriter) {
 	fake.BlockchainStub = nil
 	if fake.blockchainReturnsOnCall == nil {
 		fake.blockchainReturnsOnCall = make(map[int]struct {
-			result1 batch.BlockchainClient
+			result1 batch.AnchorWriter
 		})
 	}
 	fake.blockchainReturnsOnCall[i] = struct {
-		result1 batch.BlockchainClient
+		result1 batch.AnchorWriter
 	}{result1}
 }
 

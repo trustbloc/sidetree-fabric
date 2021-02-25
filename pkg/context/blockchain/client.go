@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	txnapi "github.com/trustbloc/fabric-peer-ext/pkg/txn/api"
+	"github.com/trustbloc/sidetree-core-go/pkg/api/operation"
 	"github.com/trustbloc/sidetree-core-go/pkg/api/txn"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer/common"
 
@@ -44,7 +45,7 @@ func New(channelID, chaincodeName, namespace string, txnProvider txnServiceProvi
 }
 
 // WriteAnchor writes anchor string to blockchain
-func (c *Client) WriteAnchor(anchor string, protocolGenesisTime uint64) error {
+func (c *Client) WriteAnchor(anchor string, _ []*operation.Reference, protocolGenesisTime uint64) error {
 	txnService, err := c.txnProvider.ForChannel(c.channelID)
 	if err != nil {
 		return err
