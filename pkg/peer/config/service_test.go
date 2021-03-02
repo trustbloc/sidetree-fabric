@@ -33,7 +33,7 @@ const (
 	v0_1_3 = "0.1.3"
 	v0_1_4 = "0.1.4"
 
-	basePath1  = "/sidetree/0.0.1"
+	basePath1  = "/sidetree/v1"
 	namespace1 = "did:sidetree"
 	basePath2  = "/file"
 	namespace2 = "file:idx"
@@ -47,7 +47,7 @@ const (
 	didSidetreeProtocol_V0_4_CfgJSON = `{"genesisTime":200000,"multihashAlgorithms":[18],"maxOperationSize":2000,"maxOperationCount":10}`
 	didSidetreeProtocol_V0_5_CfgJSON = `{"genesisTime":500000,"multihashAlgorithms":[18],"maxOperationSize":10000,"maxOperationCount":100}`
 	sidetreePeerCfgJson              = `{"Observer":{"Period":"5s"}}`
-	sidetreeHandler1CfgJson          = `{"Namespace":"did:sidetree","BasePath":"/sidetree/0.0.1","Aliases":["did:domain.com","did:alias.com"]}`
+	sidetreeHandler1CfgJson          = `{"Namespace":"did:sidetree","BasePath":"/sidetree/v1","Aliases":["did:domain.com","did:alias.com"]}`
 	sidetreeHandler2CfgJson          = `{"Namespace":"file:idx","BasePath":"/file"}`
 	fileHandler1CfgJson              = `{"BasePath":"/schema","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:1234"}`
 	fileHandler2CfgJson              = `{"BasePath":"/.well-known/trustbloc","ChaincodeName":"files","Collection":"consortium","IndexNamespace":"file:idx","IndexDocID":"file:idx:5678"}`

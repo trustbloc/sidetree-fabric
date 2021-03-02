@@ -40,7 +40,7 @@ Feature:
     And we wait 15 seconds
 
     # Configure the following Sidetree namespaces on channel 'mychannel'
-    # - did:bloc:sidetree       - Path: /sidetree/0.0.1/identifiers, /sidetree/0.0.1/operations
+    # - did:bloc:sidetree       - Path: /sidetree/v1/identifiers, /sidetree/v1/operations
     # - did:bloc:trustbloc.dev  - Path: /trustbloc.dev/identifiers, /trustbloc.dev/operations
     Then fabric-cli context "org1-mychannel-context" is used
     And fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/mychannel-consortium-config.json --noprompt"
@@ -64,20 +64,20 @@ Feature:
 
   @create_did_doc
   Scenario: create valid did doc
-    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/operations" is set to "${did_w}"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48327/sidetree/0.0.1/identifiers" to resolve DID document with initial state
+    When client sends request to "https://localhost:48327/sidetree/v1/identifiers" to resolve DID document with initial state
     Then check success response contains "#didDocumentHash"
 
     And we wait 10 seconds
 
-    When client sends request to "https://localhost:48327/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48327/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "#didDocumentHash"
-    When client sends request to "https://localhost:48327/sidetree/0.0.1/identifiers" to resolve DID document with alias "did:domain.com"
+    When client sends request to "https://localhost:48327/sidetree/v1/identifiers" to resolve DID document with alias "did:domain.com"
     Then check success response contains "#didDocumentHash"
     Then check success response contains "did:domain.com"
 
@@ -105,106 +105,106 @@ Feature:
 
   @create_deactivate_did_doc
   Scenario: create and deactivate valid did doc
-    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/operations" is set to "${did_w}"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "#didDocumentHash"
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to deactivate DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to deactivate DID document
     And we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "deactivated"
 
   @create_recover_did_doc
   Scenario: create and recover did doc
-    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/operations" is set to "${did_w}"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to recover DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to recover DID document
     And we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "recoveryKey"
 
   @create_add_remove_public_key
   Scenario: add and remove public keys
-    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/operations" is set to "${did_w}"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to add public key with ID "newKey" to DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to add public key with ID "newKey" to DID document
     Then we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "newKey"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to remove public key with ID "newKey" from DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to remove public key with ID "newKey" from DID document
     Then we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response does NOT contain "newKey"
 
   @create_add_remove_services
   Scenario: add and remove service endpoints
-    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/operations" is set to "${did_w}"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
     And we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to add service endpoint with ID "newService" to DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to add service endpoint with ID "newService" to DID document
     Then we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "newService"
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/operations" to remove service endpoint with ID "newService" from DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/operations" to remove service endpoint with ID "newService" from DID document
     Then we wait 10 seconds
 
-    When client sends request to "https://localhost:48426/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48426/sidetree/v1/identifiers" to resolve DID document
     Then check success response does NOT contain "newService"
 
   @sidetree_unauthorized
   Scenario: Attempt to access Sidetree endpoints without providing an auth token
-    When an HTTP POST is sent to "https://localhost:48327/sidetree/0.0.1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48327/sidetree/0.0.1/identifiers/did:sidetree:1234" and the returned status code is 401
+    When an HTTP POST is sent to "https://localhost:48327/sidetree/v1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48327/sidetree/v1/identifiers/did:sidetree:1234" and the returned status code is 401
 
     # The following endpoints were configured with no authorization so they should be OK to access
     When an HTTP POST is sent to "https://localhost:48327/trustbloc.dev/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 400
     When an HTTP GET is sent to "https://localhost:48327/trustbloc.dev/identifiers/did:bloc:trustbloc.dev:1234" and the returned status code is 404
 
     # Now provide valid auth tokens
-    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
-    When an HTTP POST is sent to "https://localhost:48327/sidetree/0.0.1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 400
-    When an HTTP GET is sent to "https://localhost:48327/sidetree/0.0.1/identifiers/did:sidetree:1234" and the returned status code is 404
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/operations" is set to "${did_w}"
+    When an HTTP POST is sent to "https://localhost:48327/sidetree/v1/operations" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48327/sidetree/v1/identifiers/did:sidetree:1234" and the returned status code is 404
 
   @version_and_protocol_params
   Scenario: Version and protocol parameters
     # Protocol at time (block number) 50
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version?time=50"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/version?time=50"
     And the JSON path "version" of the response equals "0.1.1"
     And the JSON path "genesisTime" of the numeric response equals "20"
     And the JSON path "multihashAlgorithms" of the array response is not empty
@@ -224,7 +224,7 @@ Feature:
     And the JSON path "keyAlgorithms" of the array response is not empty
 
     # Protocol at time (block number) 2000
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version?time=2000"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/version?time=2000"
     And the JSON path "version" of the response equals "0.1.2"
     And the JSON path "genesisTime" of the numeric response equals "1000"
     And the JSON path "multihashAlgorithms" of the array response is not empty
@@ -244,7 +244,7 @@ Feature:
     And the JSON path "keyAlgorithms" of the array response is not empty
 
     # Current protocol
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/version"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/version"
     # We can't check for actual version because we don't know how many blocks have been created
     # by the tests so far so we don't know which protocol is current
     And the JSON path "version" of the response is not empty

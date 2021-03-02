@@ -17,7 +17,7 @@ import (
 const (
 	service1  = "did:sidetree"
 	v1        = "0.0.1"
-	basePath1 = "/sidetree/0.0.1"
+	basePath1 = "/sidetree/v1"
 	ep1       = "/identifiers"
 	ep2       = "/operations"
 )

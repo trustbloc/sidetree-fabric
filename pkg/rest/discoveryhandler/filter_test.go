@@ -24,18 +24,18 @@ const (
 	path1_1            = "/identifiers"
 	path1_2            = "/operations"
 	path1_3            = "/version"
-	rootEndpoint1_1    = "https://peer1.org1.com/sidetree/0.0.1"
-	rootEndpoint1_1_v2 = "https://peer1.org1.com/sidetree/0.0.2"
-	rootEndpoint1_2    = "https://peer1.org2.com/sidetree/0.0.1"
+	rootEndpoint1_1    = "https://peer1.org1.com/sidetree/v1"
+	rootEndpoint1_1_v2 = "https://peer1.org1.com/sidetree/v2"
+	rootEndpoint1_2    = "https://peer1.org2.com/sidetree/v1"
 
 	service2           = "service2"
-	rootEndpoint2_1    = "https://peer1.org1.com/sidetree/0.0.1/cas"
-	rootEndpoint2_1_v2 = "https://peer1.org1.com/sidetree/0.0.2/cas"
-	rootEndpoint2_2    = "https://peer2.org2.com/sidetree/0.0.1/cas"
-	rootEndpoint2_2_v2 = "https://peer2.org2.com/sidetree/0.0.2/cas"
+	rootEndpoint2_1    = "https://peer1.org1.com/sidetree/v1/cas"
+	rootEndpoint2_1_v2 = "https://peer1.org1.com/sidetree/v2/cas"
+	rootEndpoint2_2    = "https://peer2.org2.com/sidetree/v1/cas"
+	rootEndpoint2_2_v2 = "https://peer2.org2.com/sidetree/v2/cas"
 
-	v1 = "0.0.1"
-	v2 = "0.0.2"
+	v1 = "v1"
+	v2 = "v2"
 )
 
 var (

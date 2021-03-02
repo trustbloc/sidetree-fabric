@@ -23,10 +23,10 @@ const (
 	org1Peer1Cfg                               = `{"Observer":{"MetaDataChaincodeName":"document","Period":"3s"}}`
 	org1Peer1NoPeriodCfg                       = `{"Observer":{"MetaDataChaincodeName":"document"}}`
 	org1Peer1CfgNoMetaDataCC                   = `{"Observer":{"Period":"3s"}}`
-	org1Peer1SidetreeHandlerCfg                = `{"BasePath":"/sidetree/0.0.1","Namespace":"did:sidetree","Authorization":{"ReadTokens":["did_r","did_w"],"WriteTokens": ["did_w"]}}`
-	org1Peer1SidetreeHandlerNoNamespaceCfg     = `{"BasePath":"/sidetree/0.0.1"}`
+	org1Peer1SidetreeHandlerCfg                = `{"BasePath":"/sidetree/v1","Namespace":"did:sidetree","Authorization":{"ReadTokens":["did_r","did_w"],"WriteTokens": ["did_w"]}}`
+	org1Peer1SidetreeHandlerNoNamespaceCfg     = `{"BasePath":"/sidetree/v1"}`
 	org1Peer1SidetreeHandlerNoBasePathCfg      = `{"Namespace":"did:sidetree"}`
-	org1Peer1SidetreeHandlerInvalidBasePathCfg = `{"Namespace":"did:sidetree","BasePath":"sidetree/0.0.1"}`
+	org1Peer1SidetreeHandlerInvalidBasePathCfg = `{"Namespace":"did:sidetree","BasePath":"sidetree/v1"}`
 )
 
 func TestSidetreePeerValidator_Validate(t *testing.T) {
@@ -37,7 +37,7 @@ func TestSidetreePeerValidator_Validate(t *testing.T) {
 
 	key := config.NewPeerKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion)
 	handler1Key := config.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, basePath1, v0_1_3)
-	handler1InvalidKey := config.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, "sidetree/0.0.1", v0_1_3)
+	handler1InvalidKey := config.NewPeerComponentKey(mspID, peerID, SidetreePeerAppName, SidetreePeerAppVersion, "sidetree/v1", v0_1_3)
 
 	t.Run("Irrelevant config -> success", func(t *testing.T) {
 		k1 := config.NewPeerKey(mspID, peerID, "app1", "v1")

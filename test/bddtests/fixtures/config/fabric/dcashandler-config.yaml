@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-basePath: /sidetree/0.0.1/cas
+basePath: /sidetree/v1/cas
 chaincodeName: sidetreetxn
 collection: dcas
 

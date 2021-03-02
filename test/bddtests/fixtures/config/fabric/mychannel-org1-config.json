@@ -29,7 +29,7 @@
           "Format": "json",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1",
+              "Name": "/sidetree/v1",
               "Version": "0.1.3",
               "Config": "file://./did-sidetree-config.json",
               "Format": "json"
@@ -71,7 +71,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1/cas",
+              "Name": "/sidetree/v1/cas",
               "Version": "0.1.3",
               "Config": "file://./dcashandler-config.yaml",
               "Format": "yaml"
@@ -83,7 +83,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1/blockchain",
+              "Name": "/sidetree/v1/blockchain",
               "Version": "0.1.3",
               "Config": "file://./blockchainhandler-config.yaml",
               "Format": "yaml"
@@ -95,7 +95,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/discovery/0.0.1",
+              "Name": "/discovery/v1",
               "Version": "0.1.4",
               "Config": "file://./discoveryhandler-config.yaml",
               "Format": "yaml"
@@ -132,7 +132,7 @@
           "Format": "json",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1",
+              "Name": "/sidetree/v1",
               "Version": "0.1.3",
               "Config": "file://./did-sidetree-config.json",
               "Format": "json"
@@ -174,7 +174,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1/cas",
+              "Name": "/sidetree/v1/cas",
               "Version": "0.1.3",
               "Config": "file://./dcashandler-config.yaml",
               "Format": "yaml"
@@ -186,7 +186,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1/blockchain",
+              "Name": "/sidetree/v1/blockchain",
               "Version": "0.1.3",
               "Config": "file://./blockchainhandler-config.yaml",
               "Format": "yaml"
@@ -198,7 +198,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/discovery/0.0.1",
+              "Name": "/discovery/v1",
               "Version": "0.1.4",
               "Config": "file://./discoveryhandler-config.yaml",
               "Format": "yaml"
@@ -235,7 +235,7 @@
           "Format": "json",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1",
+              "Name": "/sidetree/v1",
               "Version": "0.1.3",
               "Config": "file://./did-sidetree-config.json",
               "Format": "json"
@@ -277,7 +277,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1/cas",
+              "Name": "/sidetree/v1/cas",
               "Version": "0.1.3",
               "Config": "file://./dcashandler-config.yaml",
               "Format": "yaml"
@@ -289,7 +289,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/sidetree/0.0.1/blockchain",
+              "Name": "/sidetree/v1/blockchain",
               "Version": "0.1.3",
               "Config": "file://./blockchainhandler-config.yaml",
               "Format": "yaml"
@@ -301,7 +301,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "/discovery/0.0.1",
+              "Name": "/discovery/v1",
               "Version": "0.1.4",
               "Config": "file://./discoveryhandler-config.yaml",
               "Format": "yaml"
