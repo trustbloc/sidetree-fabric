@@ -164,6 +164,7 @@ Feature:
     And the JSON path "maxDeltaSize" of the numeric response equals "1700"
     And the JSON path "maxOperationHashLength" of the numeric response equals "100"
     And the JSON path "maxCasUriLength" of the numeric response equals "100"
+    And the JSON path "maxMemoryDecompressionFactor" of the numeric response equals "3"
     And the JSON path "maxCoreIndexFileSize" of the numeric response equals "1000000"
     And the JSON path "maxProofFileSize" of the numeric response equals "1000000"
     And the JSON path "maxProvisionalIndexFileSize" of the numeric response equals "1000000"

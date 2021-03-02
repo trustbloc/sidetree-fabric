@@ -14,11 +14,11 @@ import (
 )
 
 func TestUpdateIndex(t *testing.T) {
-	path := "/file"
+	path := "/file/operations"
 
 	h := NewUpdateIndexHandler(path, nil, nil)
 	require.NotNil(t, h)
-	require.Equal(t, "/file/operations", h.Path())
+	require.Equal(t, path, h.Path())
 	require.NotNil(t, h.Handler())
 	require.Equal(t, http.MethodPost, h.Method())
 }

@@ -35,7 +35,7 @@ func TestGetClientError(t *testing.T) {
 	c := New(chID, ccName, namespace, txnProvider)
 	require.NotNil(t, c)
 
-	err := c.WriteAnchor("anchor", nil,100)
+	err := c.WriteAnchor("anchor", nil, 100)
 	require.EqualError(t, err, testErr.Error())
 }
 

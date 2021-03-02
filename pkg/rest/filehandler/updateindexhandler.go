@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package filehandler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/api/protocol"
@@ -24,7 +23,7 @@ type UpdateIndex struct {
 // NewUpdateIndexHandler returns a new update index handler
 func NewUpdateIndexHandler(path string, processor resthandler.Processor, pc protocol.Client) *UpdateIndex {
 	return &UpdateIndex{
-		path:          fmt.Sprintf("%s/operations", path),
+		path:          path,
 		UpdateHandler: resthandler.NewUpdateHandler(processor, pc),
 	}
 }

@@ -83,5 +83,9 @@ func verifyBatchSizesV0(p *protocol.Protocol) error {
 		return errors.Errorf(errMsg, "MaxOperationHashLength")
 	}
 
+	if p.MaxMemoryDecompressionFactor == 0 {
+		return errors.Errorf(errMsg, "MaxMemoryDecompressionFactor")
+	}
+
 	return nil
 }
