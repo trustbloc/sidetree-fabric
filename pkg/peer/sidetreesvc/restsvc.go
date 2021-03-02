@@ -26,6 +26,12 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 
+const (
+	operationEndpoint  = "/operations"
+	resolutionEndpoint = "/identifiers"
+	versionEndpoint    = "/version"
+)
+
 type restService struct {
 	listenURL  string
 	httpServer *httpserver.Server
@@ -123,7 +129,7 @@ func newRESTHandlers(
 		logger.Debugf("[%s] Authorization tokens for document resolver REST endpoint for namespace [%s]: %s", channelID, cfg.Namespace, cfg.Authorization.ReadTokens)
 
 		service.endpoints = append(service.endpoints,
-			newEndpoint("/identifiers", authhandler.New(channelID, authTokens(cfg.Authorization.ReadTokens, tokenProvider), getResolveHandler(cfg, docHandler))),
+			newEndpoint(resolutionEndpoint, authhandler.New(channelID, authTokens(cfg.Authorization.ReadTokens, tokenProvider), getResolveHandler(cfg, docHandler))),
 		)
 	}
 
@@ -132,12 +138,12 @@ func newRESTHandlers(
 		logger.Debugf("[%s] Authorization tokens for document update REST endpoint for namespace [%s]: %s", channelID, cfg.Namespace, cfg.Authorization.WriteTokens)
 
 		service.endpoints = append(service.endpoints,
-			newEndpoint("/operations", authhandler.New(channelID, authTokens(cfg.Authorization.WriteTokens, tokenProvider), getUpdateHandler(cfg, docHandler, pc))),
+			newEndpoint(operationEndpoint, authhandler.New(channelID, authTokens(cfg.Authorization.WriteTokens, tokenProvider), getUpdateHandler(cfg, docHandler, pc))),
 		)
 	}
 
 	service.endpoints = append(service.endpoints,
-		newEndpoint("/version", sidetreehandler.NewVersionHandler(channelID, cfg, pc)),
+		newEndpoint(versionEndpoint, sidetreehandler.NewVersionHandler(channelID, cfg, pc)),
 	)
 
 	return &restHandlers{
@@ -153,11 +159,11 @@ type updateHandlerProvider func(sidetreehandler.Config, resthandler.Processor, p
 
 var (
 	didDocResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) restcommon.HTTPHandler {
-		return diddochandler.NewResolveHandler(cfg.BasePath, resolver)
+		return diddochandler.NewResolveHandler(cfg.BasePath+resolutionEndpoint, resolver)
 	}
 
 	didDocUpdateProvider = func(cfg sidetreehandler.Config, processor resthandler.Processor, pc protocol.Client) restcommon.HTTPHandler {
-		return diddochandler.NewUpdateHandler(cfg.BasePath, processor, pc)
+		return diddochandler.NewUpdateHandler(cfg.BasePath+operationEndpoint, processor, pc)
 	}
 
 	fileResolveProvider = func(cfg sidetreehandler.Config, resolver resthandler.Resolver) restcommon.HTTPHandler {
@@ -165,7 +171,7 @@ var (
 	}
 
 	fileUpdateProvider = func(cfg sidetreehandler.Config, processor resthandler.Processor, pc protocol.Client) restcommon.HTTPHandler {
-		return filehandler.NewUpdateIndexHandler(cfg.BasePath, processor, pc)
+		return filehandler.NewUpdateIndexHandler(cfg.BasePath+operationEndpoint, processor, pc)
 	}
 )
 

@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-test-common/bddtests"
 	"github.com/trustbloc/sidetree-core-go/pkg/compression"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/txnprovider"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/1_0/txnprovider"
 )
 
 // BlockchainSteps

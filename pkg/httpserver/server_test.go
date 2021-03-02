@@ -27,9 +27,9 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/common"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/diddochandler"
 	"github.com/trustbloc/sidetree-core-go/pkg/restapi/dochandler"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/operationparser"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/1_0/client"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/1_0/model"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/1_0/operationparser"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/mocks"
 )
@@ -41,23 +41,28 @@ const (
 	didDocNamespace = "did:sidetree"
 	didDocPath      = "/document"
 
+	operationEndpoint  = didDocPath + "/operations"
+	resolutionEndpoint = didDocPath + "/identifiers"
+
 	sampleNamespace = "sample:sidetree"
 	samplePath      = "/sample"
 	sha2_256        = 18
 )
 
 var p = protocol.Protocol{
-	GenesisTime:                 0,
-	MultihashAlgorithms:         []uint{sha2_256},
-	MaxOperationCount:           2,
-	MaxOperationSize:            1024,
-	CompressionAlgorithm:        "GZIP",
-	MaxChunkFileSize:            1024,
-	MaxProvisionalIndexFileSize: 1024,
-	MaxCoreIndexFileSize:        1024,
-	SignatureAlgorithms:         []string{"EdDSA", "ES256"},
-	KeyAlgorithms:               []string{"Ed25519", "P-256"},
-	Patches:                     []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
+	GenesisTime:                  0,
+	MultihashAlgorithms:          []uint{sha2_256},
+	MaxOperationCount:            2,
+	MaxOperationSize:             1024,
+	CompressionAlgorithm:         "GZIP",
+	MaxChunkFileSize:             1024,
+	MaxProvisionalIndexFileSize:  1024,
+	MaxCoreIndexFileSize:         1024,
+	SignatureAlgorithms:          []string{"EdDSA", "ES256"},
+	KeyAlgorithms:                []string{"Ed25519", "P-256"},
+	Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
+	NonceSize:                    16,
+	MaxMemoryDecompressionFactor: 3,
 }
 
 func TestServer_Start(t *testing.T) {
@@ -76,8 +81,8 @@ func TestServer_Start(t *testing.T) {
 	s := New(url,
 		"",
 		"",
-		diddochandler.NewUpdateHandler(didDocPath, didDocHandler, pc),
-		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
+		diddochandler.NewUpdateHandler(operationEndpoint, didDocHandler, pc),
+		diddochandler.NewResolveHandler(resolutionEndpoint, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
 	)
@@ -101,7 +106,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(time.Second)
 
 	t.Run("DID doc", func(t *testing.T) {
-		resp, err := httpPut(t, clientURL+didDocPath+"/operations", request)
+		resp, err := httpPut(t, clientURL+operationEndpoint, request)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
@@ -109,7 +114,7 @@ func TestServer_Start(t *testing.T) {
 		require.NoError(t, json.Unmarshal(resp, &createdDoc))
 		require.Equal(t, didID, createdDoc.Document["id"])
 
-		resp, err = httpGet(t, clientURL+didDocPath+"/identifiers/"+didID)
+		resp, err = httpGet(t, clientURL+resolutionEndpoint+"/"+didID)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
@@ -156,8 +161,8 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	s1 := New(url,
 		"",
 		"",
-		diddochandler.NewUpdateHandler(didDocPath, didDocHandler, pc),
-		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
+		diddochandler.NewUpdateHandler(operationEndpoint, didDocHandler, pc),
+		diddochandler.NewResolveHandler(resolutionEndpoint, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
 	)
@@ -165,8 +170,8 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	s2 := New(url,
 		"",
 		"",
-		diddochandler.NewUpdateHandler(didDocPath, didDocHandler, pc),
-		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
+		diddochandler.NewUpdateHandler(operationEndpoint, didDocHandler, pc),
+		diddochandler.NewResolveHandler(resolutionEndpoint, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
 	)
@@ -174,8 +179,8 @@ func TestServer_RetryOnStartup(t *testing.T) {
 	s3 := New(url,
 		"",
 		"",
-		diddochandler.NewUpdateHandler(didDocPath, didDocHandler, pc),
-		diddochandler.NewResolveHandler(didDocPath, didDocHandler),
+		diddochandler.NewUpdateHandler(operationEndpoint, didDocHandler, pc),
+		diddochandler.NewResolveHandler(resolutionEndpoint, didDocHandler),
 		newSampleUpdateHandler(sampleDocHandler),
 		newSampleResolveHandler(sampleDocHandler),
 	)

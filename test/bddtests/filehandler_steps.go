@@ -27,7 +27,7 @@ import (
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/ecsigner"
 	"github.com/trustbloc/sidetree-core-go/pkg/util/pubkey"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/client"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/1_0/client"
 )
 
 // FileHandlerSteps

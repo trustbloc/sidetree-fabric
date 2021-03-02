@@ -15,8 +15,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/trustbloc/sidetree-core-go/pkg/patch"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/docvalidator/docvalidator"
-	"github.com/trustbloc/sidetree-core-go/pkg/versions/0_1/model"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/1_0/docvalidator/docvalidator"
+	"github.com/trustbloc/sidetree-core-go/pkg/versions/1_0/model"
 
 	"github.com/trustbloc/sidetree-fabric/pkg/rest/filehandler"
 )

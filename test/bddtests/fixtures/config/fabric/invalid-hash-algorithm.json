@@ -7,6 +7,7 @@
   "maxDeltaSize": 1000,
   "maxCasUriLength": 100,
   "compressionAlgorithm": "GZIP",
+  "maxMemoryDecompressionFactor": 3,
   "maxCoreIndexFileSize": 1000000,
   "maxProofFileSize": 1000000,
   "maxProvisionalIndexFileSize": 1000000,

@@ -83,6 +83,15 @@ func TestValidator_Validate(t *testing.T) {
 		require.Contains(t, err.Error(), "field 'MaxCasURILength' must contain a value greater than 0")
 	})
 
+	t.Run("Invalid MaxMemoryDecompressionFactor -> error", func(t *testing.T) {
+		protocolInvalidMaxDecompressionFactor := getProtocol()
+		protocolInvalidMaxDecompressionFactor.MaxMemoryDecompressionFactor = 0
+
+		err := Validate(protocolInvalidMaxDecompressionFactor)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "field 'MaxMemoryDecompressionFactor' must contain a value greater than 0")
+	})
+
 	t.Run("Invalid MaxCoreIndexFileSize -> error", func(t *testing.T) {
 		protocolInvalidMaxCoreIndexSize := getProtocol()
 		protocolInvalidMaxCoreIndexSize.MaxCoreIndexFileSize = 0
@@ -158,20 +167,22 @@ func TestValidator_Validate(t *testing.T) {
 
 func getProtocol() *protocol.Protocol {
 	return &protocol.Protocol{
-		GenesisTime:                 500000,
-		MultihashAlgorithms:         []uint{18},
-		MaxOperationSize:            2000,
-		MaxOperationHashLength:      100,
-		MaxDeltaSize:                1000,
-		MaxCasURILength:             100,
-		MaxOperationCount:           10,
-		CompressionAlgorithm:        "GZIP",
-		MaxCoreIndexFileSize:        1000000,
-		MaxProofFileSize:            1000000,
-		MaxProvisionalIndexFileSize: 1000000,
-		MaxChunkFileSize:            10000000,
-		SignatureAlgorithms:         []string{"EdDSA", "ES256", "ES256K"},
-		KeyAlgorithms:               []string{"Ed25519", "P-256", "secp256k1"},
-		Patches:                     []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
+		GenesisTime:                  500000,
+		MultihashAlgorithms:          []uint{18},
+		MaxOperationSize:             2000,
+		MaxOperationHashLength:       100,
+		MaxDeltaSize:                 1000,
+		MaxCasURILength:              100,
+		MaxOperationCount:            10,
+		CompressionAlgorithm:         "GZIP",
+		MaxCoreIndexFileSize:         1000000,
+		MaxProofFileSize:             1000000,
+		MaxProvisionalIndexFileSize:  1000000,
+		MaxChunkFileSize:             10000000,
+		SignatureAlgorithms:          []string{"EdDSA", "ES256", "ES256K"},
+		KeyAlgorithms:                []string{"Ed25519", "P-256", "secp256k1"},
+		Patches:                      []string{"add-public-keys", "remove-public-keys", "add-service-endpoints", "remove-service-endpoints", "ietf-json-patch"},
+		NonceSize:                    16,
+		MaxMemoryDecompressionFactor: 3,
 	}
 }

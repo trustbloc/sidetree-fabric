@@ -39,7 +39,7 @@ import (
 	"github.com/trustbloc/sidetree-fabric/pkg/peer/config"
 	peermocks "github.com/trustbloc/sidetree-fabric/pkg/peer/mocks"
 	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/factoryregistry"
-	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/factory"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v1_0/factory"
 	"github.com/trustbloc/sidetree-fabric/pkg/role"
 )
 

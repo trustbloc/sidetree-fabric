@@ -9,7 +9,7 @@ package config
 import (
 	"github.com/pkg/errors"
 	"github.com/trustbloc/fabric-peer-ext/pkg/config/ledgerconfig/config"
-	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/validator"
+	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v1_0/validator"
 
 	sidetreecfg "github.com/trustbloc/sidetree-fabric/pkg/config"
 	"github.com/trustbloc/sidetree-fabric/pkg/observer"

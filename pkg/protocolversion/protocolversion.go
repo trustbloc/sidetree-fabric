@@ -8,7 +8,7 @@ package protocolversion
 
 import (
 	"github.com/trustbloc/sidetree-fabric/pkg/protocolversion/factoryregistry"
-	v0_1 "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v0_1/factory"
+	v0_1 "github.com/trustbloc/sidetree-fabric/pkg/protocolversion/versions/v1_0/factory"
 )
 
 const (

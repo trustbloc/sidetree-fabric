@@ -7,6 +7,7 @@
   "maxCasUriLength": 100,
   "maxOperationHashLength": 100,
   "compressionAlgorithm": "GZIP",
+  "maxMemoryDecompressionFactor": 3,
   "maxCoreIndexFileSize": 1000000,
   "maxProofFileSize": 2500000,
   "maxProvisionalIndexFileSize": 1000000,
