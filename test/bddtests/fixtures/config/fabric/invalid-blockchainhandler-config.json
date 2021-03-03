@@ -11,7 +11,7 @@
             {
               "Name": "/sidetree/v1/invalid",
               "Version": "0.1.3",
-              "Config": "{\"BasePath\":\"/sidetree/v1/blockchain\"}",
+              "Config": "{\"BasePath\":\"/sidetree/v1/anchor\"}",
               "Format": "json"
             }
           ]

@@ -44,13 +44,13 @@ Feature:
 
   @blockchain_handler
   Scenario: Blockchain functions
-    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/blockchain" is set to "${blockchain_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/v1/blockchain" is set to "${blockchain_r}"
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/anchor" is set to "${blockchain_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/anchor" is set to "${blockchain_r}"
     And the authorization bearer token for "GET" requests to path "/sidetree/v1/cas" is set to "${cas_r}"
     And the authorization bearer token for "POST" requests to path "/sidetree/v1/operations" is set to "${did_w}"
     And the authorization bearer token for "GET" requests to path "/sidetree/v1/identifiers" is set to "${did_w}"
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/version"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/version"
     Then the JSON path "name" of the response equals "Hyperledger Fabric"
     And the JSON path "version" of the response equals "2.2.1"
 
@@ -71,7 +71,7 @@ Feature:
     Then we wait 20 seconds
     Then client sends request to "${peer0.org1}/identifiers,${peer1.org1}/identifiers,${peer2.org1}/identifiers,${peer0.org2}/identifiers,${peer1.org2}/identifiers,${peer2.org2}/identifiers" to verify the DID documents that were created
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/time"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/time"
     Then the JSON path "time" of the response is not empty
     And the JSON path "hash" of the response is not empty
     And the JSON path "previousHash" of the response is not empty
@@ -79,19 +79,19 @@ Feature:
     And the JSON path "hash" of the response is saved to variable "latest-hash"
     And the JSON path "previousHash" of the response is saved to variable "latest-previous-hash"
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/time/${latest-hash}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/time/${latest-hash}"
     Then the JSON path "hash" of the response equals "${latest-hash}"
     And the JSON path "previousHash" of the response equals "${latest-previous-hash}"
     And the JSON path "time" of the response equals "${latest-time}"
 
     # Invalid hash - Bad Request (400)
-    Then an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/time/xxx_xxx" and the returned status code is 400
+    Then an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/time/xxx_xxx" and the returned status code is 400
 
     # Hash not found - Not Found (404)
-    Then an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/time/AQIDBAUGBwgJCgsM" and the returned status code is 404
+    Then an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/time/AQIDBAUGBwgJCgsM" and the returned status code is 404
 
     # The config setting for maxTransactionsInResponse is 10 so we should expect 10 transactions in the query for all transactions
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/transactions"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/transactions"
     And the JSON path "moreTransactions" of the boolean response equals "true"
     And the JSON path "transactions.0.transactionTimeHash" of the response is not empty
     And the JSON path "transactions.0.anchorString" of the response is not empty
@@ -108,7 +108,7 @@ Feature:
     And core index file URI is parsed from anchor string "anchor_string_9" and saved to variable "core_index_uri_9"
 
     # Get more transactions from where we left off
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/transactions?since=${txnNum_9}&transaction-time-hash=${timeHash_9}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/transactions?since=${txnNum_9}&transaction-time-hash=${timeHash_9}"
     And the JSON path "transactions.0.transactionTime" of the numeric response equals "${time_9}"
     And the JSON path "transactions.0.transactionTimeHash" of the response equals "${timeHash_9}"
     And the JSON path "transactions.0.transactionNumber" of the numeric response equals "${txnNum_9}"
@@ -126,18 +126,18 @@ Feature:
     And the JSON path "chunks" of the array response is not empty
 
     # Invalid since
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/transactions?since=xxx&transaction-time-hash=${timeHash_9}" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/transactions?since=xxx&transaction-time-hash=${timeHash_9}" and the returned status code is 400
     And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
 
     # Invalid time hash
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/transactions?since=0&transaction-time-hash=xxx_xxx" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/transactions?since=0&transaction-time-hash=xxx_xxx" and the returned status code is 400
     And the JSON path "code" of the response equals "invalid_transaction_number_or_time_hash"
 
     # Hash not found
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/transactions?since=0&transaction-time-hash=AQIDBAUGBwgJCgsM" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/transactions?since=0&transaction-time-hash=AQIDBAUGBwgJCgsM" and the returned status code is 404
 
     # Valid transactions
-    When an HTTP POST is sent to "https://localhost:48326/sidetree/v1/blockchain/first-valid" with content "${transactions}" of type "application/json"
+    When an HTTP POST is sent to "https://localhost:48326/sidetree/v1/anchor/first-valid" with content "${transactions}" of type "application/json"
     Then the JSON path "transactionTime" of the numeric response equals "${time_9}"
     And the JSON path "transactionTimeHash" of the response equals "${timeHash_9}"
     And the JSON path "transactionNumber" of the numeric response equals "${txnNum_9}"
@@ -145,10 +145,10 @@ Feature:
 
     # Invalid transactions
     Given variable "invalidTransactions" is assigned the JSON value '[{"transactionNumber":3,"transactionTime":10,"transactionTimeHash":"xsZhH8Wpg5_DNEIB3KN9ihtkVuBDLWWGJ2OlVWTIZBs=","anchorString":"invalid"}]'
-    When an HTTP POST is sent to "https://localhost:48326/sidetree/v1/blockchain/first-valid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
+    When an HTTP POST is sent to "https://localhost:48326/sidetree/v1/anchor/first-valid" with content "${invalidTransactions}" of type "application/json" and the returned status code is 404
 
     # Retrieve the core index file from the transaction time in transaction 0 above
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/blocks?from-time=${time_0}&max-blocks=2"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/blocks?from-time=${time_0}&max-blocks=2"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the response equals "${time_0}"
     And the JSON path "1.header.previous_hash" of the response is saved to variable "previous-hash"
@@ -164,11 +164,11 @@ Feature:
     # Retrieve the previous block using the previous hash from above
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Convert the string to base64URL-encoding.
     Given the base64-encoded value "${previous-hash}" is converted to base64URL-encoding and saved to variable "url-encoded-previous-hash"
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/blocks/${url-encoded-previous-hash}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/blocks/${url-encoded-previous-hash}"
     And the JSON path "0.header.number" of the response equals "${time_0}"
 
     # Retrieve the core index file from the current block hash
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/blocks/${latest-hash}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/blocks/${latest-hash}"
     Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.1.rwset.writes.0.value" of the response is saved to variable "txn-info"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${txn-info}" is decoded and saved to variable "url-encoded-txn-info"
@@ -180,7 +180,7 @@ Feature:
     Then the JSON path "provisionalIndexFileUri" of the response is not empty
 
     # Retrieve the core index file from the previous block hash
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/blocks/${latest-previous-hash}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/blocks/${latest-previous-hash}"
     Then the JSON path "0.data.data.0.payload.data.actions.0.payload.action.proposal_response_payload.extension.results.ns_rwset.1.rwset.writes.0.value" of the response is saved to variable "txn-info"
     # Binary values in the JSON block are returned as strings encoded in base64 (standard) encoding. Decoding the value will give us the (base64URL-encoded) anchor string.
     Given the base64-encoded value "${txn-info}" is decoded and saved to variable "url-encoded-txn-info"
@@ -191,7 +191,7 @@ Feature:
     Then the JSON path "provisionalIndexFileUri" of the response is not empty
 
     # Get block by hash where the data is base64-encoded
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/blocks/${url-encoded-previous-hash}?data-encoding=base64"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/blocks/${url-encoded-previous-hash}?data-encoding=base64"
     Then the JSON path "#" of the response has 1 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
     And the JSON path "0.header.dataHash" of the response is saved to variable "data-hash"
@@ -199,7 +199,7 @@ Feature:
     Then the hash of the base64-encoded value "${block-data}" equals "${data-hash}"
 
     # Get block by hash where the data is base64URL-encoded
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/blocks/${url-encoded-previous-hash}?data-encoding=base64url"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/blocks/${url-encoded-previous-hash}?data-encoding=base64url"
     Then the JSON path "#" of the response has 1 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
     And the JSON path "0.header.dataHash" of the response is saved to variable "data-hash"
@@ -207,7 +207,7 @@ Feature:
     Then the hash of the base64URL-encoded value "${block-data}" equals "${data-hash}"
 
     # Get blocks in range where the data is base64-encoded
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/blocks?from-time=${time_0}&max-blocks=2&data-encoding=base64"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/blocks?from-time=${time_0}&max-blocks=2&data-encoding=base64"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
     And the JSON path "0.header.dataHash" of the response is saved to variable "data-hash"
@@ -215,7 +215,7 @@ Feature:
     Then the hash of the base64-encoded value "${block-data}" equals "${data-hash}"
 
     # Get blocks in range where the data is base64URL-encoded
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/blocks?from-time=${time_0}&max-blocks=2&data-encoding=base64url"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/blocks?from-time=${time_0}&max-blocks=2&data-encoding=base64url"
     Then the JSON path "#" of the response has 2 items
     And the JSON path "0.header.number" of the numeric response equals "${time_0}"
     And the JSON path "0.header.dataHash" of the response is saved to variable "data-hash"
@@ -234,29 +234,29 @@ Feature:
     #  PEER_ADMIN_OPERATION : 8
 
     # Get the latest config block (the data is in JSON format)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/config-block"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/config-block"
     And the JSON path "data.data.0.payload.header.channel_header.type" of the numeric response equals "1"
     # Get the latest config block (the data is base64-encoded)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/config-block?data-encoding=base64"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/config-block?data-encoding=base64"
     And the JSON path "header.dataHash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64-encoded value "${config-data}" equals "${config-data-hash}"
     # Get the latest config block (the data is base64URL-encoded)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/config-block?data-encoding=base64url"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/config-block?data-encoding=base64url"
     And the JSON path "header.dataHash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64URL-encoded value "${config-data}" equals "${config-data-hash}"
 
     # Get the config block that was used by the block with the given hash (the data is in JSON format)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/config-block/${url-encoded-previous-hash}"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/config-block/${url-encoded-previous-hash}"
     And the JSON path "data.data.0.payload.header.channel_header.type" of the numeric response equals "1"
     # Get the config block that was used by the block with the given hash (the data is base64-encoded)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/config-block/${url-encoded-previous-hash}?data-encoding=base64"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/config-block/${url-encoded-previous-hash}?data-encoding=base64"
     And the JSON path "header.dataHash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64-encoded value "${config-data}" equals "${config-data-hash}"
     # Get the config block that was used by the block with the given hash (the data is base64URL-encoded)
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/blockchain/config-block/${url-encoded-previous-hash}?data-encoding=base64url"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/anchor/config-block/${url-encoded-previous-hash}?data-encoding=base64url"
     And the JSON path "header.dataHash" of the response is saved to variable "config-data-hash"
     And the JSON path "data" of the response is saved to variable "config-data"
     Then the hash of the base64URL-encoded value "${config-data}" equals "${config-data-hash}"
@@ -264,30 +264,30 @@ Feature:
   @invalid_blockchain_config
   Scenario: Invalid configuration
     Given fabric-cli context "org1-mychannel-context" is used
-    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-blockchainhandler-config.json --noprompt" then the error response should contain "component name must be set to the base path [/sidetree/v1/blockchain]"
+    When fabric-cli is executed with args "ledgerconfig update --configfile ./fixtures/config/fabric/invalid-blockchainhandler-config.json --noprompt" then the error response should contain "component name must be set to the base path [/sidetree/v1/anchor]"
 
   @blockchain_unauthorized
   Scenario: Attempt to access the blockchain endpoints without providing an auth token
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/version" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/time" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/time/hash1234" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/transactions" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/transactions?since=0&transaction-time-hash=hash1234" and the returned status code is 401
-    When an HTTP POST is sent to "https://localhost:48428/sidetree/v1/blockchain/first-valid" with content "transactions" of type "application/json" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/blocks?from-time=1&max-blocks=2" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/config-block" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/config-block/hash1234" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/version" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/time" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/time/hash1234" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/transactions" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/transactions?since=0&transaction-time-hash=hash1234" and the returned status code is 401
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/v1/anchor/first-valid" with content "transactions" of type "application/json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/blocks?from-time=1&max-blocks=2" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/config-block" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/config-block/hash1234" and the returned status code is 401
 
     # Now provide a valid token
-    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/blockchain" is set to "${blockchain_r}"
-    Given the authorization bearer token for "POST" requests to path "/sidetree/v1/blockchain" is set to "${blockchain_r}"
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/anchor" is set to "${blockchain_r}"
+    Given the authorization bearer token for "POST" requests to path "/sidetree/v1/anchor" is set to "${blockchain_r}"
 
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/version" and the returned status code is 200
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/time" and the returned status code is 200
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/time/hash1234" and the returned status code is 404
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/transactions" and the returned status code is 200
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/transactions?since=0&transaction-time-hash=hash1234" and the returned status code is 404
-    When an HTTP POST is sent to "https://localhost:48428/sidetree/v1/blockchain/first-valid" with content "transactions" of type "application/json" and the returned status code is 400
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/blocks?from-time=1&max-blocks=1" and the returned status code is 200
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/config-block" and the returned status code is 200
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/blockchain/config-block/hash1234" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/version" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/time" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/time/hash1234" and the returned status code is 404
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/transactions" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/transactions?since=0&transaction-time-hash=hash1234" and the returned status code is 404
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/v1/anchor/first-valid" with content "transactions" of type "application/json" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/blocks?from-time=1&max-blocks=1" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/config-block" and the returned status code is 200
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/anchor/config-block/hash1234" and the returned status code is 404

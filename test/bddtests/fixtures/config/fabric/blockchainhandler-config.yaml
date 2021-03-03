@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-basePath: /sidetree/v1/blockchain
+basePath: /sidetree/v1/anchor
 maxTransactionsInResponse: 10
 maxBlocksInResponse: 5
 
