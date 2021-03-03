@@ -19,7 +19,7 @@ func TestNewService(t *testing.T) {
 		service1        = "service1"
 		path1_1         = "/identifiers"
 		path1_2         = "/operations"
-		rootEndpoint1_1 = "https://peer1.org1.com/sidetree/0.0.1"
+		rootEndpoint1_1 = "https://peer1.org1.com/sidetree/v1"
 		v1              = "0.0.1"
 	)
 

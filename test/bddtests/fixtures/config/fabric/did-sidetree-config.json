@@ -1,5 +1,5 @@
 {
-  "BasePath": "/sidetree/0.0.1",
+  "BasePath": "/sidetree/v1",
   "Namespace": "did:sidetree",
   "Aliases": ["did:domain.com"],
   "Authorization":{

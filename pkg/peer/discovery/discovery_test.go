@@ -45,18 +45,18 @@ const (
 
 	service2 = "cas"
 
-	rootEndpoint1_p1_1 = "https://peer1.org1.com/sidetree/0.0.1"
-	rootEndpoint1_p1_2 = "https://peer2.org1.com/sidetree/0.0.1"
-	rootEndpoint2_p1_1 = "https://peer1.org1.com/sidetree/0.0.1/cas"
-	rootEndpoint2_p1_2 = "https://peer2.org1.com/sidetree/0.0.1/cas"
+	rootEndpoint1_p1_1 = "https://peer1.org1.com/sidetree/v1"
+	rootEndpoint1_p1_2 = "https://peer2.org1.com/sidetree/v1"
+	rootEndpoint2_p1_1 = "https://peer1.org1.com/sidetree/v1/cas"
+	rootEndpoint2_p1_2 = "https://peer2.org1.com/sidetree/v1/cas"
 
-	rootEndpoint1_p2_1 = "https://peer1.org2.com/sidetree/0.0.1"
-	rootEndpoint1_p2_2 = "https://peer2.org2.com/sidetree/0.0.1"
-	rootEndpoint2_p2_1 = "https://peer1.org2.com/sidetree/0.0.1/cas"
-	rootEndpoint2_p2_2 = "https://peer2.org2.com/sidetree/0.0.1/cas"
+	rootEndpoint1_p2_1 = "https://peer1.org2.com/sidetree/v1"
+	rootEndpoint1_p2_2 = "https://peer2.org2.com/sidetree/v1"
+	rootEndpoint2_p2_1 = "https://peer1.org2.com/sidetree/v1/cas"
+	rootEndpoint2_p2_2 = "https://peer2.org2.com/sidetree/v1/cas"
 
-	v1 = "0.0.1"
-	v2 = "0.0.2"
+	v1 = "v1"
+	v2 = "v2"
 )
 
 var (

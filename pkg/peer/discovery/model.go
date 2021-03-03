@@ -16,7 +16,7 @@ Following are some JSON examples:
     "service": "did:sidetree",
     "apiVersion": "0.0.1",
     "domain": "org1.com",
-    "rootEndpoint": "https://peer0.org1.com:48326/sidetree/0.0.1",
+    "rootEndpoint": "https://peer0.org1.com:48326/sidetree/v1",
     "endpoints": [
       {
         "path": "/identifiers",
@@ -36,7 +36,7 @@ Following are some JSON examples:
     "service": "cas",
     "apiVersion": "0.0.1",
     "domain": "org2.com",
-    "rootEndpoint": "https://peer0.org2.com:48326/sidetree/0.0.1/cas",
+    "rootEndpoint": "https://peer0.org2.com:48326/sidetree/v1/cas",
     "endpoints": [
       {
 	    "method": "GET"

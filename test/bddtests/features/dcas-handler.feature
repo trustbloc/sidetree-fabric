@@ -39,35 +39,35 @@ Feature:
 
   @dcas_upload_and_retrieve_content
   Scenario: Upload files to DCAS
-    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/cas" is set to "${cas_w}"
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/cas" is set to "${cas_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/cas" is set to "${cas_w}"
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/version"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/cas/version"
     Then the JSON path "name" of the response equals "cas"
     And the JSON path "version" of the response equals "0.1.3"
 
-    When an HTTP POST is sent to "https://localhost:48326/sidetree/0.0.1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json"
+    When an HTTP POST is sent to "https://localhost:48326/sidetree/v1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json"
     Then the JSON path "hash" of the response is saved to variable "contentHash"
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${contentHash}" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/cas/${contentHash}" and the returned status code is 400
     Then the response equals "content_max_size_not_specified"
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${contentHash}?max-size=1" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/cas/${contentHash}?max-size=1" and the returned status code is 400
     Then the response equals "content_exceeds_maximum_allowed_size"
 
-    When an HTTP GET is sent to "https://localhost:48326/sidetree/0.0.1/cas/${contentHash}?max-size=1024"
+    When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/cas/${contentHash}?max-size=1024"
     And the JSON path "$id" of the response equals "https://example.com/geographical-location.schema.json"
 
   @dcas_unauthorized
   Scenario: Attempt to access the cas endpoints without providing an auth token
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/version" and the returned status code is 401
-    When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/hash1234?max-size=1024" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/cas/version" and the returned status code is 401
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/v1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/cas/hash1234?max-size=1024" and the returned status code is 401
 
     # Now provide valid tokens
-    Given the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_r}"
-    And the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/cas" is set to "${cas_w}"
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/version" and the returned status code is 200
-    When an HTTP POST is sent to "https://localhost:48428/sidetree/0.0.1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/hash1234?max-size=1024" and the returned status code is 400
-    When an HTTP GET is sent to "https://localhost:48428/sidetree/0.0.1/cas/bafkreigm3kar2skv2vuzanwect4fvdbmtwjx46qmhgxi34j7i4pexptexy?max-size=1024" and the returned status code is 404
+    Given the authorization bearer token for "GET" requests to path "/sidetree/v1/cas" is set to "${cas_r}"
+    And the authorization bearer token for "GET" requests to path "/sidetree/v1/cas" is set to "${cas_w}"
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/cas/version" and the returned status code is 200
+    When an HTTP POST is sent to "https://localhost:48428/sidetree/v1/cas" with content from file "fixtures/testdata/schemas/geographical-location.schema.json" and the returned status code is 401
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/cas/hash1234?max-size=1024" and the returned status code is 400
+    When an HTTP GET is sent to "https://localhost:48428/sidetree/v1/cas/bafkreigm3kar2skv2vuzanwect4fvdbmtwjx46qmhgxi34j7i4pexptexy?max-size=1024" and the returned status code is 404

@@ -15,8 +15,8 @@ Feature:
 
     Given variable "did_r" is assigned the value "TOKEN_DID_R"
     And variable "did_w" is assigned the value "TOKEN_DID_W"
-    Then the authorization bearer token for "GET" requests to path "/sidetree/0.0.1/identifiers" is set to "${did_r}"
-    And the authorization bearer token for "POST" requests to path "/sidetree/0.0.1/operations" is set to "${did_w}"
+    Then the authorization bearer token for "GET" requests to path "/sidetree/v1/identifiers" is set to "${did_r}"
+    And the authorization bearer token for "POST" requests to path "/sidetree/v1/operations" is set to "${did_w}"
 
     Given the channel "mychannel" is created and all peers have joined
 
@@ -61,7 +61,7 @@ Feature:
     And we wait 2 seconds
 
     # Send the operation to peer0.org1.
-    When client sends request to "https://localhost:48326/sidetree/0.0.1/operations" to create DID document in namespace "did:sidetree"
+    When client sends request to "https://localhost:48326/sidetree/v1/operations" to create DID document in namespace "did:sidetree"
     Then check success response contains "#didDocumentHash"
 
     # Stop peer0.org1 after sending it an operation. The operation should have
@@ -81,7 +81,7 @@ Feature:
 
     # Retrieve the document from another peer since, by this time, the operation should have
     # been processed and distributed to all peers.
-    When client sends request to "https://localhost:48427/sidetree/0.0.1/identifiers" to resolve DID document
+    When client sends request to "https://localhost:48427/sidetree/v1/identifiers" to resolve DID document
     Then check success response contains "#didDocumentHash"
 
   @invalid_config_update
@@ -94,12 +94,12 @@ Feature:
 
   @observer_failover
   Scenario: Active observer fails over to standby
-    Given variable "peer0.org1" is assigned the value "https://localhost:48326/sidetree/0.0.1"
-    And variable "peer1.org1" is assigned the value "https://localhost:48327/sidetree/0.0.1"
-    And variable "peer2.org1" is assigned the value "https://localhost:48328/sidetree/0.0.1"
-    And variable "peer0.org2" is assigned the value "https://localhost:48426/sidetree/0.0.1"
-    And variable "peer1.org2" is assigned the value "https://localhost:48427/sidetree/0.0.1"
-    And variable "peer2.org2" is assigned the value "https://localhost:48428/sidetree/0.0.1"
+    Given variable "peer0.org1" is assigned the value "https://localhost:48326/sidetree/v1"
+    And variable "peer1.org1" is assigned the value "https://localhost:48327/sidetree/v1"
+    And variable "peer2.org1" is assigned the value "https://localhost:48328/sidetree/v1"
+    And variable "peer0.org2" is assigned the value "https://localhost:48426/sidetree/v1"
+    And variable "peer1.org2" is assigned the value "https://localhost:48427/sidetree/v1"
+    And variable "peer2.org2" is assigned the value "https://localhost:48428/sidetree/v1"
 
     # Write several Sidetree transactions. Scatter the requests across different endpoints to generate multiple
     # Sidetree transactions within the same block and across multiple blocks.

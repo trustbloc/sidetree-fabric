@@ -9,7 +9,7 @@
           "Version": "1",
           "Components": [
             {
-              "Name": "sidetree/0.0.1",
+              "Name": "sidetree/v1",
               "Version": "0.1.3",
               "Config": "file://./invalid-basepath.json",
               "Format": "json"
