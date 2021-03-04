@@ -173,3 +173,4 @@ Feature:
     And the JSON path "patches" of the array response is not empty
     And the JSON path "signatureAlgorithms" of the array response is not empty
     And the JSON path "keyAlgorithms" of the array response is not empty
+    And the JSON path "nonceSize" of the numeric response equals "16"
