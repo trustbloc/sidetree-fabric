@@ -222,6 +222,7 @@ Feature:
     And the JSON path "patches" of the array response is not empty
     And the JSON path "signatureAlgorithms" of the array response is not empty
     And the JSON path "keyAlgorithms" of the array response is not empty
+    And the JSON path "nonceSize" of the numeric response equals "16"
 
     # Protocol at time (block number) 2000
     When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/version?time=2000"
@@ -242,6 +243,7 @@ Feature:
     And the JSON path "patches" of the array response is not empty
     And the JSON path "signatureAlgorithms" of the array response is not empty
     And the JSON path "keyAlgorithms" of the array response is not empty
+    And the JSON path "nonceSize" of the numeric response equals "16"
 
     # Current protocol
     When an HTTP GET is sent to "https://localhost:48326/sidetree/v1/version"
