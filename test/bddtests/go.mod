@@ -8,9 +8,9 @@ require (
 	github.com/cucumber/godog v0.8.1
 	github.com/hyperledger/fabric-protos-go v0.0.0-20200707132912-fee30f3ccd23
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/viper v1.4.0
-	github.com/trustbloc/fabric-peer-test-common v0.1.5
+	github.com/trustbloc/fabric-peer-test-common v0.1.6
 	github.com/trustbloc/sidetree-core-go v0.6.0
 )
 
