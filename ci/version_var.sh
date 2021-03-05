@@ -6,7 +6,7 @@
 
 
 # Release Parameters
-BASE_VERSION=0.1.6
+BASE_VERSION=0.6.0
 IS_RELEASE=true
 
 # Project Parameters
