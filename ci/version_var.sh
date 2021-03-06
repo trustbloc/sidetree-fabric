@@ -6,8 +6,8 @@
 
 
 # Release Parameters
-BASE_VERSION=0.6.0
-IS_RELEASE=true
+BASE_VERSION=0.7.0
+IS_RELEASE=false
 
 # Project Parameters
 SOURCE_REPO=sidetree-fabric

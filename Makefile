@@ -48,9 +48,9 @@ FABRIC_TOOLS_VERSION ?= 2.0.0-alpha
 FABRIC_TOOLS_TAG     ?= $(ARCH)-$(FABRIC_TOOLS_VERSION)
 
 # Fabric peer ext docker image (overridable)
-FABRIC_PEER_EXT_IMAGE   ?= trustbloc/fabric-peer
-FABRIC_PEER_EXT_VERSION ?= 0.1.2
-FABRIC_PEER_EXT_TAG     ?= $(ARCH)-$(FABRIC_PEER_EXT_VERSION)
+FABRIC_PEER_IMAGE   ?= hyperledger/fabric-peer
+FABRIC_PEER_VERSION ?= 2.2.1
+FABRIC_PEER_TAG     ?= $(ARCH)-$(FABRIC_PEER_VERSION)
 
 export FABRIC_CLI_EXT_VERSION ?= v0.1.5
 
@@ -110,8 +110,8 @@ fabric-peer-docker:
 	@$(DBUILD_CMD) \
         -f ./images/fabric-peer/Dockerfile --no-cache \
         -t $(DOCKER_OUTPUT_NS)/$(SIDETREE_FABRIC_IMAGE_NAME):$(SIDETREE_FABRIC_IMAGE_TAG) \
-	--build-arg FABRIC_PEER_UPSTREAM_IMAGE=$(FABRIC_PEER_EXT_IMAGE) \
-	--build-arg FABRIC_PEER_UPSTREAM_TAG=$(FABRIC_PEER_EXT_TAG) \
+	--build-arg FABRIC_PEER_UPSTREAM_IMAGE=$(FABRIC_PEER_IMAGE) \
+	--build-arg FABRIC_PEER_UPSTREAM_TAG=$(FABRIC_PEER_TAG) \
 	--build-arg ALPINE_VER=$(ALPINE_VER) \
 	--build-arg GO_VER=$(GO_VER) \
 	--build-arg GO_LDFLAGS="$(GO_LDFLAGS)" \
